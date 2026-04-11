@@ -16,7 +16,14 @@ import { create } from "zustand";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type GamePhase = "lobby" | "day" | "night" | "voting" | "ended";
+export type GamePhase =
+  | "lobby"
+  | "role_reveal"
+  | "night"
+  | "day"
+  | "voting"
+  | "elimination"
+  | "ended";
 
 export interface GamePlayer {
   id: string;
@@ -37,6 +44,16 @@ interface GameState {
   players: GamePlayer[];
   /** Current vote tally: voterId → targetId */
   votes: Record<string, string>;
+  /** Player eliminated in the last vote (shown on elimination screen) */
+  eliminatedPlayerId: string | null;
+  /** Winning faction — populated when phase = "ended" */
+  winnerFaction: "wolves" | "villagers" | null;
+  /** Seconds remaining in the day discussion timer */
+  dayTimeLeft: number;
+  /** Target selected by the current player during night phase */
+  nightAction: string | null;
+  /** Result revealed to the Seer after investigating a player */
+  seerResult: "wolf" | "villager" | null;
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   setPhase: (phase: GamePhase) => void;
@@ -46,18 +63,30 @@ interface GameState {
   castVote: (voterId: string, targetId: string) => void;
   clearVotes: () => void;
   eliminatePlayer: (playerId: string) => void;
+  setEliminatedPlayer: (id: string | null) => void;
+  setWinner: (faction: "wolves" | "villagers" | null) => void;
+  setDayTimeLeft: (seconds: number) => void;
+  setNightAction: (targetId: string | null) => void;
+  setSeerResult: (result: "wolf" | "villager" | null) => void;
   reset: () => void;
 }
 
 const initialState: Pick<
   GameState,
-  "phase" | "round" | "myRole" | "players" | "votes"
+  | "phase" | "round" | "myRole" | "players" | "votes"
+  | "eliminatedPlayerId" | "winnerFaction" | "dayTimeLeft"
+  | "nightAction" | "seerResult"
 > = {
   phase: "lobby",
   round: 0,
   myRole: null,
   players: [],
   votes: {},
+  eliminatedPlayerId: null,
+  winnerFaction: null,
+  dayTimeLeft: 180,
+  nightAction: null,
+  seerResult: null,
 };
 
 export const useGameStore = create<GameState>()((set) => ({
@@ -82,6 +111,16 @@ export const useGameStore = create<GameState>()((set) => ({
         p.id === playerId ? { ...p, isAlive: false } : p,
       ),
     })),
+
+  setEliminatedPlayer: (id) => set({ eliminatedPlayerId: id }),
+
+  setWinner: (faction) => set({ winnerFaction: faction }),
+
+  setDayTimeLeft: (seconds) => set({ dayTimeLeft: seconds }),
+
+  setNightAction: (targetId) => set({ nightAction: targetId }),
+
+  setSeerResult: (result) => set({ seerResult: result }),
 
   reset: () => set(initialState),
 }));

@@ -33,7 +33,15 @@ export type ServerMsg =
   | { type: "CHAT_MESSAGE"; userId: string; text: string; time: string }
   | { type: "GAME_STARTED" }
   | { type: "PLAYER_KICKED"; playerId: string }
-  | { type: "ERROR"; message: string };
+  | { type: "ERROR"; message: string }
+  // ── In-game events ──────────────────────────────────────────────────────────
+  | { type: "ROLE_DEALT"; role: string; players: Array<{ id: string; username: string; isAlive: boolean }> }
+  | { type: "NIGHT_STARTED"; round: number }
+  | { type: "DAY_STARTED"; round: number }
+  | { type: "VOTE_PHASE" }
+  | { type: "VOTE_RESULT"; eliminatedId: string; eliminatedRole: string }
+  | { type: "SEER_RESULT"; targetId: string; result: "wolf" | "villager" }
+  | { type: "GAME_OVER"; winner: "wolves" | "villagers"; roles: Record<string, string> };
 
 export type ClientMsg =
   | { type: "PING" }
@@ -42,7 +50,14 @@ export type ClientMsg =
   | { type: "READY_TOGGLE" }
   | { type: "CHAT"; text: string }
   | { type: "KICK_PLAYER"; playerId: string }
-  | { type: "START_GAME" };
+  | { type: "START_GAME" }
+  // ── In-game actions ─────────────────────────────────────────────────────────
+  | { type: "WOLF_TARGET"; targetId: string }
+  | { type: "SEER_INVESTIGATE"; targetId: string }
+  | { type: "WITCH_SAVE"; targetId: string }
+  | { type: "WITCH_POISON"; targetId: string }
+  | { type: "HUNTER_SHOOT"; targetId: string }
+  | { type: "CAST_VOTE"; targetId: string };
 
 // ── Internal subscriber map ────────────────────────────────────────────────────
 
