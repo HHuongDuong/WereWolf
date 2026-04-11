@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, DEV_USER } from "../context/AuthContext";
 
 export function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ identifier: "", password: "" });
 
@@ -11,6 +15,11 @@ export function LoginPage() {
     e.preventDefault();
     // TODO: wire to backend
   };
+
+  function devLogin() {
+    login(DEV_USER);
+    navigate("/");
+  }
 
   return (
     <section className="auth-page">
@@ -125,6 +134,15 @@ export function LoginPage() {
           </form>
 
           <div className="auth-divider"><span>or</span></div>
+
+          <button type="button" className="auth-btn-dev" onClick={devLogin}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+            <span>Continue as DevWolf <span className="auth-btn-dev-tag">DEV</span></span>
+          </button>
+
+          <div className="auth-divider"><span>or sign in with</span></div>
 
           <div className="auth-socials">
             <button className="auth-social-btn" type="button" aria-label="Continue with Google">

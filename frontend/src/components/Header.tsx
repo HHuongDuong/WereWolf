@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export function Header() {
   const [langOpen, setLangOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="header">
@@ -42,15 +44,32 @@ export function Header() {
             )}
           </div>
 
-          <a href="/auth/login" className="btn-secondary">
-            <img src="/img/icons/user.svg" alt="" />
-            <span>Log in</span>
-          </a>
-
-          <a href="/auth/register" className="btn-primary">
-            <img src="/img/icons/play-button.svg" alt="" />
-            <span>Play</span>
-          </a>
+          {user ? (
+            <>
+              <span className="nav-username">
+                <img src="/img/icons/user.svg" alt="" />
+                {user.username}
+              </span>
+              <a href="/rooms" className="btn-primary">
+                <img src="/img/icons/play-button.svg" alt="" />
+                <span>Play</span>
+              </a>
+              <button className="btn-secondary" onClick={logout}>
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="/auth/login" className="btn-secondary">
+                <img src="/img/icons/user.svg" alt="" />
+                <span>Log in</span>
+              </a>
+              <a href="/auth/register" className="btn-primary">
+                <img src="/img/icons/play-button.svg" alt="" />
+                <span>Play</span>
+              </a>
+            </>
+          )}
         </div>
       </nav>
     </header>
