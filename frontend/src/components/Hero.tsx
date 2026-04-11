@@ -114,7 +114,7 @@ export function Hero() {
 
       {/* Village scene */}
       <div className="hero-scene">
-        <img src="/img/assets/scene_elements/scene_night-special_plain.svg" alt="" />
+        <img src="/img/assets/scene_elements/scene_night-special_plain.svg" alt="" role="presentation" />
       </div>
       <div className="hero-gradient" />
 
@@ -126,13 +126,13 @@ export function Hero() {
             <span className="vote-count">3</span>
             <div className="vote-avatars">
               <div className="vote-avatar">
-                <img src="/img/assets/picture-1.svg" alt="voter" />
+                <img src="/img/assets/picture-1.svg" alt="voter" loading="lazy" />
               </div>
               <div className="vote-avatar">
-                <img src="/img/assets/picture-3.svg" alt="voter" />
+                <img src="/img/assets/picture-3.svg" alt="voter" loading="lazy" />
               </div>
               <div className="vote-avatar">
-                <img src="/img/assets/picture-4.svg" alt="voter" />
+                <img src="/img/assets/picture-4.svg" alt="voter" loading="lazy" />
               </div>
             </div>
           </div>
@@ -171,7 +171,7 @@ export function Hero() {
               return (
                 <div key={msg.id} className="chat-msg visible">
                   <div className="chat-avatar">
-                    <img src={msg.avatar} alt={msg.username} />
+                    <img src={msg.avatar} alt={msg.username} loading="lazy" />
                   </div>
                   <div className="chat-msg-body">
                     <div className="chat-username">{msg.username}</div>

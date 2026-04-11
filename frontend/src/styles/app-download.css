@@ -44,5 +44,12 @@
 
 .app-btn img {
   height: 52px;
-  width: auto;
+  width: 160px;
+  object-fit: contain;
+}
+
+.app-btn:focus-visible {
+  outline: 2px solid var(--cta);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
