@@ -1,103 +1,57 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { RoomProvider, useRoom, type Player } from "../context/RoomContext";
 
-interface Player {
-  id: string;
-  username: string;
-  isHost: boolean;
-  isReady: boolean;
-  isYou?: boolean;
-}
-
-interface ChatMsg {
-  id: number;
-  user: string;
-  text: string;
-  time: string;
-}
-
-const MOCK_PLAYERS: Player[] = [
-  { id: "1",       username: "LunaWolf",    isHost: true,  isReady: true  },
-  { id: "2",       username: "SeerMaster",  isHost: false, isReady: true  },
-  { id: "3",       username: "VillageElder",isHost: false, isReady: false },
-  { id: "4",       username: "HunterX",     isHost: false, isReady: true  },
-  { id: "5",       username: "CursedOne",   isHost: false, isReady: false },
-  { id: "dev-001", username: "DevWolf",     isHost: false, isReady: false, isYou: true },
-];
-
-const MOCK_CHAT: ChatMsg[] = [
-  { id: 1, user: "LunaWolf",    text: "Welcome to the village! Waiting for more players...", time: "12:30" },
-  { id: 2, user: "SeerMaster",  text: "Ready when you are!",                                 time: "12:31" },
-  { id: 3, user: "HunterX",     text: "Who's the wolf this time? 👀",                        time: "12:31" },
-];
-
-const MAX_PLAYERS = 12;
-const ROOM_CODE   = "WOLF-4821";
-const ROOM_NAME   = "Midnight Hunt";
-
-interface SettingRow { label: string; value: string; accent?: "blue" | "red" | "gold" | "dim" }
-
-const SETTINGS: SettingRow[] = [
-  { label: "Mode",        value: "Classic"  },
-  { label: "Max Players", value: "12"       },
-  { label: "Day Phase",   value: "3 min"    },
-  { label: "Night Phase", value: "90 sec"   },
-  { label: "Werewolves",  value: "2"        },
-  { label: "Seer",        value: "Enabled",  accent: "blue" },
-  { label: "Witch",       value: "Disabled", accent: "dim"  },
-  { label: "Hunter",      value: "Enabled",  accent: "blue" },
-];
+// ── Entry point (wraps the page in its context) ───────────────────────────────
 
 export function RoomPage() {
-  const { user }   = useAuth();
-  const navigate   = useNavigate();
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  const [players, setPlayers] = useState<Player[]>(() =>
-    user
-      ? MOCK_PLAYERS.map(p =>
-          p.isYou ? { ...p, username: user.username, id: user.id } : p
-        )
-      : MOCK_PLAYERS
+  const { id = "unknown" } = useParams();
+  return (
+    <RoomProvider roomId={id}>
+      <RoomPageInner />
+    </RoomProvider>
   );
-  const [chat, setChat] = useState<ChatMsg[]>(MOCK_CHAT);
+}
+
+// ── Inner page (consumes context) ─────────────────────────────────────────────
+
+function RoomPageInner() {
+  const navigate = useNavigate();
+  const {
+    room,
+    players,
+    chat,
+    isHost,
+    isReady,
+    readyCount,
+    canStart,
+    toggleReady,
+    sendMessage,
+    kickPlayer,
+    startGame,
+  } = useRoom();
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [msg,  setMsg]  = useState("");
   const [copied, setCopied] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
 
-  const myPlayer   = players.find(p => p.isYou);
-  const isHost     = myPlayer?.isHost ?? false;
-  const isReady    = myPlayer?.isReady ?? false;
-  const readyCount = players.filter(p => p.isReady).length;
-  const canStart   = isHost && readyCount >= players.length - 1;
-  const emptySlots = Math.max(0, MAX_PLAYERS - players.length);
+  const emptySlots = Math.max(0, room.maxPlayers - players.length);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
-  function toggleReady() {
-    setPlayers(ps => ps.map(p => p.isYou ? { ...p, isReady: !p.isReady } : p));
-  }
-
-  function sendMsg(e: React.FormEvent) {
+  function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!msg.trim()) return;
-    const now  = new Date();
-    const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setChat(c => [...c, { id: Date.now(), user: user?.username ?? "You", text: msg.trim(), time }]);
+    sendMessage(msg);
     setMsg("");
   }
 
   function copyCode() {
-    navigator.clipboard.writeText(ROOM_CODE).catch(() => {});
+    navigator.clipboard.writeText(room.code).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }
-
-  function kickPlayer(id: string) {
-    setPlayers(ps => ps.filter(p => p.id !== id));
   }
 
   return (
@@ -112,14 +66,14 @@ export function RoomPage() {
         </button>
 
         <div className="room-page-title-wrap">
-          <h1 className="room-page-title font-display">{ROOM_NAME}</h1>
-          <span className="room-page-mode-badge">Classic</span>
+          <h1 className="room-page-title font-display">{room.name}</h1>
+          <span className="room-page-mode-badge">{room.mode}</span>
         </div>
 
         <div className="room-code-block">
           <span className="room-code-label">Room code</span>
           <button className={`room-code-btn ${copied ? "copied" : ""}`} onClick={copyCode}>
-            <span className="room-code-value">{ROOM_CODE}</span>
+            <span className="room-code-value">{room.code}</span>
             {copied ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M20 6 9 17l-5-5"/>
@@ -142,7 +96,7 @@ export function RoomPage() {
           <div className="room-section-head">
             <span className="room-section-title">Players</span>
             <span className="room-player-tally">
-              {players.length}<span className="room-player-tally-max">/{MAX_PLAYERS}</span>
+              {players.length}<span className="room-player-tally-max">/{room.maxPlayers}</span>
             </span>
           </div>
 
@@ -187,6 +141,7 @@ export function RoomPage() {
               <button
                 className={`room-action-btn start ${canStart ? "active" : ""}`}
                 disabled={!canStart}
+                onClick={startGame}
               >
                 {canStart ? (
                   <>
@@ -234,7 +189,7 @@ export function RoomPage() {
               )}
             </div>
             <div className="room-settings-list">
-              {SETTINGS.map(s => (
+              {room.settings.map(s => (
                 <div key={s.label} className="room-setting-row">
                   <span className="room-setting-label">{s.label}</span>
                   <span className={`room-setting-value ${s.accent ? `accent-${s.accent}` : ""}`}>
@@ -256,7 +211,7 @@ export function RoomPage() {
               {chat.map(m => (
                 <div
                   key={m.id}
-                  className={`room-chat-msg ${m.user === (user?.username ?? "You") ? "own" : ""}`}
+                  className={`room-chat-msg ${m.user === (players.find(p => p.isYou)?.username ?? "You") ? "own" : ""}`}
                 >
                   <span className="room-chat-user">{m.user}</span>
                   <span className="room-chat-text">{m.text}</span>
@@ -266,7 +221,7 @@ export function RoomPage() {
               <div ref={chatEndRef} />
             </div>
 
-            <form className="room-chat-form" onSubmit={sendMsg}>
+            <form className="room-chat-form" onSubmit={handleSend}>
               <input
                 className="room-chat-input"
                 placeholder="Say something..."
@@ -288,7 +243,8 @@ export function RoomPage() {
   );
 }
 
-/* ── Player Slot sub-component ── */
+// ── Player Slot sub-component ─────────────────────────────────────────────────
+
 function PlayerSlot({
   player,
   canKick,
