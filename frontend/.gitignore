@@ -6,6 +6,9 @@ out
 dist
 *.tgz
 
+# generated CSS (rebuild with: bun run tw:build)
+src/styles/tw.css
+
 # code coverage
 coverage
 *.lcov

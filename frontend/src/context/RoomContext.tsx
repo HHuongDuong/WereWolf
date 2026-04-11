@@ -19,6 +19,7 @@ import {
   useState,
 } from "react";
 import { useAuth } from "./AuthContext";
+import { useGameStore } from "../stores/gameStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -87,12 +88,12 @@ const MOCK_SETTINGS: SettingRow[] = [
 ];
 
 const MOCK_PLAYERS: Player[] = [
-  { id: "1",       username: "LunaWolf",     isHost: true,  isReady: true  },
+  { id: "1",       username: "LunaWolf",     isHost: false, isReady: true  },
   { id: "2",       username: "SeerMaster",   isHost: false, isReady: true  },
-  { id: "3",       username: "VillageElder", isHost: false, isReady: false },
+  { id: "3",       username: "VillageElder", isHost: false, isReady: true  },
   { id: "4",       username: "HunterX",      isHost: false, isReady: true  },
-  { id: "5",       username: "CursedOne",    isHost: false, isReady: false },
-  { id: "dev-001", username: "DevWolf",      isHost: false, isReady: false, isYou: true },
+  { id: "5",       username: "CursedOne",    isHost: false, isReady: true  },
+  { id: "dev-001", username: "DevWolf",      isHost: true,  isReady: false, isYou: true },
 ];
 
 const MOCK_CHAT: ChatMsg[] = [
@@ -113,6 +114,7 @@ export function RoomProvider({
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
+  const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
   const [room, setRoom] = useState<RoomInfo>({
     id: roomId,
@@ -177,8 +179,22 @@ export function RoomProvider({
   const startGame = useCallback(() => {
     if (!canStart) return;
     setRoom(r => ({ ...r, status: "in-progress" }));
-    // TODO: emit WS event — { type: "START_GAME" }
-  }, [canStart]);
+
+    // Seed the game store with the current lobby players
+    setGamePlayers(players.map(p => ({ id: p.id, username: p.username, isAlive: true })));
+
+    // TODO: WS ROLE_DEALT event sends the actual assigned role — mock for now
+    setMyRole("Werewolf");
+
+    // Advance to role reveal; after 5 s, night begins
+    setPhase("role_reveal");
+    // TODO: emit WS { type: "START_GAME" } before transitioning
+    setTimeout(() => {
+      nextRound();
+      setPhase("night");
+      // TODO: replace setTimeout with WS NIGHT_STARTED event
+    }, 5000);
+  }, [canStart, players, setPhase, setMyRole, setGamePlayers, nextRound]);
 
   const updateSettings = useCallback((settings: SettingRow[]) => {
     setRoom(r => ({ ...r, settings }));
