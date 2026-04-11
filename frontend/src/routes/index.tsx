@@ -4,6 +4,8 @@ import { Footer } from "../components/Footer";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { RoomsPage } from "../pages/RoomsPage";
+import { RoomPage } from "../pages/RoomPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -28,6 +30,14 @@ export const routes: RouteObject[] = [
   {
     path: "/auth/register",
     element: <Layout><RegisterPage /></Layout>,
+  },
+  {
+    path: "/rooms",
+    element: <Layout><RoomsPage /></Layout>,
+  },
+  {
+    path: "/rooms/:id",
+    element: <Layout><RoomPage /></Layout>,
   },
   {
     path: "*",
