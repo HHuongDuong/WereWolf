@@ -1,0 +1,394 @@
+/* ─── Hero ──────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #ccced6 7%,
+    #a0a4b2 13%,
+    #7a7f94 20%,
+    #5a617b 28%,
+    #424a67 35%,
+    #313a5a 43%,
+    #273052 52%,
+    #242d4f 63%,
+    #0e0d1c 100%
+  );
+}
+
+.hero-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 18%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 28% 12%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 42% 22%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 58% 8%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 71% 15%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1.5px 1.5px at 82% 25%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 91% 10%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 5% 35%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 35% 32%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 63% 38%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 88% 42%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 20% 45%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 78% 48%, rgba(255,255,255,0.6), transparent);
+  pointer-events: none;
+}
+
+.hero-moon {
+  position: absolute;
+  left: 38%;
+  top: 18%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+}
+
+.moon-glow {
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(255,255,255,0.25) 0%,
+    rgba(255,255,255,0.15) 30%,
+    rgba(255,255,255,0.05) 60%,
+    transparent 75%
+  );
+  animation: moonPulse 4s ease-in-out infinite;
+}
+
+.moon-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 35% 30%,
+    #f9f8f5 0%,
+    #e8e6de 40%,
+    #d4d0c8 70%,
+    #c0bcb4 100%
+  );
+  box-shadow:
+    inset -12px -8px 24px rgba(0,0,0,0.15),
+    inset 4px 4px 12px rgba(255,255,255,0.3);
+}
+
+.hero-scene {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+}
+
+.hero-scene img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.hero-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(to top, var(--bg-deep) 0%, transparent 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5vw;
+  padding: 100px 4vw 140px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Character display */
+.hero-character {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.vote-bubble {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(14,13,28,0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 40px;
+  padding: 0.4rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.vote-count {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--wolf-red);
+  font-family: 'Cinzel', serif;
+}
+
+.vote-avatars {
+  display: flex;
+  gap: -4px;
+}
+
+.vote-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(14,13,28,0.8);
+  overflow: hidden;
+  margin-left: -6px;
+}
+
+.vote-avatar:first-child {
+  margin-left: 0;
+}
+
+.vote-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.character-stage {
+  position: relative;
+  width: 240px;
+}
+
+.character-platform {
+  width: 100%;
+}
+
+.character-figure {
+  position: absolute;
+  bottom: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  animation: characterFloat 3s ease-in-out infinite;
+}
+
+/* Chat window */
+.hero-chat {
+  background: rgba(20, 19, 40, 0.82);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg);
+  width: 320px;
+  min-width: 280px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.chat-header-bar {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4caf50;
+  animation: chatDotBlink 2s ease-in-out infinite;
+}
+
+.chat-messages {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 280px;
+}
+
+.chat-msg {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.chat-msg.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chat-msg.death-msg {
+  background: rgba(196, 58, 58, 0.12);
+  border: 1px solid rgba(196, 58, 58, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.chat-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.skull-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.chat-msg-body {
+  flex: 1;
+}
+
+.chat-username {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chat-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.chat-text .mention {
+  color: #7b9ff7;
+  font-weight: 600;
+}
+
+.chat-text .role-name {
+  color: var(--wolf-red);
+  font-weight: 700;
+}
+
+.chat-death-text {
+  font-size: 0.82rem;
+  color: rgba(232, 230, 245, 0.85);
+}
+
+.chat-repeat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.chat-repeat:hover {
+  color: var(--text-primary);
+}
+
+.repeat-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  filter: invert(1);
+}
+
+/* Hero CTA & scroll */
+.hero-bottom {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 10;
+}
+
+.hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 2.4rem;
+  background: rgba(14,13,28,0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50px;
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.hero-cta:hover {
+  background: rgba(91, 94, 247, 0.2);
+  border-color: rgba(91, 94, 247, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px var(--cta-glow);
+}
+
+.hero-cta img {
+  width: 18px;
+  height: 18px;
+  filter: invert(1);
+}
+
+.scroll-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.4;
+  animation: scrollBob 2s ease-in-out infinite;
+}
+
+.scroll-indicator img {
+  width: 22px;
+  height: 22px;
+  filter: invert(1);
+}

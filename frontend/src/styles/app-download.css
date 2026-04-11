@@ -1,0 +1,48 @@
+/* ─── App Download ──────────────────────────────────────────────────── */
+.app-download {
+  padding: 100px 4vw;
+  background: var(--bg-dark);
+}
+
+.app-download-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.app-download-inner h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.app-download-inner p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+
+.app-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.app-btn {
+  display: block;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.app-btn:hover {
+  transform: translateY(-3px);
+  opacity: 0.9;
+}
+
+.app-btn img {
+  height: 52px;
+  width: auto;
+}

@@ -1,0 +1,35 @@
+/* ─── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg-deep:    #0e0d1c;
+  --bg-dark:    #141328;
+  --bg-mid:     #1e1d3a;
+  --bg-surface: #252445;
+  --bg-card:    #1c1b35;
+
+  --text-primary: #e8e6f5;
+  --text-muted:   #9090b8;
+  --text-dim:     #5a5880;
+
+  --wolf-red:    #c43a3a;
+  --wolf-red-bg: rgba(196, 58, 58, 0.12);
+  --village-blue: #3d8bc4;
+  --village-blue-bg: rgba(61, 139, 196, 0.12);
+  --solo-gold:   #d4943a;
+  --solo-gold-bg: rgba(212, 148, 58, 0.12);
+
+  --moon-white: #f5f4ef;
+  --gold:       #d4af37;
+  --cta:        #5b5ef7;
+  --cta-hover:  #4749d8;
+  --cta-glow:   rgba(91, 94, 247, 0.35);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 40px rgba(91, 94, 247, 0.2);
+
+  font-family: 'Nunito', sans-serif;
+}

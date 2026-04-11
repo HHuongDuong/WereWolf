@@ -1,0 +1,196 @@
+/* ─── Roles Section ─────────────────────────────────────────────────── */
+.roles {
+  padding: 100px 0;
+  background: var(--bg-deep);
+  overflow: hidden;
+}
+
+.roles-title {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 3rem;
+  padding: 0 4vw;
+}
+
+.roles-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 3rem;
+  padding: 0 4vw;
+  align-items: center;
+}
+
+.role-info {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  min-height: 200px;
+}
+
+.role-info-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.role-info-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.role-team-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  width: fit-content;
+}
+
+.role-team-badge.werewolves {
+  background: var(--wolf-red-bg);
+  color: var(--wolf-red);
+  border: 1px solid rgba(196,58,58,0.3);
+}
+
+.role-team-badge.villagers {
+  background: var(--village-blue-bg);
+  color: var(--village-blue);
+  border: 1px solid rgba(61,139,196,0.3);
+}
+
+.role-team-badge.solo {
+  background: var(--solo-gold-bg);
+  color: var(--solo-gold);
+  border: 1px solid rgba(212,148,58,0.3);
+}
+
+.role-info-description {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* Roles carousel */
+.roles-carousel-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.roles-carousel-track {
+  display: flex;
+  gap: 1rem;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  padding: 1rem 0;
+}
+
+.role-card {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+}
+
+.role-card.active .role-card-img-wrap {
+  box-shadow: 0 0 0 3px var(--cta);
+}
+
+.role-card-img-wrap {
+  width: 80px;
+  height: 110px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s;
+}
+
+.role-card-img-wrap.werewolves {
+  background: linear-gradient(135deg, var(--wolf-red-bg), var(--bg-surface));
+  border: 1px solid rgba(196,58,58,0.2);
+}
+
+.role-card-img-wrap.villagers {
+  background: linear-gradient(135deg, var(--village-blue-bg), var(--bg-surface));
+  border: 1px solid rgba(61,139,196,0.2);
+}
+
+.role-card-img-wrap.solo {
+  background: linear-gradient(135deg, var(--solo-gold-bg), var(--bg-surface));
+  border: 1px solid rgba(212,148,58,0.2);
+}
+
+.role-card-img-wrap img {
+  width: 72px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.role-card-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 80px;
+  line-height: 1.3;
+}
+
+.role-card.active .role-card-name {
+  color: var(--text-primary);
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgb(255, 255, 255);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.carousel-arrow:hover {
+  background: rgba(91, 94, 247, 0.2);
+  border-color: rgba(91, 94, 247, 0.4);
+}
+
+.carousel-arrow img {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+}
+
+.carousel-arrow.left { left: -12px; }
+.carousel-arrow.right { right: -12px; }

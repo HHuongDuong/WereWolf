@@ -1,0 +1,24 @@
+/* ─── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-content {
+    flex-direction: column;
+    padding-top: 120px;
+    gap: 3rem;
+  }
+  .resume-container {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .roles-layout {
+    grid-template-columns: 1fr;
+  }
+  .nav-left .nav-link { display: none; }
+}
+
+@media (max-width: 600px) {
+  .hero-chat { width: 100%; min-width: unset; }
+  .hero-character { transform: scale(0.85); }
+  .hero-bottom { bottom: 2rem; }
+  .header { padding: 0 1rem; }
+  .resume-text h1 { font-size: 1.8rem; }
+}

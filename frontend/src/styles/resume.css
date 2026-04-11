@@ -1,0 +1,59 @@
+/* ─── Resume Section ────────────────────────────────────────────────── */
+.resume {
+  position: relative;
+  padding: 100px 4vw;
+  background: var(--bg-dark);
+  overflow: hidden;
+}
+
+.resume-logo-watermark {
+  position: absolute;
+  right: -8%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 500px;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+.resume-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  align-items: center;
+}
+
+.resume-mockup {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+
+.resume-mockup img {
+  width: 100%;
+  border-radius: var(--radius-xl);
+}
+
+.resume-text h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 2.4rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.resume-text .description {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+.resume-text .more {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
