@@ -43,7 +43,7 @@
 | P-04 | Tôi muốn chat với đồng đội sói ban đêm (nếu là sói) | Must |
 | P-05 | Tôi muốn chat công khai ban ngày để thảo luận | Must |
 | P-06 | Tôi muốn vote loại người mình nghi ngờ | Must |
-| P-07 | Tôi muốn thấy kết quả rõ ràng: ai chết, vì sao, ai thắng | Must |
+| P-07 | Tôi muốn thấy kết quả rõ ràng: ai chết đêm đó, ai bị vote loại, ai thắng | Must |
 | P-08 | Tôi muốn reconnect lại phòng nếu mạng bị ngắt trong vòng 60s | Should |
 
 ### Host (cũng là Guest)
@@ -118,7 +118,7 @@
 #### Gameplay Engine
 - Chia bài tự động theo bảng phân bổ role (xem GDD)
 - Gửi role private cho từng player qua WebSocket
-- Chạy Night Phase theo đúng thứ tự: Guard → Seer → Hunter (nếu Hunter bị giết) → Werewolf → Witch
+- Chạy Night Phase theo đúng thứ tự: Guard → Seer → Werewolf → Witch (Hunter là passive — chỉ trigger khi bị giết, không có action window riêng)
 - Timeout tự động mỗi bước (30–45s), bỏ qua nếu không hành động
 - Tổng hợp kết quả đêm, tính ai chết
 - Chạy Day Phase: thông báo kết quả → thảo luận → vote
