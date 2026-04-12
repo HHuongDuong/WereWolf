@@ -7,10 +7,27 @@
 #  CÁCH DÙNG:
 #
 #  1. Chỉ chạy infrastructure (Kafka, Redis, PostgreSQL):
+#   chỉ chạy các service ko có profiles trong file
 #       docker-compose up -d
 #
 #  2. Chạy một service cụ thể kèm infra:
-#       docker-compose --profile gateway up -d
+        #  docker-compose --profile gateway up -d
+#  kiểu ví dụ:
+# Dev A làm Room service: Chạy infra = docker compose up -d
+# cd room_service -> npm run dev
+# Nhưng chẳng hạn cần test với gameplay-service của Dev B 
+# thì chạy: docker-compose --profile gameplay up -d
+# tương tự Dev C cần test tích hợp với room-service của Dev A 
+# thì chạy docker-compose --profile room up -d
+# nói chung: Muốn xem service của member khác	docker-compose --profile <tên> up -d
+# Ví dụ Với Dev A đang làm room-service, workflow hàng ngày sẽ là:
+# bash
+# # Terminal 1 — infra
+# docker-compose up -d
+# # Terminal 2 — service của mình
+# cd room_service
+# npm run dev
+# Chỉ vậy thôi. !!!! Không cần --profile trừ khi cần test với service của người khác. !!!!
 #
 #  3. Chạy toàn bộ hệ thống:
 #       docker-compose --profile all up -d
