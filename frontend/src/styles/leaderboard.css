@@ -1,9 +1,9 @@
-/* ─── Leaderboard ────────────────────────────────────────────────────────── */
+/* ─── Leaderboard ────────────────────────────────────────────────────── */
 .leaderboard {
   position: relative;
   width: 100%;
   padding: 100px 4vw;
-  background: var(--bg-card);
+  background: #1c1b35;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,22 +21,21 @@
 }
 
 .leaderboard-header h2 {
-  font-family: 'Cinzel', serif;
-  font-size: 2.25rem;
+  font-size: 36px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fff;
   margin-bottom: 1rem;
   line-height: 1.23;
 }
 
 .leaderboard-header p {
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 300;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.6);
   line-height: 1.5;
 }
 
-/* ─── Two-column content ─────────────────────────────────────────────────── */
+/* Two-column content */
 .leaderboard-content {
   display: flex;
   justify-content: space-between;
@@ -44,7 +43,7 @@
   gap: 2rem;
 }
 
-/* ─── Podium ─────────────────────────────────────────────────────────────── */
+/* Podium */
 .lb-podium-container {
   display: flex;
   width: 35%;
@@ -67,30 +66,12 @@
   z-index: 5;
 }
 
-.lb-character {
-  position: absolute;
-  width: 36%;
-}
+.lb-character { position: absolute; width: 36%; }
+.lb-second { bottom: 28%; left: 0; z-index: 3; }
+.lb-first  { bottom: 47%; left: 32%; z-index: 4; }
+.lb-third  { bottom: 21%; left: 65%; z-index: 2; }
 
-.lb-second {
-  bottom: 28%;
-  left: 0;
-  z-index: 3;
-}
-
-.lb-first {
-  bottom: 47%;
-  left: 32%;
-  z-index: 4;
-}
-
-.lb-third {
-  bottom: 21%;
-  left: 65%;
-  z-index: 2;
-}
-
-/* ─── Rankings box ───────────────────────────────────────────────────────── */
+/* Rankings box */
 .leaderboard-box {
   position: relative;
   width: 50%;
@@ -99,7 +80,7 @@
   padding: 36px 24px;
 }
 
-/* ─── Countdown pill ─────────────────────────────────────────────────────── */
+/* Countdown pill */
 .countdown-bar {
   position: absolute;
   display: flex;
@@ -119,7 +100,6 @@
 
 .countdown-icon {
   height: 18px;
-  margin-right: 0;
   opacity: 0.8;
   filter: invert(1);
 }
@@ -128,11 +108,10 @@
   font-size: 1.3rem;
   font-weight: 600;
   color: #fff;
-  text-align: center;
   letter-spacing: 0.03em;
 }
 
-/* ─── Table header ───────────────────────────────────────────────────────── */
+/* Table header */
 .lb-table-header {
   display: flex;
   align-items: center;
@@ -144,12 +123,12 @@
   margin-top: 1.5rem;
 }
 
-/* ─── Column widths (shared between header and rows) ─────────────────────── */
+/* Column widths */
 .lb-col-rank   { width: 25%; margin-left: 5%; flex-shrink: 0; }
 .lb-col-player { width: 45%; flex-shrink: 0; }
 .lb-col-elo    { width: 30%; flex-shrink: 0; }
 
-/* ─── Scrollable rows ────────────────────────────────────────────────────── */
+/* Scrollable rows */
 .lb-scrollable {
   position: relative;
   overflow-y: auto;
@@ -163,12 +142,8 @@
   height: 78px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
+.lb-row:last-of-type { border-bottom: none; }
 
-.lb-row:last-of-type {
-  border-bottom: none;
-}
-
-/* ─── Rank number ────────────────────────────────────────────────────────── */
 .lb-rank-num {
   font-size: 3.9rem;
   letter-spacing: 1px;
@@ -176,7 +151,6 @@
   color: #343445;
 }
 
-/* ─── Player cell ────────────────────────────────────────────────────────── */
 .lb-player {
   display: flex;
   align-items: center;
@@ -213,7 +187,7 @@
 .lb-username {
   font-size: 1rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #fff;
 }
 
 .lb-premium-badge {
@@ -226,7 +200,6 @@
   letter-spacing: 0.05em;
 }
 
-/* ─── ELO cell ───────────────────────────────────────────────────────────── */
 .lb-elo {
   display: flex;
   align-items: center;
@@ -248,74 +221,30 @@
   white-space: nowrap;
 }
 
-/* ─── Fade gradient at bottom of list ────────────────────────────────────── */
 .lb-gradient {
   position: absolute;
   bottom: 0;
   width: 100%;
   height: 80px;
-  background: linear-gradient(0deg, #171721, rgba(23, 23, 33, 0));
+  background: linear-gradient(0deg, #171721, rgba(23,23,33,0));
   pointer-events: none;
 }
 
-/* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .leaderboard-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .lb-podium-container {
-    width: 280px;
-    max-width: 90%;
-  }
-
-  .lb-podium {
-    height: 200px;
-  }
-
+  .leaderboard-content { flex-direction: column; align-items: center; }
+  .lb-podium-container { width: 280px; max-width: 90%; }
+  .lb-podium { height: 200px; }
   .lb-second { bottom: 6.4vw; }
   .lb-first  { bottom: 10.6vw; }
   .lb-third  { bottom: 4.6vw; }
-
-  .leaderboard-box {
-    width: 90%;
-    margin-top: 50px;
-    margin-bottom: 80px;
-  }
-
-  .leaderboard-header h2 {
-    font-size: 1.375rem;
-  }
-
-  .lb-rank-num {
-    font-size: 1.875rem;
-  }
-
-  .lb-table-header,
-  .lb-username {
-    font-size: 0.8125rem;
-  }
-
-  .lb-elo-num {
-    font-size: 0.8125rem;
-  }
-
-  .lb-row {
-    height: 70px;
-  }
-
+  .leaderboard-box { width: 90%; margin-top: 50px; margin-bottom: 80px; }
+  .leaderboard-header h2 { font-size: 1.375rem; }
+  .lb-rank-num { font-size: 1.875rem; }
+  .lb-table-header, .lb-username { font-size: 0.8125rem; }
+  .lb-elo-num { font-size: 0.8125rem; }
+  .lb-row { height: 70px; }
   .lb-col-rank { width: 22%; }
   .lb-col-player { width: 48%; }
-
-  .lb-avatar-container {
-    width: 24px;
-    height: 24px;
-    margin-right: 8px;
-  }
-
-  .lb-scrollable {
-    height: 190px;
-    overflow: hidden;
-  }
+  .lb-avatar-container { width: 24px; height: 24px; margin-right: 8px; }
+  .lb-scrollable { height: 190px; overflow: hidden; }
 }

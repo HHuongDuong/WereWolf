@@ -1,6 +1,6 @@
 import { type RouteObject } from "react-router-dom";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { Header } from "../components/home/Header";
+import { Footer } from "../components/home/Footer";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";

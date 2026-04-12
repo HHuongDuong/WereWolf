@@ -17,20 +17,19 @@ const players: Player[] = [
   { rank: 6, username: "Santithur",   elo: 782,  premium: false, avatar: "/img/assets/skin-santithur.png" },
 ];
 
-function getCountdownParts(): { days: number; hours: number; minutes: number; seconds: number } {
+function getCountdownParts() {
   const now = Date.now();
   const target = new Date("2026-05-02T22:00:00Z").getTime();
   const diff = Math.max(0, target - now);
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
-  return { days, hours, minutes, seconds };
+  return {
+    days:    Math.floor(diff / 86400000),
+    hours:   Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+    seconds: Math.floor((diff % 60000) / 1000),
+  };
 }
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
+function pad(n: number) { return String(n).padStart(2, "0"); }
 
 export function Leaderboard() {
   const [countdown, setCountdown] = useState(getCountdownParts());
@@ -63,7 +62,7 @@ export function Leaderboard() {
 
           {/* Rankings box */}
           <div className="leaderboard-box">
-            {/* Floating countdown pill */}
+            {/* Countdown pill */}
             <div className="countdown-bar">
               <img src="/img/icons/hourglass.svg" alt="" className="countdown-icon" />
               <span className="countdown-value">
@@ -73,16 +72,16 @@ export function Leaderboard() {
 
             {/* Table header */}
             <div className="lb-table-header">
-              <span className="lb-col-rank">Rank</span>
-              <span className="lb-col-player">Player</span>
-              <span className="lb-col-elo">Laurels</span>
+              <div className="lb-col-rank">Rank</div>
+              <div className="lb-col-player">Player</div>
+              <div className="lb-col-elo">Laurels</div>
             </div>
 
             {/* Rows */}
             <div className="lb-scrollable">
-              {players.map((p) => (
+              {players.map(p => (
                 <div key={p.username} className="lb-row">
-                  <span className="lb-col-rank lb-rank-num">{p.rank}</span>
+                  <div className="lb-col-rank lb-rank-num">{p.rank}</div>
 
                   <div className="lb-col-player lb-player">
                     <div className={`lb-avatar-container${p.premium ? " lb-premium" : ""}`}>

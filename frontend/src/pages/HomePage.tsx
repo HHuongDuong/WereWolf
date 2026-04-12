@@ -1,9 +1,9 @@
-import { Hero } from "../components/Hero";
-import { Resume } from "../components/Resume";
-import { Roles } from "../components/Roles";
-import { Leaderboard } from "../components/Leaderboard";
-import { Skins } from "../components/Skins";
-import { AppDownload } from "../components/AppDownload";
+import { Hero } from "../components/home/Hero";
+import { Resume } from "../components/home/Resume";
+import { Roles } from "../components/home/Roles";
+import { Leaderboard } from "../components/home/Leaderboard";
+import { Skins } from "../components/home/Skins";
+import { AppDownload } from "../components/home/AppDownload";
 
 export function HomePage() {
   return (
