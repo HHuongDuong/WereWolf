@@ -1,23 +1,27 @@
 /* ─── Resume Section ────────────────────────────────────────────────── */
 .resume {
   position: relative;
-  padding: 100px 4vw;
+  height: 85vh;
+  padding: 0 4vw;
   background: var(--bg-dark);
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .resume-logo-watermark {
   position: absolute;
-  right: -8%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 500px;
+  right: -10vw;
+  bottom: -10vw;
+  max-width: 43vw;
   opacity: 0.04;
   pointer-events: none;
 }
 
 .resume-container {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;

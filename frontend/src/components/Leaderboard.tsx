@@ -5,28 +5,20 @@ interface Player {
   username: string;
   elo: number;
   premium: boolean;
-  avatarColor: string;
+  avatar: string;
 }
 
 const players: Player[] = [
-  { rank: 1, username: "Peregrint",   elo: 1245, premium: true,  avatarColor: "#4f7dff" },
-  { rank: 2, username: "Bulletheart", elo: 1139, premium: false, avatarColor: "#c43a3a" },
-  { rank: 3, username: "Ultralex",    elo: 997,  premium: true,  avatarColor: "#d4943a" },
-  { rank: 4, username: "Ainz",        elo: 836,  premium: false, avatarColor: "#7c4dff" },
-  { rank: 5, username: "Valand",      elo: 824,  premium: true,  avatarColor: "#3d8bc4" },
-  { rank: 6, username: "Santithur",   elo: 782,  premium: false, avatarColor: "#4caf50" },
+  { rank: 1, username: "Peregrint",   elo: 1245, premium: true,  avatar: "/img/assets/skin-top1-profile.png" },
+  { rank: 2, username: "Bulletheart", elo: 1139, premium: false, avatar: "/img/assets/skin-top2-profile.png" },
+  { rank: 3, username: "Ultralex",    elo: 997,  premium: true,  avatar: "/img/assets/skin-top3-profile.png" },
+  { rank: 4, username: "Ainz",        elo: 836,  premium: false, avatar: "/img/assets/skin-ainz.png" },
+  { rank: 5, username: "Valand",      elo: 824,  premium: true,  avatar: "/img/assets/skin-valand.png" },
+  { rank: 6, username: "Santithur",   elo: 782,  premium: false, avatar: "/img/assets/skin-santithur.png" },
 ];
 
-const rankClass: Record<number, string> = {
-  1: "gold",
-  2: "silver",
-  3: "bronze",
-};
-
-// Target: 21 days 3h 49m 12s from a fixed reference
 function getCountdownParts(): { days: number; hours: number; minutes: number; seconds: number } {
   const now = Date.now();
-  // next full moon anchor — just count down from a static future time
   const target = new Date("2026-05-02T22:00:00Z").getTime();
   const diff = Math.max(0, target - now);
   const days = Math.floor(diff / 86400000);
@@ -58,51 +50,57 @@ export function Leaderboard() {
           <p>Show that you are the best before the next full moon.</p>
         </div>
 
-        <div className="leaderboard-box">
-          {/* Countdown */}
-          <div className="countdown-bar">
-            <img src="/img/icons/hourglass.svg" alt="" className="countdown-icon" />
-            <span className="countdown-label">Next full moon in</span>
-            <span className="countdown-value">
-              {days}:{pad(hours)}:{pad(minutes)}:{pad(seconds)}
-            </span>
+        <div className="leaderboard-content">
+          {/* Podium */}
+          <div className="lb-podium-container">
+            <div className="lb-podium">
+              <img className="lb-podium-svg" src="/img/assets/podium.svg" alt="Podium" />
+              <img className="lb-character lb-second" src="/img/assets/skin-top2.svg" alt="Character" />
+              <img className="lb-character lb-first"  src="/img/assets/skin-top1.svg" alt="Character" />
+              <img className="lb-character lb-third"  src="/img/assets/skin-top3.svg" alt="Character" />
+            </div>
           </div>
 
-          {/* Table header */}
-          <div className="lb-table-header">
-            <span>Rank</span>
-            <span>Player</span>
-            <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-              <img src="/img/icons/leaderboard-icon.svg" alt="" className="lb-icon-header" />
-              Laurels
-            </span>
-          </div>
-
-          {/* Rows */}
-          {players.map((p) => (
-            <div key={p.username} className="lb-row">
-              <span className={`lb-rank ${rankClass[p.rank] ?? ""}`}>
-                {p.rank}
+          {/* Rankings box */}
+          <div className="leaderboard-box">
+            {/* Floating countdown pill */}
+            <div className="countdown-bar">
+              <img src="/img/icons/hourglass.svg" alt="" className="countdown-icon" />
+              <span className="countdown-value">
+                {days}j {pad(hours)}:{pad(minutes)}:<span>{pad(seconds)}</span>
               </span>
+            </div>
 
-              <div className="lb-player">
-                <div className="lb-avatar">
-                  <div
-                    className="lb-avatar-placeholder"
-                    style={{ background: p.avatarColor + "33", color: p.avatarColor }}
-                  >
-                    {p.username[0]}
+            {/* Table header */}
+            <div className="lb-table-header">
+              <span className="lb-col-rank">Rank</span>
+              <span className="lb-col-player">Player</span>
+              <span className="lb-col-elo">Laurels</span>
+            </div>
+
+            {/* Rows */}
+            <div className="lb-scrollable">
+              {players.map((p) => (
+                <div key={p.username} className="lb-row">
+                  <span className="lb-col-rank lb-rank-num">{p.rank}</span>
+
+                  <div className="lb-col-player lb-player">
+                    <div className={`lb-avatar-container${p.premium ? " lb-premium" : ""}`}>
+                      <img className="lb-avatar" src={p.avatar} alt={p.username} draggable={false} />
+                    </div>
+                    <span className="lb-username">{p.username}</span>
+                    {p.premium && <span className="lb-premium-badge">PRO</span>}
+                  </div>
+
+                  <div className="lb-col-elo lb-elo">
+                    <img src="/img/icons/leaderboard-icon.svg" alt="" className="lb-elo-icon" />
+                    <span className="lb-elo-num">{p.elo}</span>
                   </div>
                 </div>
-                <span className="lb-username">{p.username}</span>
-                {p.premium && <span className="lb-premium-badge">PRO</span>}
-              </div>
-
-              <div className="lb-elo">
-                {p.elo}
-              </div>
+              ))}
+              <div className="lb-gradient" />
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>

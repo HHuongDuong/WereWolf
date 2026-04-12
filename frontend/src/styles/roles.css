@@ -1,8 +1,13 @@
 /* ─── Roles Section ─────────────────────────────────────────────────── */
 .roles {
-  padding: 100px 0;
+  height: 100vh;
+  padding: 0;
   background: var(--bg-deep);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .roles-title {
@@ -11,7 +16,7 @@
   font-weight: 700;
   text-align: center;
   color: var(--text-primary);
-  margin-bottom: 3rem;
+  margin-bottom: 12vh;
   padding: 0 4vw;
 }
 
@@ -89,6 +94,10 @@
 .roles-carousel-wrapper {
   position: relative;
   overflow: hidden;
+  height: 50vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .roles-carousel-track {

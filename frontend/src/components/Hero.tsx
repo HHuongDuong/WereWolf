@@ -98,21 +98,11 @@ export function Hero() {
     };
   }, []);
 
+  const voteCount = visibleCount >= 6 ? 3 : visibleCount >= 4 ? 2 : visibleCount >= 1 ? 1 : 0;
+
   return (
     <section className="hero">
-      {/* Sky gradient */}
-      <div className="hero-sky" />
-
-      {/* Stars */}
-      <div className="hero-stars" />
-
-      {/* Moon */}
-      <div className="hero-moon">
-        <div className="moon-glow" />
-        <div className="moon-body" />
-      </div>
-
-      {/* Village scene */}
+      {/* Full-hero scene — SVG contains its own sky gradient + moon */}
       <div className="hero-scene">
         <img src="/img/assets/scene_elements/scene_night-special_plain.svg" alt="" role="presentation" />
       </div>
@@ -122,20 +112,20 @@ export function Hero() {
       <div className="hero-content">
         {/* Character + votes */}
         <div className="hero-character">
-          <div className="vote-bubble">
-            <span className="vote-count">3</span>
-            <div className="vote-avatars">
-              <div className="vote-avatar">
-                <img src="/img/assets/picture-1.svg" alt="voter" loading="lazy" />
-              </div>
-              <div className="vote-avatar">
-                <img src="/img/assets/picture-3.svg" alt="voter" loading="lazy" />
-              </div>
-              <div className="vote-avatar">
-                <img src="/img/assets/picture-4.svg" alt="voter" loading="lazy" />
+          {voteCount > 0 && (
+            <div className="vote-bubble">
+              <span className="vote-count">{voteCount}</span>
+              <div className="vote-avatars">
+                {["/img/assets/picture-1.svg", "/img/assets/picture-3.svg", "/img/assets/picture-4.svg"]
+                  .slice(0, voteCount)
+                  .map((src, i) => (
+                    <div key={i} className="vote-avatar">
+                      <img src={src} alt="voter" loading="lazy" />
+                    </div>
+                  ))}
               </div>
             </div>
-          </div>
+          )}
 
           <div className="character-stage">
             <img src="/img/assets/plateform.svg" alt="Platform" className="character-platform" />

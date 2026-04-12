@@ -7,87 +7,10 @@
   flex-direction: column;
 }
 
-.hero-sky {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    #ffffff 0%,
-    #ccced6 7%,
-    #a0a4b2 13%,
-    #7a7f94 20%,
-    #5a617b 28%,
-    #424a67 35%,
-    #313a5a 43%,
-    #273052 52%,
-    #242d4f 63%,
-    #0e0d1c 100%
-  );
-}
-
-.hero-stars {
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 15% 18%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(1px 1px at 28% 12%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1.5px 1.5px at 42% 22%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(1px 1px at 58% 8%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 71% 15%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(1.5px 1.5px at 82% 25%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1px 1px at 91% 10%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(1px 1px at 5% 35%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 35% 32%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 63% 38%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1.5px 1.5px at 88% 42%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 20% 45%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 78% 48%, rgba(255,255,255,0.6), transparent);
-  pointer-events: none;
-}
-
-.hero-moon {
-  position: absolute;
-  left: 38%;
-  top: 18%;
-  width: 200px;
-  height: 200px;
-  transform: translate(-50%, -50%);
-}
-
-.moon-glow {
-  position: absolute;
-  inset: -40%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center,
-    rgba(255,255,255,0.25) 0%,
-    rgba(255,255,255,0.15) 30%,
-    rgba(255,255,255,0.05) 60%,
-    transparent 75%
-  );
-  animation: moonPulse 4s ease-in-out infinite;
-}
-
-.moon-body {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 35% 30%,
-    #f9f8f5 0%,
-    #e8e6de 40%,
-    #d4d0c8 70%,
-    #c0bcb4 100%
-  );
-  box-shadow:
-    inset -12px -8px 24px rgba(0,0,0,0.15),
-    inset 4px 4px 12px rgba(255,255,255,0.3);
-}
-
+/* Full-bleed scene — SVG has its own sky gradient + moon + stars */
 .hero-scene {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
+  inset: 0;
 }
 
 .hero-scene img {
@@ -114,7 +37,8 @@
   align-items: center;
   justify-content: center;
   gap: 5vw;
-  padding: 100px 4vw 140px;
+  padding: 0 4vw;
+  height: 100vh;
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
@@ -175,18 +99,26 @@
 .character-stage {
   position: relative;
   width: 240px;
+  /* platform (~85px tall at 240px wide) + character (~175px tall at 120px wide) */
+  height: 53vh;
 }
 
 .character-platform {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
 }
 
 .character-figure {
   position: absolute;
-  bottom: 40%;
+  /* sit character feet just above platform top (~85px) with 15px overlap */
+  bottom: 70px;
   left: 50%;
   transform: translateX(-50%);
-  width: 120px;
+  width: 100%;
+  height: 100%;
   animation: characterFloat 3s ease-in-out infinite;
 }
 
@@ -198,8 +130,13 @@
   border-radius: var(--radius-lg);
   width: 320px;
   min-width: 280px;
+  height: 70vh;
+  margin-top: 4vh;
+  margin-bottom: 10vh;
   overflow: hidden;
   box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-header-bar {
@@ -228,7 +165,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-height: 280px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .chat-msg {
@@ -336,7 +274,7 @@
 /* Hero CTA & scroll */
 .hero-bottom {
   position: absolute;
-  bottom: 3rem;
+  bottom: 8.5vh;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
