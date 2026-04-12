@@ -131,7 +131,7 @@ export function LoginPage() {
               </button>
             </div>
             <div className="auth-forgot-group">
-              <a href="/auth/forgot-password" className="auth-forgot-link">Forgot your password?</a>
+              <Link to="/auth/forgot" className="auth-forgot-link">Forgot your password?</Link>
             </div>
             <button type="submit" className="auth-validate-btn">Log in</button>
           </form>

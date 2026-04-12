@@ -423,6 +423,29 @@
   text-decoration: underline;
 }
 
+/* ── Forgot password success state ── */
+.auth-forgot-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0 8px;
+  color: #6be07a;
+  text-align: center;
+}
+
+.auth-forgot-success svg {
+  width: 40px;
+  height: 40px;
+  stroke: #6be07a;
+}
+
+.auth-forgot-success p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b1b1b1;
+}
+
 /* ── Floating skin character ── */
 .auth-skin-block {
   position: relative;

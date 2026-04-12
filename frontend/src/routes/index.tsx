@@ -6,6 +6,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { RoomsPage } from "../pages/RoomsPage";
 import { RoomPage } from "../pages/RoomPage";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -25,11 +26,15 @@ export const routes: RouteObject[] = [
   },
   {
     path: "/auth/login",
-    element: <Layout><LoginPage /></Layout>,
+    element: <LoginPage />
   },
   {
     path: "/auth/register",
-    element: <Layout><RegisterPage /></Layout>,
+    element: <RegisterPage />,
+  },
+  {
+    path: "/auth/forgot",
+    element: <ForgotPasswordPage />,
   },
   {
     path: "/rooms",
