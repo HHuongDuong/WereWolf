@@ -38,11 +38,11 @@ export const routes: RouteObject[] = [
   },
   {
     path: "/rooms",
-    element: <Layout><RoomsPage /></Layout>,
+    element: <RoomsPage />,
   },
   {
     path: "/rooms/:id",
-    element: <Layout><RoomPage /></Layout>,
+    element: <RoomPage />,
   },
   {
     path: "*",

@@ -1,0 +1,163 @@
+/* ── Play Page Header — faithful to real Wolfy header ───────────────── */
+
+.ph-header {
+  width: 100vw;
+  height: 100px;
+  background-color: #1b1b28;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 12;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+
+/* ── Left: nav ── */
+.ph-left {
+  display: flex;
+  flex: 1;
+}
+
+.ph-nav {
+  margin-left: 80px;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 1600px) { .ph-nav { margin-left: 30px; } }
+
+.ph-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  margin-right: 14px;
+  cursor: pointer;
+  height: 100px;
+  text-decoration: none;
+  transition: opacity .2s;
+  user-select: none;
+}
+
+.ph-nav-item:last-child { margin-right: 0; }
+
+.ph-nav-icon {
+  height: 25px;
+  margin-bottom: 8px;
+  object-fit: contain;
+}
+
+@media (max-width: 1200px) {
+  .ph-nav-icon { margin-bottom: 0; }
+}
+
+.ph-nav-label {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .4px;
+  color: #fff;
+  text-align: center;
+  opacity: .7;
+  transition: opacity .3s;
+}
+
+.ph-nav-item.active .ph-nav-label,
+.ph-nav-item:hover   .ph-nav-label {
+  opacity: 1;
+}
+
+.ph-nav-item.active .ph-nav-label { font-weight: 800; }
+
+@media (max-width: 1200px) {
+  .ph-nav-label { display: none; }
+}
+
+/* "New" badge */
+.ph-nav-badge {
+  position: absolute;
+  top: 13px;
+  left: 46px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 19px;
+  border: 2px solid #1b1b28;
+  border-radius: 6px;
+  background-color: #9e2024;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+}
+
+@media (max-width: 1200px) {
+  .ph-nav-badge { left: 26px; }
+}
+
+/* ── Right: wallet + notifications ── */
+.ph-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: 80px;
+}
+
+@media (max-width: 1600px) { .ph-right { margin-right: 30px; } }
+
+.ph-money-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ph-money-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border-radius: 10px;
+  width: 66px;
+  height: 48px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .2s;
+}
+
+.ph-money-item:hover { background: rgba(255,255,255,.06); }
+
+.ph-money-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+
+.ph-money-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ph-notifications {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.ph-notifications:hover { background: rgba(255,255,255,.06); }
+
+.ph-notif-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
