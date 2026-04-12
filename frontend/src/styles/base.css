@@ -39,3 +39,13 @@ button {
 .page_body {
   position: relative;
 }
+
+/* Hide app header/footer when a full-screen scene is active */
+body:has(.lobby-scene) header,
+body:has(.lobby-scene) footer {
+  display: none;
+}
+
+body:has(.lobby-scene) main {
+  padding-top: 0;
+}
