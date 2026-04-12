@@ -15,7 +15,7 @@
 | Werewolf (Ma sói) | Sói | Theo bảng chia bài | Chọn 1 người để giết | Ban đêm biết danh tính đồng đội sói. Thắng khi số sói ≥ dân còn sống. |
 | Villager (Dân làng) | Dân | Theo bảng chia bài | — | Không có kỹ năng đặc biệt. Dựa vào suy luận và vote để loại sói. |
 | Seer (Tiên tri) | Dân | 1 | Xem role của 1 người | Biết được role thật của target. Không được tiết lộ kết quả công khai (tùy nhóm). |
-| Guard (Bảo vệ) | Dân | 1 | Chọn 1 người để bảo vệ | Người được bảo vệ không chết đêm đó dù bị sói chọn. Không tự bảo vệ bản thân 2 đêm liên tiếp. |
+| Guard (Bảo vệ) | Dân | 1 | Chọn 1 người để bảo vệ | Người được bảo vệ không chết đêm đó dù bị sói chọn. Không được bảo vệ cùng 1 người **2 đêm liên tiếp** (kể cả chính bản thân Guard). |
 | Hunter (Thợ săn) | Dân | 1 | — | Khi bị giết (đêm hoặc bị vote hoặc bị bỏ độc), được chọn 1 người chết theo ngay lập tức. |
 | Witch (Phù thủy) | Dân | 1 | Dùng bình cứu hoặc bình độc | Có 2 lượt dùng trong cả game: 1 lần cứu (hồi sinh target bị sói giết đêm đó), 1 lần giết (chọn 1 người chết ngay). Mỗi bình chỉ dùng 1 lần. |
 
@@ -78,7 +78,7 @@ Hệ thống tự động chia bài dựa trên số người. Power Roles là c
 
 | Bước | Actor | Thời gian chờ | Mô tả |
 |------|-------|---------------|-------|
-| 1 | Guard | 30s | Chọn 1 người bảo vệ (không được chọn người mình đã bảo vệ đêm trước) |
+| 1 | Guard | 30s | Chọn 1 người bảo vệ (không được chọn người mình đã bảo vệ đêm trước, kể cả bản thân Guard) |
 | 2 | Seer | 30s | Chọn 1 người để xem role, nhận kết quả private |
 | 3 | Werewolf | 45s | Chat nội bộ với đồng đội sói, thống nhất chọn 1 target |
 | 4 | Witch | 30s | Xem ai bị sói chọn, quyết định dùng bình cứu / bình độc / bỏ qua |
@@ -89,7 +89,7 @@ Hệ thống tự động chia bài dựa trên số người. Power Roles là c
 
 #### Day Phase
 
-1. **Công bố kết quả đêm**: ai chết, chết vì lý do gì (bị sói giết / bị phù thủy độc / được cứu)
+1. **Công bố kết quả đêm**: ai chết
 2. **Thảo luận (60s)**: tất cả player còn sống chat công khai
 3. **Vote (30s)**: mỗi người chọn 1 người để loại
 4. **Công bố kết quả vote**: người bị vote nhiều nhất bị loại
@@ -160,7 +160,7 @@ room.started
 
 | Tình huống | Xử lý |
 |------------|-------|
-| Guard bảo vệ bản thân | Được phép,nhưng vẫn áp dụng luật không được bảo vệ 1 người 2 đêm liên tiếp (kể cả bản thân Guard) |
+| Guard bảo vệ bản thân | **Được phép.** Áp dụng luật không được bảo vệ cùng 1 người 2 đêm liên tiếp (kể cả bản thân Guard). Ví dụ: Guard tự bảo vệ đêm 1 → đêm 2 không được tự bảo vệ nữa. |
 | Guard bảo vệ người đã chết | Không hợp lệ, UI chỉ hiện người còn sống |
 | Seer xem role của sói | Trả về "Werewolf" |
 | Witch dùng hết 2 bình | Còn tồn tại trong game nhưng không có hành động đêm |

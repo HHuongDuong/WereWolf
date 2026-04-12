@@ -1,0 +1,330 @@
+# docker-compose.yml — Werewolf Online
+# Yêu cầu: Docker Engine >= 23, Docker Compose V2
+
+# ─────────────────────────────────────────────────────────────
+#  Werewolf Online — Docker Compose
+#
+#  CÁCH DÙNG:
+#
+#  1. Chỉ chạy infrastructure (Kafka, Redis, PostgreSQL):
+#   chỉ chạy các service ko có profiles trong file
+#       docker-compose up -d
+#
+#  2. Chạy một service cụ thể kèm infra:
+        #  docker-compose --profile gateway up -d
+#  kiểu ví dụ:
+# Dev A làm Room service: Chạy infra = docker compose up -d
+# cd room_service -> npm run dev
+# Nhưng chẳng hạn cần test với gameplay-service của Dev B 
+# thì chạy: docker-compose --profile gameplay up -d
+# tương tự Dev C cần test tích hợp với room-service của Dev A 
+# thì chạy docker-compose --profile room up -d
+# nói chung: Muốn xem service của member khác	docker-compose --profile <tên> up -d
+# Ví dụ Với Dev A đang làm room-service, workflow hàng ngày sẽ là:
+# bash
+# # Terminal 1 — infra
+# docker-compose up -d
+# # Terminal 2 — service của mình
+# cd room_service
+# npm run dev
+# Chỉ vậy thôi. !!!! Không cần --profile trừ khi cần test với service của người khác. !!!!
+#
+#  3. Chạy toàn bộ hệ thống:
+#       docker-compose --profile all up -d
+#
+#  4. Xem Kafka UI tại: http://localhost:8090
+# ─────────────────────────────────────────────────────────────
+
+# services
+# ├── INFRASTRUCTURE (luôn chạy khi docker-compose up -d)
+# │   ├── postgres      — cơ sở dữ liệu
+# │   ├── redis         — bộ nhớ tạm / game state
+# │   ├── zookeeper     — quản lý Kafka
+# │   ├── kafka         — message bus
+# │   └── kafka-ui      — web debug Kafka
+# │
+# └── APPLICATION SERVICES (chỉ chạy khi dùng --profile)
+#     ├── gateway-service   --profile gateway
+#     ├── room-service      --profile room
+#     ├── chat-service      --profile chat
+#     ├── vote-service      --profile vote
+#     ├── gameplay-service  --profile gameplay
+#     └── frontend          --profile frontend
+
+services:
+
+  # ═══════════════════════════════════════
+  #  INFRASTRUCTURE  (luôn chạy mặc khi docker-compose up -d)
+  # ═══════════════════════════════════════
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ww-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-werewolf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-werewolf123}
+      POSTGRES_DB: ${POSTGRES_DB:-werewolf}
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # tự động chạy init.sql khi khởi động lần đầu
+      - ./docs/init.sql:/docker-entrypoint-initdb.d/init.sql:ro 
+    networks:
+      - werewolf-net
+    # các service khác chỉ start khi postgres đã healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-werewolf} -d ${POSTGRES_DB:-werewolf}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: ww-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - werewolf-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: ww-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - werewolf-net
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: ww-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      # 9092: internal (Docker network) — services dùng khi chạy trong Docker
+      # 9094: external — services dùng khi chạy LOCAL (ngoài Docker)
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Dual listener: INTERNAL cho Docker network, EXTERNAL cho local dev
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 6
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - werewolf-net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Kafka UI — debug events dễ dàng tại http://localhost:8090
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ww-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: werewolf-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - werewolf-net
+
+  # ═══════════════════════════════════════
+  #  APPLICATION SERVICES  (dùng profile)
+  # ═══════════════════════════════════════
+  # Chạy: docker-compose --profile <tên> up -d
+  # Profiles: gateway | room | chat | vote | gameplay | frontend | all
+
+  gateway-service:
+    build:
+      context: ./gateway_service
+      dockerfile: Dockerfile
+    container_name: ww-gateway
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKER: kafka:9092          # Internal listener (Docker network)
+      # URLs để forward HTTP request tới các service khác
+      ROOM_SERVICE_URL: http://room-service:3002
+      CHAT_SERVICE_URL: http://chat-service:3003
+      VOTE_SERVICE_URL: http://vote-service:3004
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - werewolf-net
+    profiles: ["gateway", "all"]
+
+  room-service:
+    build:
+      context: ./room_service
+      dockerfile: Dockerfile
+    container_name: ww-room
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-werewolf}:${POSTGRES_PASSWORD:-werewolf123}@postgres:5432/${POSTGRES_DB:-werewolf}
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - werewolf-net
+    profiles: ["room", "all"]
+
+  chat-service:
+    build:
+      context: ./chat_service
+      dockerfile: Dockerfile
+    container_name: ww-chat
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-werewolf}:${POSTGRES_PASSWORD:-werewolf123}@postgres:5432/${POSTGRES_DB:-werewolf}
+      REDIS_URL: redis://redis:6379    # Đọc chat_channel:{roomId}:{channel}
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - werewolf-net
+    profiles: ["chat", "all"]
+
+  vote-service:
+    build:
+      context: ./vote_service
+      dockerfile: Dockerfile
+    container_name: ww-vote
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      NODE_ENV: development
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - werewolf-net
+    profiles: ["vote", "all"]
+
+  gameplay-service:
+    build:
+      context: ./gameplay_service
+      dockerfile: Dockerfile
+    container_name: ww-gameplay
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      # Spring Boot Redis config
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      # Spring Boot Kafka config
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: gameplay-service
+      SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest  # Không miss event khi restart
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - werewolf-net
+    profiles: ["gameplay", "all"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ww-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # NEXT_PUBLIC_* = biến phía browser, dùng localhost vì browser kết nối ra host
+      # Nếu deploy lên server, đổi localhost → IP/domain thật
+      NEXT_PUBLIC_GATEWAY_WS_URL: ws://localhost:3001
+      NEXT_PUBLIC_ROOM_API_URL: http://localhost:3002
+    depends_on:
+      - gateway-service
+    networks:
+      - werewolf-net
+    profiles: ["frontend", "all"]
+
+# ═══════════════════════════════════════
+#  NETWORKS & VOLUMES
+# ═══════════════════════════════════════
+
+networks:
+  werewolf-net:
+    driver: bridge
+    name: werewolf-net
+
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
