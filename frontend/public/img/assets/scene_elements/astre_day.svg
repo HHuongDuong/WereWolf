@@ -1,0 +1,40 @@
+<svg version="1.1" class="sceneElement" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1400 1000" style="enable-background:new 0 0 1400 1000;" preserveAspectRatio="xMidYMax slice" xml:space="preserve">
+<style type="text/css">
+	.astre0{opacity:0.3;fill:#FFFFFF;enable-background:new    ;}
+	.astre1{fill:url(#Sun_1_);}
+	.astre2{fill:#FFF9DE;}
+</style>
+<g id="Sky_4_">
+	<g id="Sun_2_">
+		<circle id="Sun_ray_1_" class="astre0" cx="534.4" cy="355.4" r="135.4"/>
+
+			<linearGradient id="Sun_1_" gradientUnits="userSpaceOnUse" x1="422.6" y1="-749.4" x2="646.2" y2="-749.4" gradientTransform="matrix(1 0 0 -1 0 -394)">
+			<stop  offset="0" style="stop-color:#FFFAE3;stop-opacity:0"/>
+			<stop  offset="1.000000e-02" style="stop-color:#FFFAE3;stop-opacity:7.000000e-02"/>
+			<stop  offset="5.000000e-02" style="stop-color:#FFFAE3;stop-opacity:0.26"/>
+			<stop  offset="9.000000e-02" style="stop-color:#FFFAE3;stop-opacity:0.44"/>
+			<stop  offset="0.13" style="stop-color:#FFFAE3;stop-opacity:0.59"/>
+			<stop  offset="0.17" style="stop-color:#FFFAE3;stop-opacity:0.72"/>
+			<stop  offset="0.21" style="stop-color:#FFFAE3;stop-opacity:0.82"/>
+			<stop  offset="0.26" style="stop-color:#FFFAE3;stop-opacity:0.9"/>
+			<stop  offset="0.32" style="stop-color:#FFFAE3;stop-opacity:0.96"/>
+			<stop  offset="0.39" style="stop-color:#FFFAE3;stop-opacity:0.99"/>
+			<stop  offset="0.5" style="stop-color:#FFFAE3"/>
+			<stop  offset="0.61" style="stop-color:#FFFAE3;stop-opacity:0.99"/>
+			<stop  offset="0.68" style="stop-color:#FFFAE4;stop-opacity:0.96"/>
+			<stop  offset="0.74" style="stop-color:#FFFAE6;stop-opacity:0.9"/>
+			<stop  offset="0.79" style="stop-color:#FFFBE8;stop-opacity:0.82"/>
+			<stop  offset="0.83" style="stop-color:#FFFBEB;stop-opacity:0.72"/>
+			<stop  offset="0.87" style="stop-color:#FFFCEE;stop-opacity:0.59"/>
+			<stop  offset="0.91" style="stop-color:#FFFDF3;stop-opacity:0.44"/>
+			<stop  offset="0.95" style="stop-color:#FFFEF8;stop-opacity:0.26"/>
+			<stop  offset="0.99" style="stop-color:#FFFFFD;stop-opacity:7.000000e-02"/>
+			<stop  offset="1" style="stop-color:#FFFFFF;stop-opacity:0"/>
+		</linearGradient>
+		<circle id="Sun_3_" class="astre1" cx="534.4" cy="355.4" r="111.8"/>
+		<path id="Sun_arc_1_" class="astre2" d="M534.4,246.6c61.1,0,110.9,49.1,111.8,110.3c0-0.5,0-1,0-1.5c0-61.7-50-111.8-111.7-111.8
+			s-111.8,50-111.8,111.7v0.1c0,0.5,0,1,0,1.5C423.4,295.7,473.2,246.6,534.4,246.6z"/>
+	</g>
+</g>
+</svg>
