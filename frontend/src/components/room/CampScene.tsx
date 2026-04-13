@@ -1,20 +1,9 @@
 export function CampScene() {
   return (
     <div className="camp-scene">
-      {/* Sky layers */}
+      {/* Sky layers — day scene */}
       <div className="camp-sky">
-        <div className="camp-sky-night" />
-        <div
-          className="camp-stars camp-stars-1"
-          style={{ backgroundImage: "url('/img/assets/scene_elements/stars_1.svg')" }}
-        />
-        <div
-          className="camp-stars camp-stars-2"
-          style={{ backgroundImage: "url('/img/assets/scene_elements/stars_2.svg')" }}
-        />
-        <div className="camp-moon">
-          <img src="/img/assets/scene_elements/astre_night.svg" alt="" />
-        </div>
+        <div className="camp-sky-day" />
         <div
           className="camp-clouds"
           style={{ backgroundImage: "url('/img/assets/scene_elements/clouds.svg')" }}
@@ -25,7 +14,7 @@ export function CampScene() {
       <div className="camp-ground">
         <img
           className="camp-bg-img"
-          src="/img/assets/scene_elements/plain_circle/background_night.svg"
+          src="/img/assets/scene_elements/plain_circle/background.svg"
           alt=""
         />
         <div className="camp-ground-color" />
@@ -34,7 +23,7 @@ export function CampScene() {
       {/* Scene simulation (right decorative side) */}
       <div className="camp-scene-simulation">
         <img
-          src="/img/assets/scene_elements/plain_circle/sceneSimulation_night.svg"
+          src="/img/assets/scene_elements/plain_circle/sceneSimulation.svg"
           alt=""
         />
         <div className="camp-scene-sim-bottom" />
