@@ -47,8 +47,6 @@ export function CampScene() {
         draggable={false}
       />
 
-      {/* Ground color strip */}
-      <div className="camp-ground-color" />
     </div>
   );
 }
