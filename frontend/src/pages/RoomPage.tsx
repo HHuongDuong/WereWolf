@@ -28,12 +28,8 @@ function LobbyScene() {
       {/* z:0 — full-viewport background */}
       <CampScene />
 
-      {/* z:20 — overlay nav bar */}
-      <LobbyTopBar
-        rightPanel={rightPanel}
-        lobbyOpen={lobbyOpen}
-        onTogglePanel={handleTogglePanel}
-      />
+      {/* z:20 — floating hub pill top-left */}
+      <LobbyTopBar />
 
       {/* z:5 — character slots on the ground */}
       <CharacterRing />
@@ -42,7 +38,10 @@ function LobbyScene() {
       <LobbyActionMessage lobbyOpen={lobbyOpen} onOpenLobby={handleOpenLobby} />
 
       {/* z:10 — right panel, overlaid on scene */}
-      {rightPanel === "settings" ? <LobbySettingsPanel /> : <LobbyChatPanel />}
+      {rightPanel === "settings"
+        ? <LobbySettingsPanel lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
+        : <LobbyChatPanel     lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
+      }
     </div>
   );
 }

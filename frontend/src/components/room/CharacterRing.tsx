@@ -1,92 +1,155 @@
 import { useRoom } from "../../context/RoomContext";
 
-function avatarHue(username: string) {
-  return username.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+// Role → card SVG mapping
+const ROLE_CARD: Record<string, string> = {
+  Werewolf: "werewolf.svg",
+  Villager:  "villager.svg",
+  Seer:      "seer.svg",
+  Witch:     "witch.svg",
+  Hunter:    "hunter.svg",
+  Cupid:     "cupid.svg",
+  Guard:     "guard.svg",
+};
+
+function roleCard(role?: string) {
+  if (role && ROLE_CARD[role]) return `/img/assets/cards/${ROLE_CARD[role]}`;
+  return "/img/assets/character.svg";
 }
 
-function initials(username: string) {
-  return username.slice(0, 2).toUpperCase();
+interface SlotPlayer {
+  id: string;
+  username: string;
+  isHost: boolean;
+  isReady: boolean;
+  isYou?: boolean;
+  role?: string;
+}
+
+interface EmptySlot {
+  id: string;
+  isEmpty: true;
+}
+
+type Slot = SlotPlayer | EmptySlot;
+
+function CharSlot({
+  slot,
+  lineClass,
+  isHost: isHostUser,
+  kickPlayer,
+}: {
+  slot: Slot;
+  lineClass: string;
+  isHost: boolean;
+  kickPlayer: (id: string) => void;
+}) {
+  if ("isEmpty" in slot) {
+    return (
+      <div className={`camp-char camp-char--empty ${lineClass}`}>
+        <img
+          className="camp-char-img"
+          src="/img/assets/character.svg"
+          alt=""
+          draggable={false}
+        />
+      </div>
+    );
+  }
+
+  const p = slot as SlotPlayer;
+  return (
+    <div
+      className={`camp-char ${p.isReady ? "camp-char--ready" : ""} ${p.isYou ? "camp-char--you" : ""} ${lineClass}`}
+    >
+      {/* Host badge */}
+      {p.isHost && (
+        <img
+          className="camp-char-badge"
+          src="/img/icons/badge.svg"
+          alt="Host"
+          title="Game host"
+          draggable={false}
+        />
+      )}
+
+      {/* Character image */}
+      <img
+        className="camp-char-img"
+        src={roleCard(p.role)}
+        alt={p.username}
+        draggable={false}
+      />
+
+      {/* Name label */}
+      <span className="camp-char-name">
+        {p.username}
+        {p.isYou && <span className="camp-char-you">You</span>}
+      </span>
+
+      {/* Kick button — host only, not self */}
+      {isHostUser && !p.isYou && (
+        <button
+          className="camp-char-kick"
+          title={`Kick ${p.username}`}
+          onClick={() => kickPlayer(p.id)}
+        >
+          <img src="/img/icons/cross.svg" alt="kick" draggable={false} />
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function CharacterRing() {
   const { players, room, isHost, kickPlayer } = useRoom();
 
-  // Build slots: real players + empty padding up to maxPlayers
-  const slots = [
-    ...players,
-    ...Array.from({ length: Math.max(0, room.maxPlayers - players.length) }, (_, i) => ({
-      id: `empty-${i}`,
-      username: "",
-      isHost: false,
-      isReady: false,
-      isEmpty: true,
-    })),
-  ];
+  const totalSlots = room.maxPlayers;
+  const filled: SlotPlayer[] = players as SlotPlayer[];
+  const emptyCount = Math.max(0, totalSlots - filled.length);
+  const empties: EmptySlot[] = Array.from({ length: emptyCount }, (_, i) => ({
+    id: `empty-${i}`,
+    isEmpty: true as const,
+  }));
+
+  const allSlots: Slot[] = [...filled, ...empties];
+
+  // Distribute across 2 lines: back (smaller) and front (larger)
+  // Front row: up to 6 slots; back row: the rest (up to 6)
+  const frontCount = Math.min(allSlots.length, 6);
+  const backCount  = Math.min(allSlots.length - frontCount, 6);
+
+  const frontSlots = allSlots.slice(0, frontCount);
+  const backSlots  = allSlots.slice(frontCount, frontCount + backCount);
 
   return (
-    <div className="character-ring">
-      {slots.map((slot) => {
-        if ("isEmpty" in slot && slot.isEmpty) {
-          return (
-            <div key={slot.id} className="char-slot char-slot--empty">
-              <div className="char-avatar char-avatar--empty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
-              </div>
-              <span className="char-name char-name--empty">Waiting…</span>
-            </div>
-          );
-        }
+    <>
+      {/* Back row — secondLine sizing */}
+      {backSlots.length > 0 && (
+        <div className="camp-line camp-line--second">
+          {backSlots.map(slot => (
+            <CharSlot
+              key={slot.id}
+              slot={slot}
+              lineClass=""
+              isHost={isHost}
+              kickPlayer={kickPlayer}
+            />
+          ))}
+        </div>
+      )}
 
-        const p = slot as typeof players[0];
-        const hue = avatarHue(p.username);
-
-        return (
-          <div
-            key={p.id}
-            className={`char-slot ${p.isReady ? "char-slot--ready" : ""} ${p.isYou ? "char-slot--you" : ""}`}
-          >
-            {/* Crown */}
-            {p.isHost && (
-              <div className="char-crown" title="Host">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-                  <path d="M2 19h20v2H2zM3 13l4-8 5 5 5-5 4 8H3z" />
-                </svg>
-              </div>
-            )}
-
-            {/* Avatar circle */}
-            <div
-              className="char-avatar"
-              style={{ "--hue": hue } as React.CSSProperties}
-            >
-              {initials(p.username)}
-              {p.isReady && <div className="char-ready-ring" />}
-            </div>
-
-            {/* Name */}
-            <span className="char-name">
-              {p.username}
-              {p.isYou && <span className="char-you-tag">You</span>}
-            </span>
-
-            {/* Kick button (host only, not on self) */}
-            {isHost && !p.isYou && (
-              <button
-                className="char-kick"
-                title={`Kick ${p.username}`}
-                onClick={() => kickPlayer(p.id)}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        );
-      })}
-    </div>
+      {/* Front row — firstLine sizing */}
+      <div className="camp-line camp-line--first">
+        {frontSlots.map(slot => (
+          <CharSlot
+            key={slot.id}
+            slot={slot}
+            lineClass=""
+            isHost={isHost}
+            kickPlayer={kickPlayer}
+          />
+        ))}
+      </div>
+    </>
   );
 }

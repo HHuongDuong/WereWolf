@@ -1,40 +1,36 @@
 import { useState } from "react";
-import type { CSSProperties } from "react";
 import { useRoom } from "../../context/RoomContext";
 
-function avatarHue(username: string) {
-  return username.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
-}
-function initials(username: string) {
-  return username.slice(0, 2).toUpperCase();
+interface PanelProps {
+  lobbyOpen: boolean;
+  rightPanel: "settings" | "chat";
+  onTogglePanel: () => void;
 }
 
 interface RoleCard {
   name: string;
-  short: string;
-  color: string;
+  card: string;      // SVG file name in /img/assets/cards/
   count: number;
   min: number;
   max: number;
 }
 
 const DEFAULT_PRIMARY: RoleCard[] = [
-  { name: "Werewolf", short: "WW", color: "#c43a3a", count: 2, min: 1, max: 6 },
-  { name: "Villager", short: "VI", color: "#3d8bc4", count: 6, min: 2, max: 12 },
+  { name: "Werewolf", card: "werewolf.svg", count: 2, min: 1, max: 6 },
+  { name: "Villager",  card: "villager.svg",  count: 6, min: 2, max: 12 },
 ];
 
 const DEFAULT_SPECIAL: RoleCard[] = [
-  { name: "Seer",    short: "SE", color: "#5b5ef7", count: 1, min: 0, max: 1 },
-  { name: "Witch",   short: "WI", color: "#7a3b63", count: 0, min: 0, max: 1 },
-  { name: "Hunter",  short: "HU", color: "#d4943a", count: 1, min: 0, max: 1 },
-  { name: "Cupid",   short: "CU", color: "#e07080", count: 0, min: 0, max: 1 },
-  { name: "Guard",   short: "GU", color: "#3d8bc4", count: 0, min: 0, max: 1 },
-  { name: "Elder",   short: "EL", color: "#92bb00", count: 0, min: 0, max: 1 },
+  { name: "Seer",    card: "seer.svg",    count: 1, min: 0, max: 1 },
+  { name: "Witch",   card: "witch.svg",   count: 0, min: 0, max: 1 },
+  { name: "Hunter",  card: "hunter.svg",  count: 1, min: 0, max: 1 },
+  { name: "Cupid",   card: "cupid.svg",   count: 0, min: 0, max: 1 },
+  { name: "Guard",   card: "guard.svg",   count: 0, min: 0, max: 1 },
+  { name: "Mentalist", card: "mentalist.svg", count: 0, min: 0, max: 1 },
 ];
 
-export function LobbySettingsPanel() {
+export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: PanelProps) {
   const { room, players, isHost } = useRoom();
-  const host = players.find(p => p.isHost);
 
   const [maxPlayers, setMaxPlayers] = useState(room.maxPlayers);
   const [composition, setComposition] = useState(50);
@@ -62,21 +58,37 @@ export function LobbySettingsPanel() {
 
   return (
     <div className="lobby-settings-panel">
-      {/* Header — host info */}
-      <div className="lsp-header">
-        <div
-          className="lsp-host-avatar"
-          style={{ "--hue": avatarHue(host?.username ?? "H") } as CSSProperties}
-        >
-          {initials(host?.username ?? "HO")}
-        </div>
-        <div className="lsp-host-info">
-          <span className="lsp-host-name">{host?.username ?? "Host"}</span>
-          <div className="lsp-host-badges">
-            <span className="lsp-badge lsp-badge--host">Host</span>
-            <span className="lsp-badge lsp-badge--count">{players.length} players</span>
+      {/* Panel header — same structure as LobbyChatPanel */}
+      <div className="rp-header">
+        <div className="rp-header-left">
+          <div className="rp-state">
+            <div className="rp-state-icon">
+              <img src="/img/icons/time.svg" alt="" draggable={false} />
+            </div>
+            <span className="rp-state-name">Waiting</span>
+            <span className="rp-state-count">
+              {players.length}<span>/{room.maxPlayers}</span>
+            </span>
           </div>
+          {lobbyOpen && (
+            <button className="rp-toggle-btn" onClick={onTogglePanel}>
+              {rightPanel === "settings" ? (
+                <>
+                  <img src="/img/icons/messages.svg" alt="" draggable={false} />
+                  <span>Messages</span>
+                </>
+              ) : (
+                <>
+                  <img src="/img/icons/book.svg" alt="" draggable={false} />
+                  <span>Game rules</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
+        <button className="rp-settings-btn" title="Settings">
+          <img src="/img/icons/settings.svg" alt="Settings" draggable={false} />
+        </button>
       </div>
 
       <div className="lsp-body">
@@ -133,8 +145,12 @@ export function LobbySettingsPanel() {
           <div className="lsp-roles-grid">
             {primary.map(role => (
               <div key={role.name} className="lsp-role-card">
-                <div className="lsp-role-portrait" style={{ background: role.color }}>
-                  {role.short}
+                <div className="lsp-role-portrait">
+                  <img
+                    src={`/img/assets/cards/${role.card}`}
+                    alt={role.name}
+                    draggable={false}
+                  />
                   <span className="lsp-role-count-badge">{role.count}</span>
                 </div>
                 <span className="lsp-role-name">{role.name}</span>
@@ -164,8 +180,12 @@ export function LobbySettingsPanel() {
                 key={role.name}
                 className={`lsp-role-card ${role.count === 0 ? "lsp-role-card--off" : ""}`}
               >
-                <div className="lsp-role-portrait" style={{ background: role.count > 0 ? role.color : undefined }}>
-                  {role.short}
+                <div className="lsp-role-portrait">
+                  <img
+                    src={`/img/assets/cards/${role.card}`}
+                    alt={role.name}
+                    draggable={false}
+                  />
                   {role.count > 0 && (
                     <span className="lsp-role-count-badge">{role.count}</span>
                   )}

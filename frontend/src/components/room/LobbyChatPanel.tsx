@@ -1,10 +1,14 @@
 import { useRef, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useRoom } from "../../context/RoomContext";
 
-export function LobbyChatPanel() {
+interface Props {
+  lobbyOpen: boolean;
+  rightPanel: "settings" | "chat";
+  onTogglePanel: () => void;
+}
+
+export function LobbyChatPanel({ lobbyOpen, rightPanel, onTogglePanel }: Props) {
   const { room, chat, players, sendMessage } = useRoom();
-  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState("");
 
@@ -23,43 +27,64 @@ export function LobbyChatPanel() {
 
   return (
     <div className="lobby-chat-panel">
-      {/* Header */}
-      <div className="lcp-header">
-        <div className="lcp-header-left">
-          <button className="lcp-back-btn" onClick={() => navigate("/rooms")} title="Leave room">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M19 12H5M12 5l-7 7 7 7" />
-            </svg>
-          </button>
-          <div className="lcp-room-info">
-            <span className="lcp-room-name">{room.name}</span>
-            <span className="lcp-online">{players.length} online</span>
-          </div>
-        </div>
-        <div className="lcp-state-badge">
-          <span className="lcp-state-dot" />
-          <span>Lobby</span>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="lcp-messages">
-        {chat.map(m => (
-          <div
-            key={m.id}
-            className={`lcp-msg ${m.user === myUsername ? "lcp-msg--own" : ""}`}
-          >
-            <div className="lcp-msg-head">
-              <span className="lcp-msg-user">{m.user}</span>
-              <span className="lcp-msg-time">{m.time}</span>
+      {/* Panel header — matches reference Header_chatHeader */}
+      <div className="rp-header">
+        <div className="rp-header-left">
+          {/* Waiting state pill */}
+          <div className="rp-state">
+            <div className="rp-state-icon">
+              <img src="/img/icons/time.svg" alt="" draggable={false} />
             </div>
-            <div className="lcp-msg-body">{m.text}</div>
+            <span className="rp-state-name">Waiting</span>
+            <span className="rp-state-count">
+              {players.length}<span>/{room.maxPlayers}</span>
+            </span>
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+
+          {/* Toggle button — only visible after lobby opened */}
+          {lobbyOpen && (
+            <button className="rp-toggle-btn" onClick={onTogglePanel}>
+              {rightPanel === "chat" ? (
+                <>
+                  <img src="/img/icons/book.svg" alt="" draggable={false} />
+                  <span>Game rules</span>
+                </>
+              ) : (
+                <>
+                  <img src="/img/icons/messages.svg" alt="" draggable={false} />
+                  <span>Messages</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Settings icon */}
+        <button className="rp-settings-btn" title="Settings">
+          <img src="/img/icons/settings.svg" alt="Settings" draggable={false} />
+        </button>
       </div>
 
-      {/* Input */}
+      {/* Content card — rounded, dark background */}
+      <div className="lcp-body">
+        <div className="lcp-messages">
+          {chat.map(m => (
+            <div
+              key={m.id}
+              className={`lcp-msg ${m.user === myUsername ? "lcp-msg--own" : ""}`}
+            >
+              <div className="lcp-msg-head">
+                <span className="lcp-msg-user">{m.user}</span>
+                <span className="lcp-msg-time">{m.time}</span>
+              </div>
+              <div className="lcp-msg-body">{m.text}</div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input row — outside the card, below it */}
       <form className="lcp-input-row" onSubmit={handleSend}>
         <input
           className="lcp-input"
@@ -69,9 +94,7 @@ export function LobbyChatPanel() {
           maxLength={200}
         />
         <button type="submit" className="lcp-send-btn" disabled={!msg.trim()}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M22 2 11 13M22 2 15 22l-4-9-9-4 20-7z" />
-          </svg>
+          <img src="/img/icons/send.svg" alt="Send" draggable={false} />
         </button>
       </form>
     </div>
