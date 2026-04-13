@@ -123,4 +123,24 @@ export class RoomRepository {
       order: { joinedAt: 'ASC' },
     });
   }
+
+  /**
+   * Xóa các phòng lơ lửng ở trạng thái 'waiting' quá lâu (zombie rooms)
+   */
+  async deleteZombieRooms(minutesOld: number = 30): Promise<number> {
+    const thresholdDate = new Date();
+    thresholdDate.setMinutes(thresholdDate.getMinutes() - minutesOld);
+
+    const result = await this.roomRepo
+      .createQueryBuilder()
+      .delete()
+      .from(Room)
+      .where("status = :status AND created_at < :threshold", {
+        status: 'waiting',
+        threshold: thresholdDate,
+      })
+      .execute();
+
+    return result.affected || 0;
+  }
 }

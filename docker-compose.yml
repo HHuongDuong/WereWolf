@@ -110,9 +110,7 @@ services:
     networks:
       - werewolf-net
     healthcheck:
-      # nc -z: chỉ test port connectivity, không cần parse output
-      # Đáng tin cậy hơn pipeline "echo ruok | nc | grep" trên Docker Desktop Windows
-      test: ["CMD-SHELL", "nc -z localhost 2181 || exit 1"]
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep Mode"]
       interval: 10s
       timeout: 5s
       retries: 5
