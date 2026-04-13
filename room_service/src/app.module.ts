@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { KafkaModule } from './kafka/kafka.module';
 import { RoomModule } from './room/room.module';
 import { Room } from './room/entities/room.entity';
@@ -10,6 +11,9 @@ import { RoomPlayer } from './room/entities/room-player.entity';
   imports: [
     // Config global — đọc .env
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // Schedule (Cron)
+    ScheduleModule.forRoot(),
 
     // PostgreSQL — synchronize: false vì dùng init.sql để tạo schema
     TypeOrmModule.forRootAsync({

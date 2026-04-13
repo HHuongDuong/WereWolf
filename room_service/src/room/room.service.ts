@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { RoomRepository } from './room.repository';
 import { KafkaProducerService } from '../kafka/kafka.producer';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -198,6 +199,18 @@ export class RoomService {
     }
     await this.roomRepo.setStatus(roomId, 'finished');
     this.logger.log(`Room finished: roomId=${roomId}`);
+  }
+
+  // ── R-09: Quét dọn tự động (Cron Job) ───────────────────────────
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async cleanupZombieRooms() {
+    this.logger.debug('Running cron job: cleaning up zombie rooms (waiting > 30 mins)...');
+    const deletedCount = await this.roomRepo.deleteZombieRooms(30);
+    if (deletedCount > 0) {
+      this.logger.log(`Cron job completed: deleted ${deletedCount} zombie room(s).`);
+    } else {
+      this.logger.debug('Cron job completed: no zombie rooms found.');
+    }
   }
 
   // ── Helper: Sinh roomCode 6 ký tự unique ────────────────────────
