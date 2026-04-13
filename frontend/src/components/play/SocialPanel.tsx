@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useGuest } from "../../context/AuthContext";
 
 const MOCK_FRIENDS = [
   { id: "f1", username: "LunaWolf",   online: true,  status: "In a game" },
@@ -8,7 +8,7 @@ const MOCK_FRIENDS = [
 ];
 
 export function SocialPanel() {
-  const { user } = useAuth();
+  const { guest } = useGuest();
   const [search, setSearch] = useState("");
 
   const filtered = MOCK_FRIENDS.filter(f =>
@@ -30,7 +30,7 @@ export function SocialPanel() {
           <div className="sp-online-dot" />
         </div>
         <div className="sp-profile-info">
-          <p className="sp-username">{user?.username ?? "Guest"}</p>
+          <p className="sp-username">{guest.displayName}</p>
           <span className="sp-status">Online</span>
         </div>
       </div>

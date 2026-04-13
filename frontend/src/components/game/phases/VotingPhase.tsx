@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "../../../stores/gameStore";
-import { useAuth } from "../../../context/AuthContext";
+import { useGuest } from "../../../context/AuthContext";
 import { GameHUD } from "../GameHUD";
 
 export function VotingPhase() {
@@ -13,8 +13,8 @@ export function VotingPhase() {
   const setPhase          = useGameStore(s => s.setPhase);
   const clearVotes        = useGameStore(s => s.clearVotes);
 
-  const { user } = useAuth();
-  const myId = user?.id ?? "dev-001";
+  const { guest } = useGuest();
+  const myId = guest.guestId;
 
   const [voteLocked, setVoteLocked] = useState(false);
 
