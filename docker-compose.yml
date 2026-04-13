@@ -110,11 +110,13 @@ services:
     networks:
       - werewolf-net
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      # nc -z: chỉ test port connectivity, không cần parse output
+      # Đáng tin cậy hơn pipeline "echo ruok | nc | grep" trên Docker Desktop Windows
+      test: ["CMD-SHELL", "nc -z localhost 2181 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
