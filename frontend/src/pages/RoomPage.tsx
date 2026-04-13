@@ -1,11 +1,50 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { RoomProvider } from "../context/RoomContext";
-import { RoomHeader } from "../components/room/RoomHeader";
-import { PlayersPanel } from "../components/room/PlayersPanel";
-import { GameSettings } from "../components/room/GameSettings";
-import { LobbyChat } from "../components/room/LobbyChat";
+import { CampScene } from "../components/room/CampScene";
+import { CharacterRing } from "../components/room/CharacterRing";
+import { LobbyTopBar } from "../components/room/LobbyTopBar";
+import { LobbyActionMessage } from "../components/room/LobbyActionMessage";
+import { LobbySettingsPanel } from "../components/room/LobbySettingsPanel";
+import { LobbyChatPanel } from "../components/room/LobbyChatPanel";
 import { GameView } from "../components/game/GameView";
 import { useGameStore } from "../stores/gameStore";
+
+function LobbyScene() {
+  const [lobbyOpen, setLobbyOpen] = useState(false);
+  const [rightPanel, setRightPanel] = useState<"settings" | "chat">("settings");
+
+  function handleOpenLobby() {
+    setLobbyOpen(true);
+    setRightPanel("chat");
+  }
+
+  function handleTogglePanel() {
+    setRightPanel(p => (p === "chat" ? "settings" : "chat"));
+  }
+
+  return (
+    <div className="lobby-scene">
+      {/* z:0 — full-viewport background */}
+      <CampScene />
+
+      {/* z:20 — floating hub pill top-left */}
+      <LobbyTopBar />
+
+      {/* z:5 — character slots on the ground */}
+      <CharacterRing />
+
+      {/* z:5 — floating card in the left scene area */}
+      <LobbyActionMessage lobbyOpen={lobbyOpen} onOpenLobby={handleOpenLobby} />
+
+      {/* z:10 — right panel, overlaid on scene */}
+      {rightPanel === "settings"
+        ? <LobbySettingsPanel lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
+        : <LobbyChatPanel     lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
+      }
+    </div>
+  );
+}
 
 export function RoomPage() {
   const { id = "unknown" } = useParams();
@@ -13,20 +52,7 @@ export function RoomPage() {
 
   return (
     <RoomProvider roomId={id}>
-      {phase === "lobby" ? (
-        <div className="room-page">
-          <RoomHeader />
-          <div className="room-page-body">
-            <PlayersPanel />
-            <div className="room-right-panel">
-              <GameSettings />
-              <LobbyChat />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <GameView />
-      )}
+      {phase === "lobby" ? <LobbyScene /> : <GameView />}
     </RoomProvider>
   );
 }

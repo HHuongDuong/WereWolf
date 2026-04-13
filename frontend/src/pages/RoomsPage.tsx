@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RoomsHero } from "../components/rooms/RoomsHero";
-import { RoomsToolbar } from "../components/rooms/RoomsToolbar";
-import { RoomCard, type Room, type GameMode } from "../components/rooms/RoomCard";
+import { PlayHeader } from "../components/play/PlayHeader";
+import { StartGameCard } from "../components/play/StartGameCard";
+import { GameListItem } from "../components/play/GameListItem";
+import { AvatarPreview } from "../components/play/AvatarPreview";
+import { SocialPanel } from "../components/play/SocialPanel";
 import { CreateRoomModal } from "../components/rooms/CreateRoomModal";
+import type { Room, GameMode } from "../components/rooms/RoomCard";
 
 const MOCK_ROOMS: Room[] = [
   { id: "r1", name: "Midnight Hunt",       host: "LunaWolf",    players: 7,  maxPlayers: 12, status: "waiting",     mode: "Classic",  hasPassword: false },
@@ -12,65 +15,98 @@ const MOCK_ROOMS: Room[] = [
   { id: "r4", name: "Forest of Shadows",   host: "CursedOne",   players: 3,  maxPlayers: 10, status: "waiting",     mode: "Classic",  hasPassword: false },
   { id: "r5", name: "Silver Blade Guild",  host: "HunterX",     players: 9,  maxPlayers: 16, status: "waiting",     mode: "Extended", hasPassword: true  },
   { id: "r6", name: "Howling Pit",         host: "PackLeader",  players: 6,  maxPlayers: 8,  status: "waiting",     mode: "Speed",    hasPassword: false },
+  { id: "r7", name: "Witch's Cauldron",    host: "WitchKraft",  players: 5,  maxPlayers: 10, status: "waiting",     mode: "Classic",  hasPassword: false },
+  { id: "r8", name: "Dark Forest Run",     host: "ShadowPaw",   players: 2,  maxPlayers: 8,  status: "waiting",     mode: "Speed",    hasPassword: false },
 ];
 
 export function RoomsPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "waiting" | "in-progress">("all");
+  const [tab, setTab] = useState<"public" | "private">("public");
   const [showCreate, setShowCreate] = useState(false);
 
-  const filtered = MOCK_ROOMS.filter(r => {
-    const matchSearch = r.name.toLowerCase().includes(search.toLowerCase())
-                     || r.host.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || r.status === filter;
-    return matchSearch && matchFilter;
-  });
+  const visibleRooms = MOCK_ROOMS.filter(r =>
+    tab === "private" ? r.hasPassword : !r.hasPassword
+  );
+
+  function handlePlay() {
+    const open = MOCK_ROOMS.find(r => r.status === "waiting");
+    if (open) navigate(`/rooms/${open.id}`);
+  }
 
   function handleCreate(data: { name: string; maxPlayers: string; mode: GameMode; password: string }) {
-    // TODO: wire to backend — create room and navigate to it
     void data;
     setShowCreate(false);
     navigate("/rooms/r1");
   }
 
   return (
-    <div className="rooms-page">
-      <RoomsHero
-        waitingCount={MOCK_ROOMS.filter(r => r.status === "waiting").length}
-        inProgressCount={MOCK_ROOMS.filter(r => r.status === "in-progress").length}
-      />
+    <>
+    <PlayHeader />
+    <section className="play-page" style={{ backgroundImage: "url('/img/assets/scene_elements/scene_night.svg')", backgroundPosition: "50% 80%", backgroundSize: "cover" }}>
+      {/* Scene gradient overlay */}
+      <div className="play-gradient" />
 
-      <div className="rooms-main">
-        <RoomsToolbar
-          search={search}
-          onSearchChange={setSearch}
-          filter={filter}
-          onFilterChange={setFilter}
+      {/* ── Left panel ── */}
+      <aside className="play-left">
+        <StartGameCard
+          tab={tab}
+          onTabChange={setTab}
+          onPlay={handlePlay}
           onCreateClick={() => setShowCreate(true)}
         />
 
-        {filtered.length === 0 ? (
-          <div className="rooms-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="10"/><path d="M8 15s1.5-2 4-2 4 2 4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-            </svg>
-            <p>No rooms found</p>
-            <span>Try a different filter or create your own room</span>
-          </div>
-        ) : (
-          <div className="rooms-grid">
-            {filtered.map((room, i) => (
-              <RoomCard
+        <div className="play-list-header">
+          <span className="play-list-title">Join a game</span>
+        </div>
+
+        <div className="play-list">
+          {visibleRooms.length === 0 ? (
+            <>
+              {[0, 1, 2, 3].map(i => (
+                <GameListItem key={i} room={MOCK_ROOMS[0]!} onJoin={() => {}} skeleton />
+              ))}
+            </>
+          ) : (
+            visibleRooms.map(room => (
+              <GameListItem
                 key={room.id}
                 room={room}
-                style={{ "--delay": `${i * 0.05}s` } as React.CSSProperties}
                 onJoin={() => navigate(`/rooms/${room.id}`)}
               />
-            ))}
+            ))
+          )}
+        </div>
+
+        {/* Moon Pass drop banner */}
+        <div className="play-drop-banner">
+          <div className="pdb-overflow">
+            <img src="/img/assets/moon.svg" alt="" className="pdb-moon" />
           </div>
-        )}
-      </div>
+          <div className="pdb-border" />
+          <div className="pdb-left">
+            <img src="/img/assets/skin-top1.svg" alt="Skin" className="pdb-skin" />
+            <img src="/img/assets/skin-top2.svg" alt="Skin" className="pdb-skin" />
+          </div>
+          <div className="pdb-right">
+            <div className="pdb-countdown">
+              <span className="pdb-timer-text">18 days</span>
+            </div>
+            <a className="pdb-cta" href="/shop">
+              <span>Moon Pass</span>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Center: avatar scene ── */}
+      <main className="play-center">
+        <AvatarPreview />
+      </main>
+
+      {/* ── Right: social panel ── */}
+      <aside className="play-right">
+        <SocialPanel />
+      </aside>
 
       {showCreate && (
         <CreateRoomModal
@@ -78,6 +114,7 @@ export function RoomsPage() {
           onSubmit={handleCreate}
         />
       )}
-    </div>
+    </section>
+    </>
   );
 }

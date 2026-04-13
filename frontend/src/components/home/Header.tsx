@@ -1,12 +1,19 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export function Header() {
   const [langOpen, setLangOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, logout } = useAuth();
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="header">
+    <header className={`header${scrolled ? " scrolled" : ""}`}>
       <nav className="nav">
         <div className="nav-left">
           <a href="/" className="brand">
@@ -25,23 +32,22 @@ export function Header() {
           <div
             className="lang-selector"
             onClick={() => setLangOpen(o => !o)}
-            onBlur={() => setLangOpen(false)}
             tabIndex={0}
+            onBlur={() => setTimeout(() => setLangOpen(false), 150)}
           >
-            <img src="/img/icons/planet-earth.svg" alt="Language" className="lang-icon" />
-            <span>EN</span>
-            <img src="/img/icons/arrow-down.svg" alt="" className="lang-arrow" />
-            {langOpen && (
-              <div className="lang-dropdown">
-                <a href="/fr" className="lang-option">
-                  <span>Français</span>
-                </a>
-                <div className="lang-option active">
-                  <span>English</span>
-                  <img src="/img/icons/check.svg" alt="selected" className="check-icon" />
-                </div>
+            <div className="lang-selector-inner">
+              <img className="lang-icon" src="/img/icons/planet-earth.svg" alt="Location" />
+              <img className="lang-arrow" src="/img/icons/arrow-down.svg" alt="" />
+            </div>
+            <div className={`lang-dropdown${langOpen ? " open" : ""}`}>
+              <a href="/fr" className="lang-option">
+                <span>Français</span>
+              </a>
+              <div className="lang-option active">
+                <span>English</span>
+                <img className="check-icon" src="/img/icons/check.svg" alt="Check" />
               </div>
-            )}
+            </div>
           </div>
 
           {user ? (
@@ -51,11 +57,12 @@ export function Header() {
                 {user.username}
               </span>
               <a href="/rooms" className="btn-primary">
-                <img src="/img/icons/play-button.svg" alt="" />
+                <img src="/img/icons/play-button.svg" alt="Play" />
                 <span>Play</span>
               </a>
               <button className="btn-secondary" onClick={logout}>
-                Log out
+                <img src="/img/icons/user.svg" alt="" />
+                <span>Log out</span>
               </button>
             </>
           ) : (
@@ -65,7 +72,7 @@ export function Header() {
                 <span>Log in</span>
               </a>
               <a href="/auth/register" className="btn-primary">
-                <img src="/img/icons/play-button.svg" alt="" />
+                <img src="/img/icons/play-button.svg" alt="Play werewolf" />
                 <span>Play</span>
               </a>
             </>
