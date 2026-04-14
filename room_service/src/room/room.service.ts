@@ -28,6 +28,8 @@ export class RoomService {
     const room = await this.roomRepo.createRoom(dto.guestId, dto.displayName, code);
 
     this.logger.log(`Room created: code=${code} host=${dto.guestId}`);
+    await this.notifyRoomUpdated(room.id);
+
     return {
       roomId: room.id,
       roomCode: room.code,
@@ -63,6 +65,7 @@ export class RoomService {
     const alreadyIn = room.players.some((p) => p.playerId === dto.guestId);
     if (!alreadyIn) {
       await this.roomRepo.addPlayer(room.id, dto.guestId, dto.displayName);
+      await this.notifyRoomUpdated(room.id);
     }
 
     const updated = await this.roomRepo.findByCode(code);
@@ -96,6 +99,7 @@ export class RoomService {
     }
 
     await this.roomRepo.updateConfig(roomId, dto.maxPlayers, dto.config);
+    await this.notifyRoomUpdated(roomId);
     return { updated: true };
   }
 
@@ -122,6 +126,7 @@ export class RoomService {
 
     // Đổi status trước khi publish (tránh duplicate event nếu retry)
     await this.roomRepo.setStatus(roomId, 'in_game');
+    await this.notifyRoomUpdated(roomId);
 
     await this.kafkaProducer.publishRoomStarted(room);
     this.logger.log(`Game started: roomId=${roomId}`);
@@ -144,6 +149,7 @@ export class RoomService {
     }
 
     await this.roomRepo.deleteRoom(roomId);
+    await this.notifyRoomDeleted(roomId);
     this.logger.log(`Room cancelled: roomId=${roomId}`);
     return { cancelled: true };
   }
@@ -168,6 +174,7 @@ export class RoomService {
     
     if (remainingPlayers === 0) {
       await this.roomRepo.deleteRoom(roomId);
+      await this.notifyRoomDeleted(roomId);
       this.logger.log(`Room deleted (no players left): roomId=${roomId}`);
       return { left: true, roomDeleted: true };
     }
@@ -177,6 +184,7 @@ export class RoomService {
       return this.assignNewHost(roomId);
     }
 
+    await this.notifyRoomUpdated(roomId);
     return { left: true };
   }
 
@@ -187,11 +195,13 @@ export class RoomService {
     if (!earliest) {
       // Không còn ai → xóa phòng
       await this.roomRepo.deleteRoom(roomId);
+      await this.notifyRoomDeleted(roomId);
       this.logger.log(`Room deleted (no players left): roomId=${roomId}`);
       return { left: true, roomDeleted: true };
     }
 
     await this.roomRepo.updateHost(roomId, earliest.playerId);
+    await this.notifyRoomUpdated(roomId);
     this.logger.log(`New host assigned: roomId=${roomId} newHost=${earliest.playerId}`);
     return { left: true, newHostId: earliest.playerId };
   }
@@ -208,6 +218,7 @@ export class RoomService {
       return;
     }
     await this.roomRepo.setStatus(roomId, 'finished');
+    await this.notifyRoomUpdated(roomId);
     this.logger.log(`Room finished: roomId=${roomId}`);
   }
 
@@ -255,5 +266,17 @@ export class RoomService {
       if (!existing) return code;
     }
     throw new Error('Failed to generate unique room code after 5 attempts');
+  }
+
+  // ── Helper: Thông báo cho Kafka ─────────────────────────────────
+  private async notifyRoomUpdated(roomId: string) {
+    const room = await this.roomRepo.findByIdWithPlayers(roomId);
+    if (room) {
+      await this.kafkaProducer.publishRoomUpdated(room);
+    }
+  }
+
+  private async notifyRoomDeleted(roomId: string) {
+    await this.kafkaProducer.publishRoomDeleted(roomId);
   }
 }

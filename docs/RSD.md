@@ -221,6 +221,8 @@ CREATE INDEX idx_messages_room_channel
 | Topic | Producer | Consumer | Payload |
 |-------|----------|----------|---------|
 | `room.started` | room-service | gameplay-service | `{ roomId, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
+| `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, players: [{ guestId, displayName }] }` |
+| `room.deleted` | room-service | gateway-service | `{ roomId }` |
 | `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], reasons?: [], eliminatedId?: string } }` |
 | `game.chat.channel.updated` | gameplay-service | chat-service | `{ roomId, channel, enabled, allowedGuestIds: [] }` |
 | `game.vote.start` | gameplay-service | vote-service | `{ roomId, round, alivePlayerIds: [], durationSec }` |
