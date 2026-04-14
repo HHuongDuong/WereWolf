@@ -6,9 +6,4 @@ export class CreateRoomDto {
     message: 'guestId phải có định dạng guest_ + 10 ký tự alphanumeric',
   })
   guestId: string;
-
-  @IsString()
-  @MinLength(1)
-  @MaxLength(20)
-  displayName: string;
 }
