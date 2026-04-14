@@ -61,6 +61,42 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
       messages: [{ key: room.id, value: JSON.stringify(payload) }],
     });
 
-    this.logger.log(`[room.started] roomId=${room.id} players=${room.players.length}`);
+    this.logger.debug(`[room.started] roomId=${room.id} players=${room.players.length}`);
+  }
+
+  /**
+   * Publish sự kiện room.updated lên Kafka (Thay thế cho Websocket Gateway tự push).
+   * Consumer: gateway-service (NestJS).
+   */
+  async publishRoomUpdated(room: Room): Promise<void> {
+    const payload = {
+      roomId: room.id,
+      roomCode: room.code,
+      hostId: room.hostId,
+      status: room.status,
+      players: room.players.map((p) => ({
+        guestId: p.playerId,
+        displayName: p.displayName,
+      })),
+    };
+
+    await this.producer.send({
+      topic: 'room.updated',
+      messages: [{ key: room.id, value: JSON.stringify(payload) }],
+    });
+
+    this.logger.debug(`[room.updated] roomId=${room.id} status=${room.status}`);
+  }
+
+  /**
+   * Publish sự kiện room.deleted lên Kafka (khi phòng bị cancel hoặc trống).
+   */
+  async publishRoomDeleted(roomId: string): Promise<void> {
+    await this.producer.send({
+      topic: 'room.deleted',
+      messages: [{ key: roomId, value: JSON.stringify({ roomId }) }],
+    });
+
+    this.logger.debug(`[room.deleted] roomId=${roomId}`);
   }
 }
