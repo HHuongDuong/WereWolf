@@ -1,0 +1,36 @@
+# docker-compose.yml — Wolfy Frontend
+#
+# Standalone compose for frontend-only development.
+# Requires the root infra to be running first:
+#   cd .. && docker-compose up -d
+#
+# Then start the frontend:
+#   docker-compose up -d           # dev build (default)
+#   docker-compose up -d frontend  # same
+#
+# The container joins the existing `werewolf-net` network
+# so it can reach gateway-service, room-service, etc.
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ww-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # Gateway WebSocket — browser connects to host, so use localhost
+      BUN_PUBLIC_GATEWAY_WS_URL: ws://localhost:3001
+      # Room API — browser connects to host
+      BUN_PUBLIC_ROOM_API_URL: http://localhost:3002
+    networks:
+      - werewolf-net
+
+networks:
+  werewolf-net:
+    # Attach to the network created by the root docker-compose.yml
+    external: true
+    name: werewolf-net
