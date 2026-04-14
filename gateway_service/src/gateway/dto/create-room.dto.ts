@@ -1,4 +1,4 @@
-import { IsString, Matches, MinLength, MaxLength, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsString, Matches, MinLength, MaxLength } from 'class-validator';
 
 export class CreateRoomDto {
   @IsString()
@@ -11,10 +11,4 @@ export class CreateRoomDto {
   @MinLength(1)
   @MaxLength(20)
   displayName: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(6)
-  @Max(12)
-  maxPlayers?: number;
 }

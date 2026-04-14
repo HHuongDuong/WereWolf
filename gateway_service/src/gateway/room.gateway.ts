@@ -66,12 +66,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         displayName: dto.displayName,
       });
 
-      if (dto.maxPlayers !== undefined) {
-        await this.roomClient.configureRoom(created.roomId, {
-          guestId: dto.guestId,
-          maxPlayers: dto.maxPlayers,
-        });
-      }
+      const players = [{ guestId: dto.guestId, displayName: dto.displayName }];
+      this.rooms.set(created.roomId, {
+        roomId: created.roomId,
+        roomCode: created.roomCode,
+        hostId: created.hostId,
+        status: 'waiting',
+        players,
+      });
 
       this.trackSession(socketId, dto.guestId, created.roomId);
       this.addToRoom(socketId, created.roomId);
