@@ -48,6 +48,11 @@ export class RoomServiceClient {
     return res.data;
   }
 
+  async getRoomState(roomId: string) {
+    const res = await this.http.get(`/rooms/${roomId}`);
+    return res.data;
+  }
+
   async assignHost(roomId: string) {
     const res = await this.http.patch(`/rooms/${roomId}/host`);
     return res.data;

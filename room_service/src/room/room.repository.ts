@@ -125,6 +125,15 @@ export class RoomRepository {
   }
 
   /**
+   * Đếm số lượng player còn lại trong phòng
+   */
+  async getPlayerCount(roomId: string): Promise<number> {
+    return this.playerRepo.count({
+      where: { room: { id: roomId } },
+    });
+  }
+
+  /**
    * Xóa các phòng lơ lửng ở trạng thái 'waiting' quá lâu (zombie rooms)
    */
   async deleteZombieRooms(minutesOld: number = 30): Promise<number> {
