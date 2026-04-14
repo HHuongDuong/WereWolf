@@ -21,7 +21,7 @@ export class RoomService {
     private readonly roomRepo: RoomRepository,
     private readonly kafkaProducer: KafkaProducerService,
   ) {}
-
+  // user press btb CREATE ROOM
   // ── R-01: Tạo phòng ─────────────────────────────────────────────
   async createRoom(dto: CreateRoomDto) {
     const code = await this.generateUniqueCode();
@@ -34,7 +34,7 @@ export class RoomService {
       hostId: room.hostId,
     };
   }
-
+  // user press btn JOIN
   // ── R-02: Join phòng ────────────────────────────────────────────
   async joinRoom(dto: JoinRoomDto) {
     const code = dto.roomCode.toUpperCase();
@@ -74,7 +74,7 @@ export class RoomService {
       })),
     };
   }
-
+  // User cấu hình phòng
   // ── R-03: Cấu hình phòng ────────────────────────────────────────
   async configureRoom(roomId: string, dto: ConfigureRoomDto) {
     const room = await this.roomRepo.findByIdWithPlayers(roomId);
@@ -99,6 +99,7 @@ export class RoomService {
     return { updated: true };
   }
 
+  // User press start game
   // ── R-04: Start game ────────────────────────────────────────────
   async startGame(roomId: string, dto: StartGameDto) {
     const room = await this.roomRepo.findByIdWithPlayers(roomId);
@@ -162,7 +163,16 @@ export class RoomService {
 
     await this.roomRepo.removePlayer(roomId, guestId);
 
-    // Nếu host rời và game chưa bắt đầu → assign host mới
+    // Check nếu phòng trống sau khi remove → xóa phòng ngay
+    const remainingPlayers = await this.roomRepo.getPlayerCount(roomId);
+    
+    if (remainingPlayers === 0) {
+      await this.roomRepo.deleteRoom(roomId);
+      this.logger.log(`Room deleted (no players left): roomId=${roomId}`);
+      return { left: true, roomDeleted: true };
+    }
+
+    // Nếu host rời và còn người và phòng đang 'waiting' → assign host mới
     if (room.hostId === guestId && room.status === 'waiting') {
       return this.assignNewHost(roomId);
     }
