@@ -8,7 +8,8 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { randomUUID } from 'crypto';
+import { WebSocketServer as WsServer, WebSocket } from 'ws';
 import { RoomServiceClient } from './room.client';
 import { validatePayload } from './validation';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -19,7 +20,7 @@ import { StartGameDto, CancelRoomDto, LeaveRoomDto } from './dto/room-action.dto
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server: WsServer;
 
   private readonly logger = new Logger(RoomGateway.name);
   private readonly sessions = new Map<string, { guestId?: string; roomId?: string }>();
@@ -33,26 +34,41 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       players: Array<{ guestId: string; displayName: string }>;
     }
   >();
+  private readonly sockets = new Map<string, WebSocket>();
+  private readonly socketIds = new Map<WebSocket, string>();
+  private readonly roomMembers = new Map<string, Set<string>>();
 
   constructor(private readonly roomClient: RoomServiceClient) {}
 
-  handleConnection(socket: Socket) {
-    this.sessions.set(socket.id, {});
-    this.logger.log(`Client connected: ${socket.id}`);
+  handleConnection(socket: WebSocket) {
+    const socketId = randomUUID();
+    this.sockets.set(socketId, socket);
+    this.socketIds.set(socket, socketId);
+    this.sessions.set(socketId, {});
+    this.logger.log(`Client connected: ${socketId}`);
   }
 
-  handleDisconnect(socket: Socket) {
-    this.sessions.delete(socket.id);
-    this.logger.log(`Client disconnected: ${socket.id}`);
+  handleDisconnect(socket: WebSocket) {
+    const socketId = this.socketIds.get(socket);
+    if (!socketId) return;
+
+    this.removeFromAllRooms(socketId);
+    this.sessions.delete(socketId);
+    this.sockets.delete(socketId);
+    this.socketIds.delete(socket);
+    this.logger.log(`Client disconnected: ${socketId}`);
   }
 
   @SubscribeMessage('CREATE_ROOM')
   async handleCreateRoom(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, CreateRoomDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    if (!socketId) return;
 
     try {
       const created = await this.roomClient.createRoom({
@@ -76,8 +92,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         players,
       });
 
-      this.trackSession(socket, dto.guestId, created.roomId);
-      socket.join(created.roomId);
+      this.trackSession(socketId, dto.guestId, created.roomId);
+      this.addToRoom(socketId, created.roomId);
 
       this.emitRoomUpdated(created.roomId);
     } catch (err) {
@@ -87,11 +103,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('JOIN_ROOM')
   async handleJoinRoom(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, JoinRoomDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    if (!socketId) return;
 
     try {
       const joined = await this.roomClient.joinRoom({
@@ -109,8 +128,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         players: joined.players,
       });
 
-      this.trackSession(socket, dto.guestId, joined.roomId);
-      socket.join(joined.roomId);
+      this.trackSession(socketId, dto.guestId, joined.roomId);
+      this.addToRoom(socketId, joined.roomId);
 
       this.emitRoomUpdated(joined.roomId);
     } catch (err) {
@@ -120,13 +139,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('CONFIGURE_ROOM')
   async handleConfigureRoom(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, ConfigureRoomDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
 
-    const session = this.sessions.get(socket.id);
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
     if (!session?.roomId) return this.emitError(socket, 'NO_ROOM', 'Bạn chưa ở trong phòng');
 
     try {
@@ -144,13 +164,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('START_GAME')
   async handleStartGame(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, StartGameDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
 
-    const session = this.sessions.get(socket.id);
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
     if (!session?.roomId) return this.emitError(socket, 'NO_ROOM', 'Bạn chưa ở trong phòng');
 
     try {
@@ -170,11 +191,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('LEAVE_ROOM')
   async handleLeaveRoom(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, LeaveRoomDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    if (!socketId) return;
 
     try {
       const result = await this.roomClient.leaveRoom(dto.roomId, dto.guestId);
@@ -187,8 +211,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         else this.rooms.set(dto.roomId, existing);
       }
 
-      socket.leave(dto.roomId);
-      this.sessions.set(socket.id, { guestId: dto.guestId });
+      this.removeFromRoom(socketId, dto.roomId);
+      this.sessions.set(socketId, { guestId: dto.guestId });
 
       if (!result?.roomDeleted) this.emitRoomUpdated(dto.roomId);
     } catch (err) {
@@ -198,33 +222,35 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('CANCEL_ROOM')
   async handleCancelRoom(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: WebSocket,
     @MessageBody() payload: unknown,
   ) {
     const { dto, errors } = validatePayload(payload, CancelRoomDto);
     if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
 
-    const session = this.sessions.get(socket.id);
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
     if (!session?.roomId) return this.emitError(socket, 'NO_ROOM', 'Bạn chưa ở trong phòng');
 
     try {
       await this.roomClient.cancelRoom(session.roomId, { guestId: dto.guestId });
       this.rooms.delete(session.roomId);
-      this.server.to(session.roomId).emit('ROOM_CANCELLED', { roomId: session.roomId });
+      this.broadcastToRoom(session.roomId, 'ROOM_CANCELLED', { roomId: session.roomId });
+      this.roomMembers.delete(session.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
   }
 
-  private trackSession(socket: Socket, guestId: string, roomId: string) {
-    this.sessions.set(socket.id, { guestId, roomId });
+  private trackSession(socketId: string, guestId: string, roomId: string) {
+    this.sessions.set(socketId, { guestId, roomId });
   }
 
   private emitRoomUpdated(roomId: string) {
     const state = this.rooms.get(roomId);
     if (!state) return;
 
-    this.server.to(roomId).emit('ROOM_UPDATED', {
+    this.broadcastToRoom(roomId, 'ROOM_UPDATED', {
       roomId: state.roomId,
       roomCode: state.roomCode,
       players: state.players,
@@ -233,14 +259,55 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  private emitError(socket: Socket, code: string, message: string) {
-    socket.emit('ERROR', { code, message });
+  private emitError(socket: WebSocket, code: string, message: string) {
+    this.sendMessage(socket, 'ERROR', { code, message });
   }
 
-  private emitHttpError(socket: Socket, err: unknown) {
+  private emitHttpError(socket: WebSocket, err: unknown) {
     const anyErr = err as { response?: { data?: { code?: string; message?: string } } };
     const code = anyErr?.response?.data?.code ?? 'ROOM_SERVICE_ERROR';
     const message = anyErr?.response?.data?.message ?? 'Room service request failed';
     this.emitError(socket, code, message);
+  }
+
+  private getSocketId(socket: WebSocket) {
+    return this.socketIds.get(socket);
+  }
+
+  private addToRoom(socketId: string, roomId: string) {
+    const members = this.roomMembers.get(roomId) ?? new Set<string>();
+    members.add(socketId);
+    this.roomMembers.set(roomId, members);
+  }
+
+  private removeFromRoom(socketId: string, roomId: string) {
+    const members = this.roomMembers.get(roomId);
+    if (!members) return;
+
+    members.delete(socketId);
+    if (members.size === 0) this.roomMembers.delete(roomId);
+  }
+
+  private removeFromAllRooms(socketId: string) {
+    for (const [roomId, members] of this.roomMembers.entries()) {
+      if (members.delete(socketId) && members.size === 0) {
+        this.roomMembers.delete(roomId);
+      }
+    }
+  }
+
+  private broadcastToRoom(roomId: string, event: string, data: unknown) {
+    const members = this.roomMembers.get(roomId);
+    if (!members) return;
+
+    for (const socketId of members) {
+      const socket = this.sockets.get(socketId);
+      if (socket) this.sendMessage(socket, event, data);
+    }
+  }
+
+  private sendMessage(socket: WebSocket, event: string, data: unknown) {
+    if (socket.readyState !== WebSocket.OPEN) return;
+    socket.send(JSON.stringify({ event, data }));
   }
 }
