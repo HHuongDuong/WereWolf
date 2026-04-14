@@ -6,15 +6,13 @@ export function PlayersPanel() {
     room,
     players,
     isHost,
-    isReady,
-    readyCount,
     canStart,
-    toggleReady,
-    kickPlayer,
     startGame,
+    leaveRoom,
   } = useRoom();
 
   const emptySlots = Math.max(0, room.maxPlayers - players.length);
+  const minPlayers = 6;
 
   return (
     <div className="room-players-section">
@@ -28,10 +26,10 @@ export function PlayersPanel() {
       <div className="room-players-grid">
         {players.map(p => (
           <PlayerSlot
-            key={p.id}
+            key={p.guestId}
             player={p}
-            canKick={isHost && !p.isYou && !p.isHost}
-            onKick={() => kickPlayer(p.id)}
+            canKick={false}
+            onKick={() => {}}
           />
         ))}
         {Array.from({ length: emptySlots }).map((_, i) => (
@@ -48,19 +46,6 @@ export function PlayersPanel() {
       </div>
 
       <div className="room-actions">
-        <div className="room-ready-progress">
-          <div className="room-ready-progress-head">
-            <span className="room-ready-label">Players ready</span>
-            <span className="room-ready-count">{readyCount}/{players.length}</span>
-          </div>
-          <div className="room-ready-track">
-            <div
-              className="room-ready-fill"
-              style={{ width: `${(readyCount / players.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
         {isHost ? (
           <button
             className={`room-action-btn start ${canStart ? "active" : ""}`}
@@ -75,22 +60,12 @@ export function PlayersPanel() {
                 </svg>
               </>
             ) : (
-              `Waiting for ${players.length - readyCount - 1} more…`
+              `Need ${Math.max(0, minPlayers - players.length)} more player${minPlayers - players.length === 1 ? "" : "s"}…`
             )}
           </button>
         ) : (
-          <button
-            className={`room-action-btn ready ${isReady ? "active" : ""}`}
-            onClick={toggleReady}
-          >
-            {isReady ? (
-              <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M20 6 9 17l-5-5"/>
-                </svg>
-                Ready!
-              </>
-            ) : "Ready Up"}
+          <button className="room-action-btn" onClick={leaveRoom}>
+            Leave Room
           </button>
         )}
       </div>

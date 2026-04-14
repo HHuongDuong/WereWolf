@@ -1,13 +1,9 @@
 /**
  * RoomContext — active room / game-lobby state.
  *
- * Lifted out of RoomPage so that future features (WebSocket events,
- * in-game overlay, spectator view) can share the same live state without
- * prop-drilling.
- *
- * Wrap individual room routes with <RoomProvider roomId={id}>.
- * Replace the stub implementations with real API/WS calls once the backend
- * is ready — the hook interface stays the same.
+ * Wraps individual room routes with <RoomProvider roomId={id}>.
+ * On mount: fetches room info via REST, then emits JOIN_ROOM via WS.
+ * Subscribes to ROOM_UPDATED for live player/status updates.
  */
 
 import {
@@ -18,19 +14,20 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGuest } from "./AuthContext";
+import { useWs } from "./WsContext";
+import { useApi } from "./ApiContext";
 import { useGameStore } from "../stores/gameStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type GameMode   = "Classic" | "Extended" | "Speed";
-export type RoomStatus = "waiting" | "in-progress" | "finished";
+export type RoomStatus = "waiting" | "in_game" | "finished";
 
 export interface Player {
-  id: string;
-  username: string;
+  guestId: string;
+  displayName: string;
   isHost: boolean;
-  isReady: boolean;
   isYou?: boolean;
 }
 
@@ -49,9 +46,8 @@ export interface SettingRow {
 
 export interface RoomInfo {
   id: string;
-  name: string;
   code: string;
-  mode: GameMode;
+  hostId: string;
   maxPlayers: number;
   status: RoomStatus;
   settings: SettingRow[];
@@ -63,44 +59,13 @@ interface RoomContextValue {
   chat: ChatMsg[];
   myPlayer: Player | undefined;
   isHost: boolean;
-  isReady: boolean;
-  readyCount: number;
   canStart: boolean;
 
-  toggleReady(): void;
   sendMessage(text: string): void;
-  kickPlayer(id: string): void;
   startGame(): void;
+  leaveRoom(): void;
   updateSettings(settings: SettingRow[]): void;
 }
-
-// ── Stub data (replace with API/WS feeds) ─────────────────────────────────────
-
-const MOCK_SETTINGS: SettingRow[] = [
-  { label: "Mode",        value: "Classic"  },
-  { label: "Max Players", value: "12"       },
-  { label: "Day Phase",   value: "3 min"    },
-  { label: "Night Phase", value: "90 sec"   },
-  { label: "Werewolves",  value: "2"        },
-  { label: "Seer",        value: "Enabled",  accent: "blue" },
-  { label: "Witch",       value: "Disabled", accent: "dim"  },
-  { label: "Hunter",      value: "Enabled",  accent: "blue" },
-];
-
-const MOCK_PLAYERS: Player[] = [
-  { id: "1",       username: "LunaWolf",     isHost: false, isReady: true  },
-  { id: "2",       username: "SeerMaster",   isHost: false, isReady: true  },
-  { id: "3",       username: "VillageElder", isHost: false, isReady: true  },
-  { id: "4",       username: "HunterX",      isHost: false, isReady: true  },
-  { id: "5",       username: "CursedOne",    isHost: false, isReady: true  },
-  { id: "guest_dev", username: "You",        isHost: true,  isReady: false, isYou: true },
-];
-
-const MOCK_CHAT: ChatMsg[] = [
-  { id: 1, user: "LunaWolf",   text: "Welcome to the village! Waiting for more players...", time: "12:30" },
-  { id: 2, user: "SeerMaster", text: "Ready when you are!",                                 time: "12:31" },
-  { id: 3, user: "HunterX",    text: "Who's the wolf this time? 👀",                        time: "12:31" },
-];
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -113,89 +78,112 @@ export function RoomProvider({
   roomId: string;
   children: React.ReactNode;
 }) {
+  const navigate = useNavigate();
   const { guest } = useGuest();
+  const { send, on } = useWs();
+  const api = useApi();
   const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
   const [room, setRoom] = useState<RoomInfo>({
     id: roomId,
-    name: "Midnight Hunt",
-    code: "WOLF-4821",
-    mode: "Classic",
+    code: "",
+    hostId: "",
     maxPlayers: 12,
     status: "waiting",
-    settings: MOCK_SETTINGS,
+    settings: [],
   });
 
-  const [players, setPlayers] = useState<Player[]>(() =>
-    MOCK_PLAYERS.map(p =>
-      p.isYou ? { ...p, username: guest.displayName, id: guest.guestId } : p,
-    ),
-  );
-
-  const [chat, setChat] = useState<ChatMsg[]>(MOCK_CHAT);
-
-  // Sync player name if guest displayName changes
-  useEffect(() => {
-    setPlayers(ps =>
-      ps.map(p => (p.isYou ? { ...p, username: guest.displayName, id: guest.guestId } : p)),
-    );
-  }, [guest.guestId, guest.displayName]);
-
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [chat, setChat] = useState<ChatMsg[]>([]);
   const msgCounter = useRef(Date.now());
+
+  // Fetch initial room info, then register WS session via JOIN_ROOM
+  useEffect(() => {
+    api.rooms.get(roomId).then(info => {
+      setRoom(r => ({
+        ...r,
+        code: info.roomCode,
+        hostId: info.hostId,
+        maxPlayers: info.maxPlayers,
+        status: info.status,
+      }));
+      send({
+        type: "JOIN_ROOM",
+        guestId: guest.guestId,
+        displayName: guest.displayName,
+        roomCode: info.roomCode,
+      });
+    }).catch(err => {
+      console.error("[Room] failed to load room:", err);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
+
+  // Subscribe to ROOM_UPDATED — populate players and room state
+  useEffect(() => {
+    return on("ROOM_UPDATED", (msg) => {
+      const newPlayers: Player[] = msg.players.map(p => ({
+        guestId: p.guestId,
+        displayName: p.displayName,
+        isHost: p.guestId === msg.hostId,
+        isYou: p.guestId === guest.guestId,
+      }));
+      setPlayers(newPlayers);
+      setRoom(r => ({
+        ...r,
+        code: msg.roomCode,
+        hostId: msg.hostId,
+        status: msg.status as RoomStatus,
+      }));
+    });
+  }, [on, guest.guestId]);
+
+  // Subscribe to ROOM_CANCELLED — navigate away
+  useEffect(() => {
+    return on("ROOM_CANCELLED", () => {
+      navigate("/rooms");
+    });
+  }, [on, navigate]);
 
   const myPlayer   = players.find(p => p.isYou);
   const isHost     = myPlayer?.isHost ?? false;
-  const isReady    = myPlayer?.isReady ?? false;
-  const readyCount = players.filter(p => p.isReady).length;
-  const canStart   = isHost && readyCount >= players.length - 1;
-
-  const toggleReady = useCallback(() => {
-    setPlayers(ps => ps.map(p => (p.isYou ? { ...p, isReady: !p.isReady } : p)));
-    // TODO: emit WS event — { type: "READY_TOGGLE" }
-  }, []);
+  const canStart   = isHost && players.length >= 6;
 
   const sendMessage = useCallback(
     (text: string) => {
       if (!text.trim()) return;
       const now  = new Date();
       const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+      // Local echo — chat_service not yet wired to gateway
+      // TODO: replace with send({ type: "CHAT_MESSAGE", roomId, channel: "all", content: text.trim() })
       setChat(c => [
         ...c,
         { id: msgCounter.current++, user: guest.displayName, text: text.trim(), time },
       ]);
-      // TODO: emit WS event — { type: "CHAT", text }
     },
     [guest.displayName],
   );
 
-  const kickPlayer = useCallback((id: string) => {
-    setPlayers(ps => ps.filter(p => p.id !== id));
-    // TODO: call API — DELETE /api/rooms/:roomId/players/:id
-  }, []);
-
   const startGame = useCallback(() => {
     if (!canStart) return;
-    setRoom(r => ({ ...r, status: "in-progress" }));
-
-    // Seed the game store with the current lobby players
-    setGamePlayers(players.map(p => ({ id: p.id, username: p.username, isAlive: true })));
-
-    // TODO: WS ROLE_DEALT event sends the actual assigned role — mock for now
+    send({ type: "START_GAME", roomId, guestId: guest.guestId });
+    // Local phase transition — will be replaced by ROLE_ASSIGNED / PHASE_CHANGED WS events
+    setGamePlayers(players.map(p => ({ id: p.guestId, username: p.displayName, isAlive: true })));
     setMyRole("Werewolf");
-
-    // Advance to role reveal; after 5 s, night begins
     setPhase("role_reveal");
-    // TODO: emit WS { type: "START_GAME" } before transitioning
     setTimeout(() => {
       nextRound();
       setPhase("night");
-      // TODO: replace setTimeout with WS NIGHT_STARTED event
     }, 5000);
-  }, [canStart, players, setPhase, setMyRole, setGamePlayers, nextRound]);
+  }, [canStart, send, roomId, guest.guestId, players, setPhase, setMyRole, setGamePlayers, nextRound]);
+
+  const leaveRoom = useCallback(() => {
+    send({ type: "LEAVE_ROOM", roomId, guestId: guest.guestId });
+    navigate("/rooms");
+  }, [send, roomId, guest.guestId, navigate]);
 
   const updateSettings = useCallback((settings: SettingRow[]) => {
     setRoom(r => ({ ...r, settings }));
-    // TODO: call API — PATCH /api/rooms/:roomId/settings
   }, []);
 
   return (
@@ -206,13 +194,10 @@ export function RoomProvider({
         chat,
         myPlayer,
         isHost,
-        isReady,
-        readyCount,
         canStart,
-        toggleReady,
         sendMessage,
-        kickPlayer,
         startGame,
+        leaveRoom,
         updateSettings,
       }}
     >

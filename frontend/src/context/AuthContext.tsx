@@ -18,7 +18,7 @@ const GuestContext = createContext<GuestContextValue | null>(null);
 function initGuest(): Guest {
   let guestId = localStorage.getItem(GUEST_ID_KEY);
   if (!guestId) {
-    guestId = "guest_" + crypto.randomUUID();
+    guestId = "guest_" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
     localStorage.setItem(GUEST_ID_KEY, guestId);
   }
   const displayName =

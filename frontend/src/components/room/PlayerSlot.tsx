@@ -9,11 +9,11 @@ export function PlayerSlot({
   canKick: boolean;
   onKick: () => void;
 }) {
-  const hue      = player.username.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
-  const initials = player.username.slice(0, 2).toUpperCase();
+  const hue      = player.displayName.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  const initials = player.displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className={`player-slot ${player.isYou ? "you" : ""} ${player.isReady ? "ready" : ""}`}>
+    <div className={`player-slot ${player.isYou ? "you" : ""}`}>
       {player.isHost && (
         <div className="player-slot-crown" title="Room Host">
           <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11">
@@ -29,13 +29,13 @@ export function PlayerSlot({
         {initials}
       </div>
 
-      <span className="player-slot-name" title={player.username}>
-        {player.username}
+      <span className="player-slot-name" title={player.displayName}>
+        {player.displayName}
         {player.isYou && <span className="player-slot-you-tag">You</span>}
       </span>
 
-      <div className={`player-slot-badge ${player.isReady ? "ready" : "waiting"}`}>
-        {player.isReady ? "Ready" : "Waiting"}
+      <div className="player-slot-badge">
+        In Lobby
       </div>
 
       {canKick && (
