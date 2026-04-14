@@ -24,16 +24,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(RoomGateway.name);
   private readonly sessions = new Map<string, { guestId?: string; roomId?: string }>();
-  private readonly rooms = new Map<
-    string,
-    {
-      roomId: string;
-      roomCode?: string;
-      hostId?: string;
-      status?: 'waiting' | 'in_game' | 'finished';
-      players: Array<{ guestId: string; displayName: string }>;
-    }
-  >();
   private readonly sockets = new Map<string, WebSocket>();
   private readonly socketIds = new Map<WebSocket, string>();
   private readonly roomMembers = new Map<string, Set<string>>();
@@ -83,19 +73,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
 
-      const players = [{ guestId: dto.guestId, displayName: dto.displayName }];
-      this.rooms.set(created.roomId, {
-        roomId: created.roomId,
-        roomCode: created.roomCode,
-        hostId: created.hostId,
-        status: 'waiting',
-        players,
-      });
-
       this.trackSession(socketId, dto.guestId, created.roomId);
       this.addToRoom(socketId, created.roomId);
 
-      this.emitRoomUpdated(created.roomId);
+      await this.emitRoomUpdated(created.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
@@ -119,19 +100,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         roomCode: dto.roomCode,
       });
 
-      const existing = this.rooms.get(joined.roomId);
-      this.rooms.set(joined.roomId, {
-        roomId: joined.roomId,
-        roomCode: existing?.roomCode,
-        hostId: existing?.hostId,
-        status: existing?.status ?? 'waiting',
-        players: joined.players,
-      });
-
       this.trackSession(socketId, dto.guestId, joined.roomId);
       this.addToRoom(socketId, joined.roomId);
 
-      this.emitRoomUpdated(joined.roomId);
+      await this.emitRoomUpdated(joined.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
@@ -156,7 +128,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         config: dto.config,
       });
 
-      this.emitRoomUpdated(session.roomId);
+      await this.emitRoomUpdated(session.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
@@ -177,13 +149,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       await this.roomClient.startGame(session.roomId, { guestId: dto.guestId });
 
-      const existing = this.rooms.get(session.roomId);
-      if (existing) {
-        existing.status = 'in_game';
-        this.rooms.set(session.roomId, existing);
-      }
-
-      this.emitRoomUpdated(session.roomId);
+      await this.emitRoomUpdated(session.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
@@ -203,18 +169,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const result = await this.roomClient.leaveRoom(dto.roomId, dto.guestId);
 
-      const existing = this.rooms.get(dto.roomId);
-      if (existing) {
-        existing.players = existing.players.filter((p) => p.guestId !== dto.guestId);
-        if (result?.newHostId) existing.hostId = result.newHostId;
-        if (result?.roomDeleted) this.rooms.delete(dto.roomId);
-        else this.rooms.set(dto.roomId, existing);
-      }
-
       this.removeFromRoom(socketId, dto.roomId);
       this.sessions.set(socketId, { guestId: dto.guestId });
 
-      if (!result?.roomDeleted) this.emitRoomUpdated(dto.roomId);
+      if (!result?.roomDeleted) await this.emitRoomUpdated(dto.roomId);
     } catch (err) {
       this.emitHttpError(socket, err);
     }
@@ -234,7 +192,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       await this.roomClient.cancelRoom(session.roomId, { guestId: dto.guestId });
-      this.rooms.delete(session.roomId);
       this.broadcastToRoom(session.roomId, 'ROOM_CANCELLED', { roomId: session.roomId });
       this.roomMembers.delete(session.roomId);
     } catch (err) {
@@ -246,17 +203,19 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.sessions.set(socketId, { guestId, roomId });
   }
 
-  private emitRoomUpdated(roomId: string) {
-    const state = this.rooms.get(roomId);
-    if (!state) return;
-
-    this.broadcastToRoom(roomId, 'ROOM_UPDATED', {
-      roomId: state.roomId,
-      roomCode: state.roomCode,
-      players: state.players,
-      hostId: state.hostId,
-      status: state.status ?? 'waiting',
-    });
+  private async emitRoomUpdated(roomId: string) {
+    try {
+      const state = await this.roomClient.getRoomState(roomId);
+      this.broadcastToRoom(roomId, 'ROOM_UPDATED', {
+        roomId: state.roomId,
+        roomCode: state.roomCode,
+        players: state.players,
+        hostId: state.hostId,
+        status: state.status ?? 'waiting',
+      });
+    } catch (err) {
+      this.logger.warn(`ROOM_UPDATED skipped for roomId=${roomId}`);
+    }
   }
 
   private emitError(socket: WebSocket, code: string, message: string) {

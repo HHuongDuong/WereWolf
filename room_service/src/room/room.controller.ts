@@ -7,6 +7,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  Get,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RoomService } from './room.service';
@@ -107,5 +108,16 @@ export class RoomController {
   @ApiOperation({ summary: 'Assign host mới (R-07) - Gọi internal bởi gateway' })
   assignHost(@Param('roomId') roomId: string) {
     return this.roomService.assignNewHost(roomId);
+  }
+
+  /**
+   * R-09-1 — Lấy thông tin phòng để đồng bộ UI (internal)
+   * GET /rooms/:roomId
+   * chưa cập nhật doc
+   */
+  @Get(':roomId')
+  @ApiOperation({ summary: 'Lấy trạng thái phòng (R-09) - internal' })
+  getRoomState(@Param('roomId') roomId: string) {
+    return this.roomService.getRoomState(roomId);
   }
 }

@@ -211,6 +211,25 @@ export class RoomService {
     this.logger.log(`Room finished: roomId=${roomId}`);
   }
 
+  // ── R-09-1: Lấy trạng thái phòng (internal) ─────────────────────
+  async getRoomState(roomId: string) {
+    const room = await this.roomRepo.findByIdWithPlayers(roomId);
+    if (!room) {
+      throw new NotFoundException({ code: 'ROOM_NOT_FOUND', message: 'Phòng không tồn tại' });
+    }
+
+    return {
+      roomId: room.id,
+      roomCode: room.code,
+      hostId: room.hostId,
+      status: room.status,
+      players: room.players.map((p) => ({
+        guestId: p.playerId,
+        displayName: p.displayName,
+      })),
+    };
+  }
+
   // ── R-09: Quét dọn tự động (Cron Job) ───────────────────────────
   @Cron(CronExpression.EVERY_10_MINUTES)
   async cleanupZombieRooms() {
