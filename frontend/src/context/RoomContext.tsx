@@ -168,7 +168,7 @@ export function RoomProvider({
     if (!canStart) return;
     send({ type: "START_GAME", roomId, guestId: guest.guestId });
     // Local phase transition — will be replaced by ROLE_ASSIGNED / PHASE_CHANGED WS events
-    setGamePlayers(players.map(p => ({ id: p.guestId, username: p.displayName, isAlive: true })));
+    setGamePlayers(players.map(p => ({ guestId: p.guestId, displayName: p.displayName, isAlive: true })));
     setMyRole("Werewolf");
     setPhase("role_reveal");
     setTimeout(() => {

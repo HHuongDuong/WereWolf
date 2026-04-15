@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useRoom } from "../../context/RoomContext";
+import { useGameStore } from "../../stores/gameStore";
+import { useGuest } from "../../context/AuthContext";
 
 interface Props {
   lobbyOpen: boolean;
@@ -7,8 +9,20 @@ interface Props {
 }
 
 export function LobbyActionMessage({ lobbyOpen, onOpenLobby }: Props) {
-  const { room } = useRoom();
+  const { room, players } = useRoom();
+  const { guest } = useGuest();
+  const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
   const [copied, setCopied] = useState(false);
+
+  function devForceStart() {
+    const gamePlayers = players.length > 0
+      ? players.map(p => ({ guestId: p.guestId, displayName: p.displayName, isAlive: true }))
+      : [{ guestId: guest.guestId, displayName: guest.displayName, isAlive: true }];
+    setGamePlayers(gamePlayers);
+    setMyRole("Werewolf");
+    setPhase("role_reveal");
+    setTimeout(() => { nextRound(); setPhase("night"); }, 5000);
+  }
 
   const inviteLink = `https://wolfy.net/game/${room.id}`;
 
@@ -40,6 +54,12 @@ export function LobbyActionMessage({ lobbyOpen, onOpenLobby }: Props) {
         <button className="lam-open-btn" onClick={onOpenLobby}>
           Open the lobby
         </button>
+
+        {import.meta.env.DEV && (
+          <button className="dev-skip-btn" style={{ marginTop: 12, width: "100%" }} onClick={devForceStart}>
+            DEV: Force Start Game
+          </button>
+        )}
       </div>
     );
   }
@@ -67,6 +87,12 @@ export function LobbyActionMessage({ lobbyOpen, onOpenLobby }: Props) {
         </svg>
         {copied ? "Copied!" : inviteLink}
       </button>
+
+      {import.meta.env.DEV && (
+        <button className="dev-skip-btn" style={{ marginTop: 12, width: "100%" }} onClick={devForceStart}>
+          DEV: Force Start Game
+        </button>
+      )}
     </div>
   );
 }

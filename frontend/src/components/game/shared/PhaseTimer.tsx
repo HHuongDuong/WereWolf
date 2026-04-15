@@ -1,5 +1,9 @@
+import { useEffect, useState } from "react";
+
 interface PhaseTimerProps {
-  seconds: number;
+  /** Unix ms deadline from the server */
+  deadlineTimestamp: number | null;
+  /** Total duration in seconds (for the progress bar) */
   totalSeconds: number;
   warningAt?: number;
 }
@@ -10,8 +14,24 @@ function fmt(s: number): string {
   return `${m}:${String(sec).padStart(2, "0")}`;
 }
 
-export function PhaseTimer({ seconds, totalSeconds, warningAt = 30 }: PhaseTimerProps) {
-  const pct = Math.max(0, Math.min(1, seconds / totalSeconds));
+export function PhaseTimer({ deadlineTimestamp, totalSeconds, warningAt = 30 }: PhaseTimerProps) {
+  const [seconds, setSeconds] = useState<number>(() =>
+    deadlineTimestamp == null ? 0 : Math.max(0, Math.ceil((deadlineTimestamp - Date.now()) / 1000)),
+  );
+
+  useEffect(() => {
+    if (deadlineTimestamp == null) {
+      setSeconds(0);
+      return;
+    }
+    const tick = () =>
+      setSeconds(Math.max(0, Math.ceil((deadlineTimestamp - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [deadlineTimestamp]);
+
+  const pct = Math.max(0, Math.min(1, seconds / Math.max(1, totalSeconds)));
   const warning = seconds <= warningAt;
 
   return (

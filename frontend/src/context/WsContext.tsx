@@ -54,7 +54,7 @@ export type ServerMsg =
   // | { type: "GAME_OVER" }               // renamed → GAME_ENDED
 
 export type ClientMsg =
-  | { type: "CREATE_ROOM"; guestId: string; displayName: string; maxPlayers: number }
+  | { type: "CREATE_ROOM"; guestId: string; displayName: string }
   | { type: "JOIN_ROOM"; guestId: string; displayName: string; roomCode: string }
   | { type: "CONFIGURE_ROOM"; roomId: string; guestId: string; maxPlayers: number; config: import("../index").RoomConfig }
   | { type: "LEAVE_ROOM"; roomId: string; guestId: string }

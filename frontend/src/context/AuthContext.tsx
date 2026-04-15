@@ -15,9 +15,11 @@ interface GuestContextValue {
 
 const GuestContext = createContext<GuestContextValue | null>(null);
 
+const GUEST_ID_RE = /^guest_[a-zA-Z0-9]{10}$/;
+
 function initGuest(): Guest {
   let guestId = localStorage.getItem(GUEST_ID_KEY);
-  if (!guestId) {
+  if (!guestId || !GUEST_ID_RE.test(guestId)) {
     guestId = "guest_" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
     localStorage.setItem(GUEST_ID_KEY, guestId);
   }

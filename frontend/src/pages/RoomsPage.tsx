@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlayHeader } from "../components/play/PlayHeader";
 import { StartGameCard } from "../components/play/StartGameCard";
@@ -6,6 +6,9 @@ import { GameListItem } from "../components/play/GameListItem";
 import { AvatarPreview } from "../components/play/AvatarPreview";
 import { SocialPanel } from "../components/play/SocialPanel";
 import { CreateRoomModal } from "../components/rooms/CreateRoomModal";
+import { useWs } from "../context/WsContext";
+import { useGuest } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import type { Room, GameMode } from "../components/rooms/RoomCard";
 
 const MOCK_ROOMS: Room[] = [
@@ -21,8 +24,13 @@ const MOCK_ROOMS: Room[] = [
 
 export function RoomsPage() {
   const navigate = useNavigate();
+  const { send, on } = useWs();
+  const { guest } = useGuest();
+  const { toast } = useToast();
   const [tab, setTab] = useState<"public" | "private">("public");
   const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const visibleRooms = MOCK_ROOMS.filter(r =>
     tab === "private" ? r.hasPassword : !r.hasPassword
@@ -35,8 +43,40 @@ export function RoomsPage() {
 
   function handleCreate(data: { name: string; maxPlayers: string; mode: GameMode; password: string }) {
     void data;
-    setShowCreate(false);
-    navigate("/rooms/r1");
+    if (creating) return;
+    setCreating(true);
+
+    function cleanup() {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      unsubRoom();
+      unsubErr();
+      setCreating(false);
+    }
+
+    // Navigate on first ROOM_UPDATED after CREATE_ROOM
+    const unsubRoom = on("ROOM_UPDATED", (msg) => {
+      cleanup();
+      setShowCreate(false);
+      navigate(`/rooms/${msg.roomId}`);
+    });
+
+    // Surface gateway validation / service errors immediately
+    const unsubErr = on("ERROR", (msg) => {
+      cleanup();
+      toast(`${msg.code}: ${msg.message}`, "error");
+    });
+
+    // Timeout fallback — likely Kafka not running if we get here
+    timeoutRef.current = setTimeout(() => {
+      cleanup();
+      toast("No response from gateway. Check that Kafka and gateway_service are running.", "error");
+    }, 8000);
+
+    send({
+      type: "CREATE_ROOM",
+      guestId: guest.guestId,
+      displayName: guest.displayName,
+    });
   }
 
   return (
@@ -110,8 +150,9 @@ export function RoomsPage() {
 
       {showCreate && (
         <CreateRoomModal
-          onClose={() => setShowCreate(false)}
+          onClose={() => !creating && setShowCreate(false)}
           onSubmit={handleCreate}
+          loading={creating}
         />
       )}
     </section>

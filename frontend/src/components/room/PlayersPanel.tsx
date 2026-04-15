@@ -1,4 +1,6 @@
 import { useRoom } from "../../context/RoomContext";
+import { useGameStore } from "../../stores/gameStore";
+import { useGuest } from "../../context/AuthContext";
 import { PlayerSlot } from "./PlayerSlot";
 
 export function PlayersPanel() {
@@ -10,6 +12,19 @@ export function PlayersPanel() {
     startGame,
     leaveRoom,
   } = useRoom();
+
+  const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
+  const { guest } = useGuest();
+
+  function devForceStart() {
+    const mockPlayers = players.length > 0
+      ? players.map(p => ({ guestId: p.guestId, displayName: p.displayName, isAlive: true }))
+      : [{ guestId: guest.guestId, displayName: guest.displayName, isAlive: true }];
+    setGamePlayers(mockPlayers);
+    setMyRole("Werewolf");
+    setPhase("role_reveal");
+    setTimeout(() => { nextRound(); setPhase("night"); }, 5000);
+  }
 
   const emptySlots = Math.max(0, room.maxPlayers - players.length);
   const minPlayers = 6;
@@ -69,6 +84,14 @@ export function PlayersPanel() {
           </button>
         )}
       </div>
+
+      {import.meta.env.DEV && (
+        <div className="dev-skip-bar">
+          <button className="dev-skip-btn" onClick={devForceStart}>
+            DEV: Force Start Game
+          </button>
+        </div>
+      )}
     </div>
   );
 }

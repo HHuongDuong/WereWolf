@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useGameStore } from "../../../stores/gameStore";
+import { RoleIcon } from "../shared/RoleIcon";
 
 export function GameOverPhase() {
-  const winnerFaction = useGameStore(s => s.winnerFaction);
-  const players       = useGameStore(s => s.players);
-  const reset         = useGameStore(s => s.reset);
-  const navigate      = useNavigate();
+  const winnerFaction  = useGameStore(s => s.winnerFaction);
+  const players        = useGameStore(s => s.players);
+  const revealedRoles  = useGameStore(s => s.revealedRoles);
+  const reset          = useGameStore(s => s.reset);
+  const navigate       = useNavigate();
 
   const wolvesWin = winnerFaction === "wolves";
 
@@ -46,21 +48,29 @@ export function GameOverPhase() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          {players.map(p => (
-            <div
-              key={p.id}
-              className={`game-over-player ${p.isAlive ? "alive" : "dead"}`}
-            >
-              <div className="game-over-player-avatar">
-                {p.username[0]?.toUpperCase() ?? "?"}
+          {players.map(p => {
+            const role = revealedRoles[p.guestId];
+            return (
+              <div
+                key={p.guestId}
+                className={`game-over-player ${p.isAlive ? "alive" : "dead"}`}
+              >
+                <div className="game-over-player-avatar">
+                  {p.displayName[0]?.toUpperCase() ?? "?"}
+                </div>
+                <span className="game-over-player-name">{p.displayName}</span>
+                {role && (
+                  <div className="game-over-player-role">
+                    <RoleIcon role={role} size={16} />
+                    <span>{role}</span>
+                  </div>
+                )}
+                <span className="game-over-player-status">
+                  {p.isAlive ? "Survived" : "Eliminated"}
+                </span>
               </div>
-              <span className="game-over-player-name">{p.username}</span>
-              <span className="game-over-player-status">
-                {p.isAlive ? "Survived" : "Eliminated"}
-              </span>
-              {/* TODO: WS GAME_OVER { roles } reveals actual roles here */}
-            </div>
-          ))}
+            );
+          })}
         </motion.div>
 
         <motion.div
@@ -74,7 +84,6 @@ export function GameOverPhase() {
           </button>
           <button className="game-over-btn secondary" disabled>
             Play Again
-            {/* TODO: emit WS rematch event */}
           </button>
         </motion.div>
       </div>
