@@ -1,8 +1,8 @@
-import { useAuth } from "../../context/AuthContext";
+import { useGuest } from "../../context/AuthContext";
 
 export function AvatarPreview() {
-  const { user } = useAuth();
-  const username = user?.username ?? "Guest";
+  const { guest } = useGuest();
+  const username = guest.displayName;
 
   return (
     <div className="avatar-preview-box">

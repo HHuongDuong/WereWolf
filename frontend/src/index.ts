@@ -5,29 +5,56 @@ import index from "./index.html";
 
 export type WsData = {
   roomId: string | null;
-  userId: string | null;
+  guestId: string | null;
 };
 
-/** Messages sent from the browser → server */
+/** Room config payload (used in CONFIGURE_ROOM and room.started Kafka event) */
+export type RoomConfig = {
+  guardDuration: number;
+  seerDuration: number;
+  werewolfDuration: number;
+  witchDuration: number;
+  discussDuration: number;
+  voteDuration: number;
+};
+
+/** Messages sent from the browser → server (snake_case doc names → UPPER_SNAKE here) */
 export type ClientMsg =
-  | { type: "PING" }
-  | { type: "JOIN_ROOM"; roomId: string; userId: string }
-  | { type: "LEAVE_ROOM" }
-  | { type: "READY_TOGGLE" }
-  | { type: "CHAT"; text: string }
-  | { type: "KICK_PLAYER"; playerId: string }
-  | { type: "START_GAME" };
+  // | { type: "PING" }                                    // no heartbeat in contract
+  | { type: "CREATE_ROOM"; guestId: string; displayName: string; maxPlayers: number }
+  | { type: "JOIN_ROOM"; guestId: string; displayName: string; roomCode: string }
+  | { type: "CONFIGURE_ROOM"; roomId: string; guestId: string; maxPlayers: number; config: RoomConfig }
+  | { type: "LEAVE_ROOM"; roomId: string; guestId: string }
+  | { type: "START_GAME"; roomId: string; guestId: string }
+  | { type: "NIGHT_ACTION"; roomId: string; actionType: "guard" | "seer" | "werewolf_kill" | "witch"; targetId: string }
+  | { type: "CHAT_MESSAGE"; roomId: string; channel: "wolves" | "all"; content: string }
+  | { type: "VOTE"; roomId: string; round: number; targetId: string }
+  | { type: "RECONNECT"; guestId: string; roomId: string };
+  // | { type: "READY_TOGGLE" }                            // not in contract
+  // | { type: "KICK_PLAYER"; playerId: string }           // not in contract
 
 /** Messages sent from server → browser */
 export type ServerMsg =
-  | { type: "PONG" }
-  | { type: "ROOM_JOINED"; roomId: string }
-  | { type: "ROOM_LEFT" }
-  | { type: "PLAYER_READY"; playerId: string; isReady: boolean }
-  | { type: "CHAT_MESSAGE"; userId: string; text: string; time: string }
-  | { type: "GAME_STARTED" }
-  | { type: "PLAYER_KICKED"; playerId: string }
-  | { type: "ERROR"; message: string };
+  // | { type: "PONG" }                                    // no heartbeat in contract
+  | { type: "ROOM_UPDATED"; players: Array<{ guestId: string; displayName: string }>; hostId: string; status: string }
+  | { type: "ROLE_ASSIGNED"; role: string }
+  | { type: "PHASE_CHANGED"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }
+  | { type: "NIGHT_ACTION_ACK"; actionType: string; success: boolean; reason?: string }
+  | { type: "SEER_RESULT"; targetId: string; role: string }
+  | { type: "WITCH_INFO"; werewolfKillTargetId: string }
+  | { type: "HUNTER_TRIGGER"; hunterId: string }
+  | { type: "CHAT_MESSAGE"; senderName: string; channel: "wolves" | "all"; content: string; sentAt: string }
+  | { type: "VOTE_STARTED"; round: number; durationSec: number; candidates: string[] }
+  | { type: "VOTE_RESULT"; round: number; counts: Record<string, number>; eliminatedId: string | null; tied: boolean }
+  | { type: "GAME_ENDED"; winner: "werewolf" | "villager"; roles: Record<string, string> }
+  | { type: "PLAYER_DISCONNECTED"; guestId: string; reconnectDeadline: number }
+  | { type: "PLAYER_RECONNECTED"; guestId: string }
+  | { type: "ERROR"; code: string; message: string };
+  // | { type: "ROOM_JOINED"; roomId: string }             // replaced by ROOM_UPDATED
+  // | { type: "ROOM_LEFT" }                               // replaced by ROOM_UPDATED
+  // | { type: "PLAYER_READY"; playerId: string; isReady: boolean }  // not in contract
+  // | { type: "GAME_STARTED" }                            // not in contract — game start implied by ROLE_ASSIGNED
+  // | { type: "PLAYER_KICKED"; playerId: string }         // not in contract
 
 // ── Room registry ──────────────────────────────────────────────────────────────
 
@@ -79,7 +106,7 @@ server = serve<WsData>({
     // WebSocket upgrade endpoint
     "/ws": (req: Request) => {
       const upgraded = server.upgrade(req, {
-        data: { roomId: null, userId: null },
+        data: { roomId: null, guestId: null },
       });
       if (upgraded) return; // Bun takes over; no Response needed
       return new Response("WebSocket upgrade failed", { status: 500 });
@@ -98,30 +125,33 @@ server = serve<WsData>({
           typeof raw === "string" ? raw : raw.toString(),
         ) as ClientMsg;
       } catch {
-        send(ws, { type: "ERROR", message: "Invalid JSON" });
+        send(ws, { type: "ERROR", code: "INVALID_JSON", message: "Invalid JSON" });
         return;
       }
 
       switch (msg.type) {
-        // ── Heartbeat ──────────────────────────────────────────────────────────
-        case "PING":
-          send(ws, { type: "PONG" });
-          break;
-
         // ── Room lifecycle ─────────────────────────────────────────────────────
+        case "CREATE_ROOM": {
+          // TODO: call room_service POST /rooms, then broadcast ROOM_UPDATED
+          console.log(`[WS] ${msg.guestId} wants to create room (maxPlayers: ${msg.maxPlayers})`);
+          break;
+        }
+
         case "JOIN_ROOM": {
-          // Leave any existing room first
           if (ws.data.roomId) {
             rooms.get(ws.data.roomId)?.delete(ws);
             ws.unsubscribe(`room:${ws.data.roomId}`);
           }
-          ws.data.roomId = msg.roomId;
-          ws.data.userId = msg.userId;
-          if (!rooms.has(msg.roomId)) rooms.set(msg.roomId, new Set());
-          rooms.get(msg.roomId)!.add(ws);
-          ws.subscribe(`room:${msg.roomId}`);
-          send(ws, { type: "ROOM_JOINED", roomId: msg.roomId });
-          console.log(`[WS] ${msg.userId} joined room ${msg.roomId}`);
+          ws.data.guestId = msg.guestId;
+          // TODO: resolve roomId from roomCode via room_service
+          // ws.data.roomId = resolvedRoomId;
+          console.log(`[WS] ${msg.guestId} joining room ${msg.roomCode}`);
+          break;
+        }
+
+        case "CONFIGURE_ROOM": {
+          // TODO: call room_service PATCH /rooms/:id, then broadcast ROOM_UPDATED
+          console.log(`[WS] ${msg.guestId} configuring room ${msg.roomId}`);
           break;
         }
 
@@ -129,69 +159,56 @@ server = serve<WsData>({
           if (!ws.data.roomId) break;
           rooms.get(ws.data.roomId)?.delete(ws);
           ws.unsubscribe(`room:${ws.data.roomId}`);
-          send(ws, { type: "ROOM_LEFT" });
           ws.data.roomId = null;
-          break;
-        }
-
-        // ── Game lobby ─────────────────────────────────────────────────────────
-        case "READY_TOGGLE": {
-          if (!ws.data.roomId || !ws.data.userId) {
-            send(ws, { type: "ERROR", message: "Not in a room" });
-            break;
-          }
-          // TODO: track per-player ready state server-side
-          broadcast(ws.data.roomId, {
-            type: "PLAYER_READY",
-            playerId: ws.data.userId,
-            isReady: true,
-          });
-          break;
-        }
-
-        case "CHAT": {
-          if (!ws.data.roomId || !ws.data.userId) {
-            send(ws, { type: "ERROR", message: "Not in a room" });
-            break;
-          }
-          if (!msg.text.trim()) break;
-          const now = new Date();
-          const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-          broadcast(ws.data.roomId, {
-            type: "CHAT_MESSAGE",
-            userId: ws.data.userId,
-            text: msg.text.trim(),
-            time,
-          });
-          break;
-        }
-
-        case "KICK_PLAYER": {
-          if (!ws.data.roomId) break;
-          // Notify and disconnect the kicked player
-          const members = rooms.get(ws.data.roomId);
-          if (members) {
-            for (const m of members) {
-              if (m.data.userId === msg.playerId) {
-                send(m, { type: "PLAYER_KICKED", playerId: msg.playerId });
-                m.data.roomId = null;
-                members.delete(m);
-              }
-            }
-          }
-          broadcast(ws.data.roomId, {
-            type: "PLAYER_KICKED",
-            playerId: msg.playerId,
-          });
+          // TODO: broadcast ROOM_UPDATED to remaining members
           break;
         }
 
         case "START_GAME": {
           if (!ws.data.roomId) break;
-          broadcast(ws.data.roomId, { type: "GAME_STARTED" });
-          console.log(`[WS] game started in room ${ws.data.roomId}`);
+          // TODO: call room_service POST /rooms/:id/start → emits room.started Kafka event
+          console.log(`[WS] ${msg.guestId} starting game in room ${ws.data.roomId}`);
           break;
         }
+
+        // ── In-game actions ────────────────────────────────────────────────────
+        case "NIGHT_ACTION": {
+          // TODO: forward to gameplay_service; reply with NIGHT_ACTION_ACK
+          console.log(`[WS] night action ${msg.actionType} → ${msg.targetId}`);
+          break;
+        }
+
+        case "CHAT_MESSAGE": {
+          if (!ws.data.roomId || !ws.data.guestId) {
+            send(ws, { type: "ERROR", code: "NOT_IN_ROOM", message: "Not in a room" });
+            break;
+          }
+          if (!msg.content.trim()) break;
+          // TODO: validate channel access via chat_service
+          broadcast(ws.data.roomId, {
+            type: "CHAT_MESSAGE",
+            senderName: ws.data.guestId,
+            channel: msg.channel,
+            content: msg.content.trim(),
+            sentAt: new Date().toISOString(),
+          });
+          break;
+        }
+
+        case "VOTE": {
+          // TODO: forward to vote_service
+          console.log(`[WS] vote from ${ws.data.guestId} → ${msg.targetId} (round ${msg.round})`);
+          break;
+        }
+
+        case "RECONNECT": {
+          // TODO: restore session from room_service, re-subscribe to room topic
+          console.log(`[WS] reconnect: ${msg.guestId} → room ${msg.roomId}`);
+          break;
+        }
+
+        // | "READY_TOGGLE" — not in contract
+        // | "KICK_PLAYER"  — not in contract
       }
     },
 
@@ -199,7 +216,8 @@ server = serve<WsData>({
       if (ws.data.roomId) {
         rooms.get(ws.data.roomId)?.delete(ws);
         ws.unsubscribe(`room:${ws.data.roomId}`);
-        console.log(`[WS] ${ws.data.userId ?? "?"} left room ${ws.data.roomId}`);
+        console.log(`[WS] ${ws.data.guestId ?? "?"} left room ${ws.data.roomId}`);
+        // TODO: broadcast PLAYER_DISCONNECTED with reconnectDeadline = Date.now() + 60_000
       } else {
         console.log("[WS] client disconnected");
       }

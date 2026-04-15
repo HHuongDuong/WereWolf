@@ -2,7 +2,7 @@
  * ApiContext — centralised API gateway stub.
  *
  * All fetch calls should go through this context so that:
- *   - Auth headers are injected automatically from AuthContext
+ *   - Guest ID is injected automatically from GuestContext
  *   - The base URL is configured in one place
  *   - Error handling is uniform
  *
@@ -12,7 +12,7 @@
  */
 
 import { createContext, useContext, useMemo } from "react";
-import { useAuth, type User } from "./AuthContext";
+import { useGuest } from "./AuthContext";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,17 +37,9 @@ export interface CreateRoomPayload {
   password?: string;
 }
 
-export interface LoginPayload     { email: string; password: string }
-export interface RegisterPayload  { username: string; email: string; password: string }
-
 // ── Context shape ─────────────────────────────────────────────────────────────
 
 interface ApiContextValue {
-  /** Authentication endpoints */
-  auth: {
-    login(payload: LoginPayload): Promise<User>;
-    register(payload: RegisterPayload): Promise<User>;
-  };
   /** Room / lobby endpoints */
   rooms: {
     list(): Promise<Room[]>;
@@ -70,14 +62,14 @@ function stub(name: string): never {
 const ApiContext = createContext<ApiContextValue | null>(null);
 
 export function ApiProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { guest } = useGuest();
 
-  /** Builds fetch options with JSON headers + optional Bearer token. */
+  /** Builds fetch options with JSON headers + guest identity header. */
   function headers(): HeadersInit {
-    const h: Record<string, string> = { "Content-Type": "application/json" };
-    // When the backend issues real tokens, swap `user?.id` for the JWT.
-    if (user) h["Authorization"] = `Bearer ${user.id}`;
-    return h;
+    return {
+      "Content-Type": "application/json",
+      "X-Guest-Id": guest.guestId,
+    };
   }
 
   /** Thin wrapper: throws on non-2xx, returns parsed JSON. */
@@ -94,19 +86,6 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   }
 
   const api = useMemo<ApiContextValue>(() => ({
-    auth: {
-      async login(payload) {
-        // TODO: wire to backend — POST /api/auth/login
-        void BASE_URL; void request; void payload;
-        stub("auth.login");
-      },
-      async register(payload) {
-        // TODO: wire to backend — POST /api/auth/register
-        void payload;
-        stub("auth.register");
-      },
-    },
-
     rooms: {
       async list() {
         // TODO: wire to backend — GET /api/rooms
@@ -129,7 +108,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [user?.id]);
+  }), [guest.guestId]);
 
   return <ApiContext.Provider value={api}>{children}</ApiContext.Provider>;
 }

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "../../../stores/gameStore";
 import { PlayerCard } from "../shared/PlayerCard";
-import { useAuth } from "../../../context/AuthContext";
+import { useGuest } from "../../../context/AuthContext";
 
 export function NightPhase() {
   const myRole      = useGameStore(s => s.myRole);
@@ -11,9 +11,9 @@ export function NightPhase() {
   const setNightAction = useGameStore(s => s.setNightAction);
   const setSeerResult  = useGameStore(s => s.setSeerResult);
   const setPhase    = useGameStore(s => s.setPhase);
-  const { user }    = useAuth();
+  const { guest } = useGuest();
 
-  const myId        = user?.id ?? "dev-001";
+  const myId = guest.guestId;
   const alivePlayers = players.filter(p => p.isAlive && p.id !== myId);
 
   function handleWolfTarget(targetId: string) {

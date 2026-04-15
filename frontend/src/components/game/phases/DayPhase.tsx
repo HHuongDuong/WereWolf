@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "../../../stores/gameStore";
 import { useRoom } from "../../../context/RoomContext";
-import { useAuth } from "../../../context/AuthContext";
+import { useGuest } from "../../../context/AuthContext";
 import { GameHUD } from "../GameHUD";
 import { PhaseTimer } from "../shared/PhaseTimer";
 import { PlayerCard } from "../shared/PlayerCard";
@@ -16,11 +16,11 @@ export function DayPhase() {
   const setPhase    = useGameStore(s => s.setPhase);
 
   const { chat, sendMessage } = useRoom();
-  const { user } = useAuth();
+  const { guest } = useGuest();
   const inputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const myId = user?.id ?? "dev-001";
+  const myId = guest.guestId;
 
   // Countdown
   useEffect(() => {
@@ -76,7 +76,7 @@ export function DayPhase() {
               {chat.map(msg => (
                 <div
                   key={msg.id}
-                  className={`day-chat-msg ${msg.user === (user?.username ?? "You") ? "own" : ""}`}
+                  className={`day-chat-msg ${msg.user === guest.displayName ? "own" : ""}`}
                 >
                   <span className="day-chat-user">{msg.user}</span>
                   <span className="day-chat-text">{msg.text}</span>

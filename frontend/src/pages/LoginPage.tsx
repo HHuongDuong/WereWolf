@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth, DEV_USER } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ login: "", password: "" });
 
@@ -13,13 +10,8 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: wire to backend
+    // TODO: auth is out of scope (GDD §8) — wire when accounts are added
   };
-
-  function devLogin() {
-    login(DEV_USER);
-    navigate("/");
-  }
 
   return (
     <section
@@ -135,14 +127,6 @@ export function LoginPage() {
             </div>
             <button type="submit" className="auth-validate-btn">Log in</button>
           </form>
-
-          {/* Dev bypass */}
-          <button type="button" className="auth-dev-btn" onClick={devLogin}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-            </svg>
-            Continue as DevWolf <span className="auth-dev-tag">DEV</span>
-          </button>
 
           <div className="auth-no-account">
             No account? <Link to="/auth/register" className="auth-register-link">Register</Link>

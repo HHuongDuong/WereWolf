@@ -18,7 +18,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useAuth } from "./AuthContext";
+import { useGuest } from "./AuthContext";
 import { useGameStore } from "../stores/gameStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ const MOCK_PLAYERS: Player[] = [
   { id: "3",       username: "VillageElder", isHost: false, isReady: true  },
   { id: "4",       username: "HunterX",      isHost: false, isReady: true  },
   { id: "5",       username: "CursedOne",    isHost: false, isReady: true  },
-  { id: "dev-001", username: "DevWolf",      isHost: true,  isReady: false, isYou: true },
+  { id: "guest_dev", username: "You",        isHost: true,  isReady: false, isYou: true },
 ];
 
 const MOCK_CHAT: ChatMsg[] = [
@@ -113,7 +113,7 @@ export function RoomProvider({
   roomId: string;
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { guest } = useGuest();
   const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
   const [room, setRoom] = useState<RoomInfo>({
@@ -127,22 +127,19 @@ export function RoomProvider({
   });
 
   const [players, setPlayers] = useState<Player[]>(() =>
-    user
-      ? MOCK_PLAYERS.map(p =>
-          p.isYou ? { ...p, username: user.username, id: user.id } : p,
-        )
-      : MOCK_PLAYERS,
+    MOCK_PLAYERS.map(p =>
+      p.isYou ? { ...p, username: guest.displayName, id: guest.guestId } : p,
+    ),
   );
 
   const [chat, setChat] = useState<ChatMsg[]>(MOCK_CHAT);
 
-  // Sync player name if auth user changes (e.g. after dev-login)
+  // Sync player name if guest displayName changes
   useEffect(() => {
-    if (!user) return;
     setPlayers(ps =>
-      ps.map(p => (p.isYou ? { ...p, username: user.username, id: user.id } : p)),
+      ps.map(p => (p.isYou ? { ...p, username: guest.displayName, id: guest.guestId } : p)),
     );
-  }, [user?.id, user?.username]);
+  }, [guest.guestId, guest.displayName]);
 
   const msgCounter = useRef(Date.now());
 
@@ -164,11 +161,11 @@ export function RoomProvider({
       const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
       setChat(c => [
         ...c,
-        { id: msgCounter.current++, user: user?.username ?? "You", text: text.trim(), time },
+        { id: msgCounter.current++, user: guest.displayName, text: text.trim(), time },
       ]);
       // TODO: emit WS event — { type: "CHAT", text }
     },
-    [user?.username],
+    [guest.displayName],
   );
 
   const kickPlayer = useCallback((id: string) => {

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useGuest } from "../../context/AuthContext";
 
 export function Header() {
   const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, logout } = useAuth();
+  const { guest } = useGuest();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -50,33 +50,14 @@ export function Header() {
             </div>
           </div>
 
-          {user ? (
-            <>
-              <span className="nav-username">
-                <img src="/img/icons/user.svg" alt="" />
-                {user.username}
-              </span>
-              <a href="/rooms" className="btn-primary">
-                <img src="/img/icons/play-button.svg" alt="Play" />
-                <span>Play</span>
-              </a>
-              <button className="btn-secondary" onClick={logout}>
-                <img src="/img/icons/user.svg" alt="" />
-                <span>Log out</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <a href="/auth/login" className="btn-secondary">
-                <img src="/img/icons/user.svg" alt="" />
-                <span>Log in</span>
-              </a>
-              <a href="/auth/register" className="btn-primary">
-                <img src="/img/icons/play-button.svg" alt="Play werewolf" />
-                <span>Play</span>
-              </a>
-            </>
-          )}
+          <span className="nav-username">
+            <img src="/img/icons/user.svg" alt="" />
+            {guest.displayName}
+          </span>
+          <a href="/rooms" className="btn-primary">
+            <img src="/img/icons/play-button.svg" alt="Play" />
+            <span>Play</span>
+          </a>
         </div>
       </nav>
     </header>
