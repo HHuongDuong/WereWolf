@@ -29,8 +29,11 @@ public class TimeoutScheduler {
             if (state.getPhaseDeadline() > System.currentTimeMillis()) continue;
 
             switch (state.getPhase()) {
-                case ROLE_REVEAL -> dayPhaseService.startNight(roomId);
-                case NIGHT -> nightPhaseService.resolveNight(roomId);
+                case ROLE_REVEAL -> {
+                    dayPhaseService.startNight(roomId);
+                    nightPhaseService.advanceNightPhase(roomId);
+                }
+                case NIGHT -> nightPhaseService.advanceNightPhase(roomId);
                 case DISCUSS -> dayPhaseService.startVote(roomId);
                 case VOTE -> {
                     log.warn("Vote timeout for roomId={}, triggering force resolve", roomId);

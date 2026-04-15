@@ -62,6 +62,14 @@ public class GameInitService {
                 .players(assignedRoles)
                 .build());
 
+        producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                .roomId(event.getRoomId())
+                .phase(GamePhase.ROLE_REVEAL.toValue())
+                .round(state.getRound())
+                .deadlineTimestamp(state.getPhaseDeadline())
+                .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
+                .build());
+
         repo.markProcessed(idempotencyKey);
     }
 

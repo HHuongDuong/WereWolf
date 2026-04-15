@@ -16,6 +16,7 @@ public class GameState {
     @Builder.Default
     private WitchPotions witchPotions = WitchPotions.builder().build();
     private String lastGuardedId;
+    private String currentNightRole;
     private Map<String, Integer> config;
     private long phaseDeadline;
 }

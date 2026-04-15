@@ -26,6 +26,7 @@ public class DayPhaseService {
     private final GameEventProducer producer;
     private final EndGameService endGameService;
     private final RedisLockService lockService;
+    private final NightPhaseService nightPhaseService;
 
     public void startVote(String roomId) {
         GameState state = repo.get(roomId);
@@ -56,37 +57,17 @@ public class DayPhaseService {
         if (state == null)
             return;
 
-        long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("werewolfDuration", 45) : 45;
-        long deadline = System.currentTimeMillis() + (durationSec * 1000L);
         state.setPhase(GamePhase.NIGHT);
         state.setNightActions(new NightActions());
-        state.setPhaseDeadline(deadline);
+        state.setCurrentNightRole(null);
+        state.setPhaseDeadline(System.currentTimeMillis());
         repo.save(roomId, state);
-
-        List<String> alivePlayers = state.getPlayers().entrySet().stream()
-                .filter(e -> e.getValue().isAlive())
-                .map(Map.Entry::getKey)
-                .toList();
-
-        producer.publishPhaseChanged(PhaseChangedEvent.builder()
-                .roomId(roomId)
-                .phase("night")
-                .round(state.getRound())
-                .deadlineTimestamp(deadline)
-                .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
-                .build());
-
-        List<String> wolves = state.getPlayers().entrySet().stream()
-                .filter(e -> e.getValue().isAlive() && "WEREWOLF".equals(e.getValue().getRole()))
-                .map(Map.Entry::getKey)
-                .toList();
-
-        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
-                .roomId(roomId).channel("wolves").enabled(true)
-                .allowedGuestIds(wolves)
-                .round(state.getRound()).build());
         producer.publishChatChannelUpdated(ChatChannelEvent.builder()
                 .roomId(roomId).channel("all").enabled(false)
+                .allowedGuestIds(List.of())
+                .round(state.getRound()).build());
+        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
+                .roomId(roomId).channel("wolves").enabled(false)
                 .allowedGuestIds(List.of())
                 .round(state.getRound()).build());
     }
@@ -126,6 +107,10 @@ public class DayPhaseService {
         } finally {
             lockService.releaseLock(event.getRoomId());
         }
+        GameState latestState = repo.get(event.getRoomId());
+        if (latestState != null && latestState.getPhase() == GamePhase.NIGHT) {
+            nightPhaseService.advanceNightPhase(event.getRoomId());
+        }
     }
 
     public void forceResolveVote(String roomId) {
@@ -145,6 +130,10 @@ public class DayPhaseService {
             }
         } finally {
             lockService.releaseLock(roomId);
+        }
+        GameState latestState = repo.get(roomId);
+        if (latestState != null && latestState.getPhase() == GamePhase.NIGHT) {
+            nightPhaseService.advanceNightPhase(roomId);
         }
     }
 }
