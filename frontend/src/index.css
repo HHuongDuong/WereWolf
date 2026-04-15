@@ -1,3 +1,6 @@
+/* Tailwind v4 utilities — regenerate with: bun run tw:build */
+@import "./styles/tw.css";
+
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/animations.css";
@@ -9,4 +12,9 @@
 @import "./styles/skins.css";
 @import "./styles/app-download.css";
 @import "./styles/footer.css";
+@import "./styles/auth.css";
+@import "./styles/play-header.css";
+@import "./styles/rooms.css";
+@import "./styles/game.css";
+@import "./styles/toast.css";
 @import "./styles/responsive.css";

@@ -1,0 +1,21 @@
+<svg id="Calque_1" data-name="Calque 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 300">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ebb73a;
+      }
+
+      .cls-2 {
+        fill: #fed858;
+      }
+
+      .cls-3 {
+        fill: #dd972e;
+      }
+    </style>
+  </defs>
+  <title>eloBg</title>
+  <rect class="cls-1" width="850" height="300"/>
+  <path class="cls-2" d="M484,0H0V220.66S118.07,0,484,0Z"/>
+  <path class="cls-3" d="M366,300H850V79.34S731.93,300,366,300Z"/>
+</svg>

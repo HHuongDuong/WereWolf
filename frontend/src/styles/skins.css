@@ -1,79 +1,194 @@
-/* ─── Skins Section ─────────────────────────────────────────────────── */
+/* ─── Skins / Avatar Section ────────────────────────────────────────── */
 .skins {
-  padding: 100px 4vw;
-  background: var(--bg-deep);
+  position: relative;
+  width: 100%;
   overflow: hidden;
+  z-index: 2;
 }
 
+/* Background scene (same SVG as hero) */
+.skins-scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.skins-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(14,13,28,0.65) 0%, rgba(14,13,28,0.9) 100%);
+  pointer-events: none;
+}
+
+/* Avatar group */
 .skins-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.skins-inner h2 {
-  font-family: 'Cinzel', serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
-}
-
-.skins-subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 3.5rem;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.skins-grid {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.skin-card {
+  position: relative;
+  z-index: 1;
+  padding: 80px 0 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1.25rem 1rem;
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: var(--radius-lg);
-  width: 130px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  cursor: pointer;
 }
 
-.skin-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255,255,255,0.15);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-}
-
-.skin-img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: var(--radius-sm);
-}
-
-.skin-name {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.skin-top-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.7rem;
+.skins-title {
+  font-size: 36px;
   font-weight: 700;
-  color: var(--gold);
+  line-height: 1.23;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 60px;
+  padding: 0 20px;
+}
+
+/* Main 3-column content */
+.skins-main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  width: 1110px;
+  max-width: 90%;
+}
+
+/* Left: color swatches + item thumbnails */
+.skins-items-available {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Color swatches row */
+.skin-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.skin-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.skin-color-swatch span {
+  flex: 1;
+  display: block;
+}
+
+/* Item grid */
+.skin-item-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.skin-item-group {
+  position: relative;
+  margin-right: 26px;
+  margin-bottom: 26px;
+  width: 90px;
+  height: 90px;
+}
+
+.skin-item {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Rarity gradients */
+.skin-item.legendary { box-shadow: 0 0 9px 0 #5e53d5; background-image: linear-gradient(-43deg, #5046be, #b288da); }
+.skin-item.epic      { box-shadow: 0 0 9px 0 #fda284; background-image: linear-gradient(-43deg, #d29782, #eccb67); }
+.skin-item.rare      { background-image: linear-gradient(-43deg, #1a4f96, #44b8de); }
+.skin-item.uncommon  { background-image: linear-gradient(-43deg, #467c87, #3fc2a7); }
+.skin-item.common    { background-image: linear-gradient(-43deg, #3a3846, #c1c1c1); }
+.skin-item.selected  { background-color: #fff; box-shadow: 0 0 9px 0 #b3b3b3; }
+
+.skin-item-preview {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.skin-item-preview img {
+  height: 80%;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Center: character display */
+.skins-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.skins-display-platform {
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160%;
+}
+.skins-display-platform img { width: 100%; }
+
+.skins-display-character {
+  height: 280px;
+  position: relative;
+  z-index: 2;
+}
+.skins-display-character img { height: 100%; width: auto; }
+
+/* Right: placement slots (body + hat rows) */
+.skins-placement {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.skins-placement-row {
+  display: flex;
+  gap: 20px;
+}
+
+.skin-slot {
+  width: 110px;
+  height: 110px;
+}
+
+.skin-slot .skin-item { background-image: linear-gradient(-43deg, #1a4f96, #44b8de); }
+.skin-slot .skin-item.hat { background-image: linear-gradient(-43deg, #3a3846, #c1c1c1); }
+
+@media (max-width: 768px) {
+  .skins-main { flex-direction: column; align-items: center; }
+  .skins-title { font-size: 22px; }
+  .skins-items-available { display: none; }
+  .skins-placement { display: none; }
+  .skin-item-group { width: 70px; height: 70px; margin-right: 16px; margin-bottom: 16px; }
 }

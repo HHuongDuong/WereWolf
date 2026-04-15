@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/*
+ * Map existing design tokens → Tailwind v4 theme utilities.
+ * This lets you use classes like: bg-bg-deep, text-cta, font-display, etc.
+ */
+@theme {
+  --font-display: "Cinzel", serif;
+  --font-body:    "Nunito", sans-serif;
+
+  --color-bg-deep:    #0e0d1c;
+  --color-bg-dark:    #141328;
+  --color-bg-card:    #1c1b35;
+  --color-bg-surface: #252445;
+
+  --color-text-primary: #e8e6f5;
+  --color-text-muted:   #9090b8;
+  --color-text-dim:     #5a5880;
+
+  --color-cta:          #5b5ef7;
+  --color-wolf-red:     #c43a3a;
+  --color-village-blue: #3d8bc4;
+  --color-solo-gold:    #d4943a;
+  --color-gold:         #d4af37;
+  --color-moon-white:   #f5f4ef;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+}
