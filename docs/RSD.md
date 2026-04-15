@@ -61,7 +61,7 @@ Chỉ khi `status = waiting` |
 
 | ID | Yêu cầu | Input | Output | Ghi chú |
 |----|---------|-------|--------|---------|
-| G-09 | Broadcast kết quả đêm | `{ deadIds[] }` | `game.phase.changed { phase: "day", metadata: { deadIds } }` | Cập nhật `isAlive` trong Redis trước khi broadcast. `reasons[]` lưu nội bộ (debug), không gửi ra client |
+| G-09 | Broadcast kết quả đêm | `{ deadIds[] }` | `game.phase.changed { phase: "day", metadata: { deadIds } }` | Cập nhật `isAlive` trong Redis trước khi broadcast. **Không gửi `reasons[]` ra client** theo thiết kế game (GDD mục 3.2) |
 | G-10 | Mở thảo luận | `{ roomId }` | `game.chat.channel.updated { channel: "all", enabled: true }` | Kèm `deadline` timestamp |
 | G-11 | Bắt đầu vote | `{ roomId, round }` | Publish `game.vote.start` | Sau khi hết thời gian thảo luận |
 | G-12 | Nhận kết quả vote | Kafka `vote.result` | Xác định người bị loại, trigger Hunter nếu cần | Tie → không ai bị loại |
@@ -220,14 +220,14 @@ CREATE INDEX idx_messages_room_channel
 
 | Topic | Producer | Consumer | Payload |
 |-------|----------|----------|---------|
-| `room.started` | room-service | gameplay-service | `{ roomId, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
+| `room.started` | room-service | gameplay-service | `{ roomId, roomCode, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
 | `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, players: [{ guestId, displayName }] }` |
 | `room.deleted` | room-service | gateway-service | `{ roomId }` |
-| `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], reasons?: [], eliminatedId?: string } }` |
+| `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], eliminatedId?: string } }` |
 | `game.chat.channel.updated` | gameplay-service | chat-service | `{ roomId, channel, enabled, allowedGuestIds: [] }` |
 | `game.vote.start` | gameplay-service | vote-service | `{ roomId, round, alivePlayerIds: [], durationSec }` |
 | `vote.result` | vote-service | gameplay-service | `{ roomId, round, counts: { [guestId]: number }, eliminatedId: string \| null, tied: bool }` |
-| `game.ended` | gameplay-service | room-service | `{ roomId, winner: "werewolf" \| "villager" }` |
+| `game.ended` | gameplay-service | room-service | `{ roomId, winner: "werewolf" \| "villager", round: number }` |
 
 **Quy tắc chung:**
 - Tất cả payload dùng `camelCase`

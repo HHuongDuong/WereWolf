@@ -105,7 +105,8 @@ npm run dev   # http://localhost:3000
 ## 📨 Kafka Event Contract
 
 > **Quy tắc vàng:** Không tự ý thêm/sửa event schema mà không báo team.  
-> Mọi thay đổi phải update bảng này trước khi code.
+> Mọi thay đổi phải update bảng này trước khi code.  
+> **Nguồn chuẩn:** RSD mục 5 — Kafka Events Specification
 
 ### Topics & Payload
 
@@ -130,6 +131,40 @@ npm run dev   # http://localhost:3000
   }
 }
 ```
+> Gameplay-service nhận event này để khởi tạo game, phân vai, và bắt đầu phase ROLE_REVEAL.
+
+---
+
+#### `room.updated`
+- **Producer:** room-service  
+- **Consumer:** gateway-service  
+```json
+{
+  "roomId": "uuid",
+  "roomCode": "ABC123",
+  "hostId": "guest_abc",
+  "status": "waiting" | "in_game" | "finished",
+  "players": [
+    { "guestId": "guest_abc", "displayName": "Alice" },
+    { "guestId": "guest_xyz", "displayName": "Bob" }
+  ]
+}
+```
+> Gateway broadcast `ROOM_UPDATED` đến tất cả WebSocket clients trong phòng. Được publish mỗi khi có thay đổi: join, leave, configure, start game, game ended.
+
+---
+
+#### `room.deleted`
+- **Producer:** room-service  
+- **Consumer:** gateway-service  
+```json
+{
+  "roomId": "uuid"
+}
+```
+> Gateway broadcast `ROOM_CANCELLED` và cleanup room members. Được publish khi: host cancel phòng, phòng rỗng (tất cả leave), hoặc cronjob cleanup zombie rooms.
+
+---
 
 #### `game.phase.changed`
 - **Producer:** gameplay-service  
@@ -146,8 +181,9 @@ npm run dev   # http://localhost:3000
   }
 }
 ```
+> Gateway broadcast `phase_changed` đến tất cả players. `metadata.deadIds`: người chết đêm. `metadata.eliminatedId`: người bị vote. `metadata.reasons`: chỉ dùng debug, **không gửi ra client** theo thiết kế game.
 
-> `reasons[]` được gameplay-service tính nội bộ (G-08) nhưng **không gửi ra client** theo thiết kế game. Players chỉ biết ai chết, không biết lý do.
+---
 
 #### `game.chat.channel.updated`
 - **Producer:** gameplay-service  
@@ -161,8 +197,9 @@ npm run dev   # http://localhost:3000
   "round": 1
 }
 ```
+> Chat-service dùng để validate sender. `allowedGuestIds`: danh sách player được phép dùng channel.
 
-> `allowedGuestIds`: danh sách player được phép dùng channel. Chat-service dùng để validate sender.
+---
 
 #### `game.vote.start`
 - **Producer:** gameplay-service  
@@ -175,8 +212,9 @@ npm run dev   # http://localhost:3000
   "durationSec": 30
 }
 ```
+> Vote-service khởi tạo phiên vote. `alivePlayerIds`: vừa là danh sách voter hợp lệ, vừa là danh sách target hợp lệ.
 
-> `alivePlayerIds`: vừa là danh sách voter hợp lệ, vừa là danh sách target hợp lệ (trừ voter tự vote cho mình — vote-service tự validate).
+---
 
 #### `vote.result`
 - **Producer:** vote-service  
@@ -193,8 +231,9 @@ npm run dev   # http://localhost:3000
   "tied": false
 }
 ```
+> Gameplay-service nhận kết quả vote để xử lý elimination. Nếu `tied = true` thì `eliminatedId = null` (không random tiebreak).
 
-> Nếu `tied = true` thì `eliminatedId = null`. Gameplay-service không random tiebreak.
+---
 
 #### `game.ended`
 - **Producer:** gameplay-service  
@@ -206,8 +245,17 @@ npm run dev   # http://localhost:3000
   "round": 4
 }
 ```
+> **room-service:** UPDATE `rooms SET status='finished', ended_at=NOW()`
 
-> Room-service nhận event này để UPDATE `rooms SET status='finished', ended_at=NOW()`.
+---
+
+### Quy tắc chung (RSD mục 5)
+
+- ✅ Tất cả payload dùng **camelCase**
+- ✅ Tất cả timestamp là **Unix milliseconds** (`number`)
+- ❌ **Không bao giờ** đặt `role` vào bất kỳ Kafka topic nào (trừ khi game đã kết thúc)
+- ✅ Mọi event phải có `roomId` để routing
+- ✅ Consumer phải implement **idempotency** (check processed events)
 
 ---
 
