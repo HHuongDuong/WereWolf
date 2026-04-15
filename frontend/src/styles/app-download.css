@@ -1,55 +1,83 @@
-/* ─── App Download ──────────────────────────────────────────────────── */
+/* ─── App Download / Application Section ────────────────────────────── */
 .app-download {
-  padding: 100px 4vw;
-  background: var(--bg-dark);
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  z-index: 2;
+  padding-top: 10vh;
+  max-height: 650px;
+  display: flex;
+  justify-content: center;
+  background-color: #1f1f2e;
 }
 
 .app-download-inner {
-  max-width: 700px;
+  width: 1110px;
   margin: 0 auto;
-  text-align: center;
+  max-width: 90%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.app-download-inner h2 {
-  font-family: 'Cinzel', serif;
-  font-size: 2rem;
+/* Phone mockup */
+.app-mockup {
+  display: flex;
+  position: relative;
+  width: 42%;
+}
+
+.app-mockup img {
+  width: 83%;
+  object-fit: cover;
+  object-position: 50% 0;
+}
+
+/* Text + buttons */
+.app-description {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 42%;
+}
+
+.app-description h2 {
+  font-size: 36px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
+  line-height: 1.23;
+  margin-bottom: 16px;
+  color: #fff;
 }
 
-.app-download-inner p {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 2.5rem;
-  line-height: 1.7;
+.app-description p {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.5;
+  margin-bottom: 70px;
+  color: rgba(255,255,255,0.8);
 }
 
 .app-buttons {
   display: flex;
-  justify-content: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
+  gap: 0;
 }
 
 .app-btn {
   display: block;
+  width: 166px;
   transition: transform 0.2s, opacity 0.2s;
+  text-decoration: none;
 }
+.app-btn:first-child { margin-right: 20px; }
+.app-btn:hover { transform: translateY(-3px); opacity: 0.9; }
+.app-btn img { width: 100%; height: auto; }
 
-.app-btn:hover {
-  transform: translateY(-3px);
-  opacity: 0.9;
-}
-
-.app-btn img {
-  height: 52px;
-  width: 160px;
-  object-fit: contain;
-}
-
-.app-btn:focus-visible {
-  outline: 2px solid var(--cta);
-  outline-offset: 3px;
-  border-radius: 6px;
+@media (max-width: 768px) {
+  .app-download { height: auto; max-height: none; padding-top: 0; }
+  .app-download-inner { flex-direction: column-reverse; }
+  .app-mockup { width: 100%; padding-top: 40px; height: 400px; max-width: 400px; margin: 0 auto; display: flex; justify-content: center; }
+  .app-mockup img { width: 90%; }
+  .app-description { width: 100%; }
+  .app-description h2 { padding-top: 80px; font-size: 22px; }
+  .app-description p { margin-bottom: 30px; font-size: 12px; }
 }

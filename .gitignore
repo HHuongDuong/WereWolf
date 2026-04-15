@@ -1,4 +1,10 @@
+<<<<<<< HEAD
+cloned
+package-lock.json
+bun.lock
+=======
 **/node_modules/
 **/dist/
 **/.env
 **/temp.txt
+>>>>>>> 5712a3d588cd708f340c243b4df7dc1be1d86364

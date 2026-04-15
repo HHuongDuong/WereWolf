@@ -6,6 +6,9 @@ out
 dist
 *.tgz
 
+# generated CSS (rebuild with: bun run tw:build)
+src/styles/tw.css
+
 # code coverage
 coverage
 *.lcov
@@ -33,3 +36,4 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 bun.lock
+package-lock.json
