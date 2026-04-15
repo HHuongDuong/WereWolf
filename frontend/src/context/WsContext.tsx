@@ -99,7 +99,7 @@ interface WsContextValue {
 
 const WsContext = createContext<WsContextValue | null>(null);
 
-const WS_URL = (import.meta as { env?: { VITE_GATEWAY_WS_URL?: string } }).env?.VITE_GATEWAY_WS_URL ?? "ws://localhost:3001";
+const WS_URL = import.meta.env?.VITE_GATEWAY_WS_URL ?? "ws://localhost:3001";
 
 const RECONNECT_DELAY_MS = 3_000;
 

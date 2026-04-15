@@ -97,8 +97,19 @@ export function RoomProvider({
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const msgCounter = useRef(Date.now());
 
-  // Fetch initial room info, then register WS session via JOIN_ROOM
+  // Register WS session via JOIN_ROOM immediately, then enrich with REST data
   useEffect(() => {
+    // Send JOIN_ROOM right away so the gateway (real or mock) emits ROOM_UPDATED.
+    // roomCode starts empty — the real gateway will look it up from the session;
+    // the mock gateway ignores it entirely.
+    send({
+      type: "JOIN_ROOM",
+      guestId: guest.guestId,
+      displayName: guest.displayName,
+      roomCode: room.code || roomId,
+    });
+
+    // REST fetch is best-effort: enriches room info but is not required (fails in mock mode)
     api.rooms.get(roomId).then(info => {
       setRoom(r => ({
         ...r,
@@ -107,14 +118,8 @@ export function RoomProvider({
         maxPlayers: info.maxPlayers,
         status: info.status,
       }));
-      send({
-        type: "JOIN_ROOM",
-        guestId: guest.guestId,
-        displayName: guest.displayName,
-        roomCode: info.roomCode,
-      });
     }).catch(err => {
-      console.error("[Room] failed to load room:", err);
+      console.warn("[Room] REST fetch failed (expected in mock mode):", err);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
