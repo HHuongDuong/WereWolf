@@ -11,7 +11,11 @@ public class GameState {
     private GamePhase phase;
     private int round;
     private Map<String, PlayerState> players;
-    private Map<String, NightAction> nightActions;
+    @Builder.Default
+    private NightActions nightActions = new NightActions();
+    @Builder.Default
+    private WitchPotions witchPotions = WitchPotions.builder().build();
+    private String lastGuardedId;
     private Map<String, Integer> config;
     private long phaseDeadline;
 }

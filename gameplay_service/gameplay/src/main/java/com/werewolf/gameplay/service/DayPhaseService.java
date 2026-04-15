@@ -4,6 +4,7 @@ import com.werewolf.gameplay.kafka.GameEventProducer;
 import com.werewolf.gameplay.lock.RedisLockService;
 import com.werewolf.gameplay.model.GamePhase;
 import com.werewolf.gameplay.model.GameState;
+import com.werewolf.gameplay.model.NightActions;
 import com.werewolf.gameplay.model.events.ChatChannelEvent;
 import com.werewolf.gameplay.model.events.PhaseChangedEvent;
 import com.werewolf.gameplay.model.events.VoteResultEvent;
@@ -11,10 +12,8 @@ import com.werewolf.gameplay.model.events.VoteStartEvent;
 import com.werewolf.gameplay.redis.GameStateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +29,8 @@ public class DayPhaseService {
 
     public void startVote(String roomId) {
         GameState state = repo.get(roomId);
-        if (state == null || state.getPhase() != GamePhase.DISCUSS) return;
+        if (state == null || state.getPhase() != GamePhase.DISCUSS)
+            return;
 
         long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("voteDuration", 30) : 30;
         long deadline = System.currentTimeMillis() + (durationSec * 1000L);
@@ -53,12 +53,13 @@ public class DayPhaseService {
 
     public void startNight(String roomId) {
         GameState state = repo.get(roomId);
-        if (state == null) return;
+        if (state == null)
+            return;
 
         long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("werewolfDuration", 45) : 45;
         long deadline = System.currentTimeMillis() + (durationSec * 1000L);
         state.setPhase(GamePhase.NIGHT);
-        state.setNightActions(new HashMap<>());
+        state.setNightActions(new NightActions());
         state.setPhaseDeadline(deadline);
         repo.save(roomId, state);
 
@@ -92,13 +93,16 @@ public class DayPhaseService {
 
     public void handleVoteResult(VoteResultEvent event) {
         String idempotencyKey = "vote_result:" + event.getRoomId() + ":" + event.getRound();
-        if (repo.isProcessed(idempotencyKey)) return;
-        
+        if (repo.isProcessed(idempotencyKey))
+            return;
+
         // Use lock for resolving vote
-        if (!lockService.tryLock(event.getRoomId())) return;
+        if (!lockService.tryLock(event.getRoomId()))
+            return;
         try {
             GameState state = repo.get(event.getRoomId());
-            if (state == null || state.getPhase() != GamePhase.VOTE) return;
+            if (state == null || state.getPhase() != GamePhase.VOTE)
+                return;
 
             if (event.getEliminatedId() != null && state.getPlayers().containsKey(event.getEliminatedId())) {
                 state.getPlayers().get(event.getEliminatedId()).setAlive(false);
@@ -126,10 +130,12 @@ public class DayPhaseService {
 
     public void forceResolveVote(String roomId) {
         // Fallback for timeout
-        if (!lockService.tryLock(roomId)) return;
+        if (!lockService.tryLock(roomId))
+            return;
         try {
             GameState state = repo.get(roomId);
-            if (state == null || state.getPhase() != GamePhase.VOTE) return;
+            if (state == null || state.getPhase() != GamePhase.VOTE)
+                return;
             // No eliminate fallback:
             state.setRound(state.getRound() + 1);
             repo.save(roomId, state);

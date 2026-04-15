@@ -4,7 +4,9 @@ import com.werewolf.gameplay.kafka.GameEventProducer;
 import com.werewolf.gameplay.lock.RedisLockService;
 import com.werewolf.gameplay.model.GamePhase;
 import com.werewolf.gameplay.model.GameState;
+import com.werewolf.gameplay.model.NightActions;
 import com.werewolf.gameplay.model.PlayerState;
+import com.werewolf.gameplay.model.WitchPotions;
 import com.werewolf.gameplay.model.events.ChatChannelEvent;
 import com.werewolf.gameplay.model.events.PhaseChangedEvent;
 import com.werewolf.gameplay.model.events.RolesAssignedEvent;
@@ -43,7 +45,8 @@ public class GameInitService {
                 .phase(GamePhase.ROLE_REVEAL)
                 .round(1)
                 .players(players)
-                .nightActions(new HashMap<>())
+                .nightActions(new NightActions())
+                .witchPotions(WitchPotions.builder().build())
                 .config(event.getConfig())
                 .phaseDeadline(deadline)
                 .build();
@@ -80,16 +83,26 @@ public class GameInitService {
     }
 
     private List<String> buildRoleList(int size) {
-        int wolves = size >= 8 ? 3 : 1;
         List<String> roles = new ArrayList<>();
-        for (int i = 0; i < wolves; i++)
+        int wolves = size >= 9 ? 3 : 2;
+
+        for (int i = 0; i < wolves; i++) {
             roles.add("WEREWOLF");
+        }
         roles.add("SEER");
-        roles.add("GUARD"); // Using GUARD mapped to DOCTOR sometimes, sticking to GUARD as per night phase
-                            // doc
-        int villagers = size - wolves - 2;
-        for (int i = 0; i < villagers; i++)
+        if (size >= 8) {
+            roles.add("GUARD");
+        }
+        if (size >= 10) {
+            roles.add("WITCH");
+        }
+        if (size >= 12) {
+            roles.add("HUNTER");
+        }
+
+        while (roles.size() < size) {
             roles.add("VILLAGER");
+        }
         return roles;
     }
 }

@@ -4,8 +4,8 @@ import com.werewolf.gameplay.kafka.GameEventProducer;
 import com.werewolf.gameplay.lock.RedisLockService;
 import com.werewolf.gameplay.model.GamePhase;
 import com.werewolf.gameplay.model.GameState;
+import com.werewolf.gameplay.model.NightActions;
 import com.werewolf.gameplay.model.PlayerState;
-import com.werewolf.gameplay.model.NightAction;
 import com.werewolf.gameplay.model.events.ChatChannelEvent;
 import com.werewolf.gameplay.model.events.NightActionEvent;
 import com.werewolf.gameplay.model.events.PhaseChangedEvent;
@@ -14,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -32,19 +34,20 @@ public class NightPhaseService {
 
         GameState state = repo.get(event.getRoomId());
         if (state == null || state.getPhase() != GamePhase.NIGHT) return;
-        if (!state.getPlayers().get(event.getPlayerId()).isAlive()) return;
-
-        if ("WEREWOLF".equalsIgnoreCase(event.getRole())) {
-            PlayerState targetPlayer = state.getPlayers().get(event.getTargetId());
-            if (targetPlayer != null && "WEREWOLF".equalsIgnoreCase(targetPlayer.getRole())) {
-                return;
-            }
+        PlayerState actor = state.getPlayers().get(event.getPlayerId());
+        if (actor == null || !actor.isAlive()) return;
+        if (event.getTargetId() != null) {
+            PlayerState target = state.getPlayers().get(event.getTargetId());
+            if (target == null || !target.isAlive()) return;
         }
 
-        String actionKey = getActionKey(event.getPlayerId(), event.getRole());
-        if (state.getNightActions().containsKey(actionKey)) return;
+        NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+        state.setNightActions(actions);
 
-        state.getNightActions().put(actionKey, new NightAction(event.getTargetId()));
+        if (!applyNightAction(state, event)) {
+            return;
+        }
+
         repo.save(event.getRoomId(), state);
         repo.markProcessed(event.getEventId());
 
@@ -53,28 +56,72 @@ public class NightPhaseService {
         }
     }
 
-    private String getActionKey(String playerId, String role) {
-        if ("WEREWOLF".equalsIgnoreCase(role)) {
-            return "wolf_" + playerId;
-        }
-        return roleToActionKey(role);
-    }
+    private boolean applyNightAction(GameState state, NightActionEvent event) {
+        NightActions actions = state.getNightActions();
+        String role = event.getRole().toUpperCase();
 
-    private String roleToActionKey(String role) {
-        return switch (role.toUpperCase()) {
-            case "WEREWOLF" -> "wolves"; // Fallback, not used per player
-            case "SEER" -> "seer";
-            case "GUARD", "DOCTOR" -> "guard";
-            default -> role.toLowerCase();
+        return switch (role) {
+            case "GUARD", "DOCTOR" -> {
+                if (event.getTargetId() == null || event.getTargetId().equals(state.getLastGuardedId())
+                        || actions.getGuardTarget() != null) {
+                    yield false;
+                }
+                actions.setGuardTarget(event.getTargetId());
+                yield true;
+            }
+            case "SEER" -> {
+                if (event.getTargetId() == null || actions.getSeerTarget() != null) {
+                    yield false;
+                }
+                actions.setSeerTarget(event.getTargetId());
+                yield true;
+            }
+            case "WEREWOLF" -> {
+                PlayerState targetPlayer = state.getPlayers().get(event.getTargetId());
+                if (event.getTargetId() == null || actions.getWolfTarget() != null || targetPlayer == null
+                        || "WEREWOLF".equalsIgnoreCase(targetPlayer.getRole())) {
+                    yield false;
+                }
+                actions.setWolfTarget(event.getTargetId());
+                yield true;
+            }
+            case "WITCH" -> {
+                if (event.getTargetId() == null) {
+                    if (!state.getWitchPotions().isSavePotion()
+                            || actions.getWolfTarget() == null
+                            || actions.getWitchSaved() != null) {
+                        yield false;
+                    }
+                    actions.setWitchSaved(actions.getWolfTarget());
+                    state.getWitchPotions().setSavePotion(false);
+                    yield true;
+                }
+                if (!state.getWitchPotions().isKillPotion() || actions.getWitchPoisoned() != null) {
+                    yield false;
+                }
+                actions.setWitchPoisoned(event.getTargetId());
+                state.getWitchPotions().setKillPotion(false);
+                yield true;
+            }
+            default -> false;
         };
     }
 
     private boolean allActionsReceived(GameState state) {
-        Set<String> required = state.getPlayers().entrySet().stream()
-                .filter(e -> e.getValue().isAlive() && List.of("WEREWOLF", "SEER", "GUARD", "DOCTOR").contains(e.getValue().getRole()))
-                .map(e -> getActionKey(e.getKey(), e.getValue().getRole()))
-                .collect(Collectors.toSet());
-        return state.getNightActions().keySet().containsAll(required);
+        NightActions actions = state.getNightActions();
+
+        if (hasAliveRole(state, "GUARD") && actions.getGuardTarget() == null) {
+            return false;
+        }
+        if (hasAliveRole(state, "SEER") && actions.getSeerTarget() == null) {
+            return false;
+        }
+        return !hasAliveRole(state, "WEREWOLF") || actions.getWolfTarget() != null;
+    }
+
+    private boolean hasAliveRole(GameState state, String role) {
+        return state.getPlayers().values().stream()
+                .anyMatch(player -> player.isAlive() && role.equalsIgnoreCase(player.getRole()));
     }
 
     public void resolveNight(String roomId) {
@@ -82,33 +129,34 @@ public class NightPhaseService {
         try {
             GameState state = repo.get(roomId);
             if (state == null || state.getPhase() != GamePhase.NIGHT) return;
-
-            Map<String, Long> wolfVoteCounts = state.getNightActions().entrySet().stream()
-                    .filter(e -> e.getKey().startsWith("wolf_"))
-                    .map(e -> e.getValue().getTargetId())
-                    .collect(Collectors.groupingBy(target -> target, Collectors.counting()));
-            
-            long maxVotes = wolfVoteCounts.values().stream()
-                    .max(Long::compare)
-                    .orElse(0L);
-
-            List<String> tiedTargets = wolfVoteCounts.entrySet().stream()
-                    .filter(e -> e.getValue() == maxVotes)
-                    .map(Map.Entry::getKey)
-                    .toList();
-
-            String wolfTarget = tiedTargets.isEmpty() ? null : tiedTargets.get(new Random().nextInt(tiedTargets.size()));
-
-            String guardTarget = Optional.ofNullable(state.getNightActions().get("guard")).map(NightAction::getTargetId).orElse(null);
+            NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+            String wolfTarget = actions.getWolfTarget();
+            String guardTarget = actions.getGuardTarget();
+            String witchSaved = actions.getWitchSaved();
+            String witchPoisoned = actions.getWitchPoisoned();
 
             List<String> newlyDeadPlayers = new ArrayList<>();
-            if (wolfTarget != null && !wolfTarget.equals(guardTarget)) {
-                state.getPlayers().get(wolfTarget).setAlive(false);
+            if (wolfTarget != null && !wolfTarget.equals(guardTarget) && !wolfTarget.equals(witchSaved)) {
                 newlyDeadPlayers.add(wolfTarget);
             }
+            if (witchPoisoned != null && !newlyDeadPlayers.contains(witchPoisoned)) {
+                newlyDeadPlayers.add(witchPoisoned);
+            }
 
-            state.getNightActions().clear();
+            for (String deadPlayerId : newlyDeadPlayers) {
+                PlayerState player = state.getPlayers().get(deadPlayerId);
+                if (player != null) {
+                    player.setAlive(false);
+                }
+            }
+
+            state.setLastGuardedId(guardTarget);
+            state.setNightActions(new NightActions());
             state.getPlayers().values().forEach(p -> p.setProtectedThisNight(false));
+
+            if (!newlyDeadPlayers.isEmpty() && endGameService.checkEndGame(roomId, state)) {
+                return;
+            }
 
             state.setPhase(GamePhase.DISCUSS);
             long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("discussDuration", 60) : 60;
@@ -136,10 +184,6 @@ public class NightPhaseService {
                     .roomId(roomId).channel("all").enabled(true)
                     .allowedGuestIds(alivePlayerIds)
                     .round(state.getRound()).build());
-
-            if (!newlyDeadPlayers.isEmpty()) {
-                endGameService.checkEndGame(roomId, state);
-            }
         } finally {
             lockService.releaseLock(roomId);
         }
