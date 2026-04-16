@@ -94,7 +94,7 @@ export function RoomProvider({
   const isCreator = locationState?.isCreator ?? false;
   const initialRoom = locationState?.initialRoom;
   const { guest } = useGuest();
-  const { send, on } = useWs();
+  const { send, on, status: wsStatus } = useWs();
   const api = useApi();
   const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
@@ -119,8 +119,13 @@ export function RoomProvider({
   const msgCounter = useRef(Date.now());
 
   // Guests send JOIN_ROOM; the host already has a session from CREATE_ROOM.
+  // Wait for WS to be connected before sending — avoids drop on fresh page load via link.
+  const joinSentRef = useRef(false);
   useEffect(() => {
     if (isCreator) return;
+    if (wsStatus !== "connected") return;
+    if (joinSentRef.current) return;
+    joinSentRef.current = true;
     send({
       type: "JOIN_ROOM",
       guestId: guest.guestId,
@@ -128,7 +133,7 @@ export function RoomProvider({
       roomCode,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomCode]);
+  }, [roomCode, wsStatus]);
 
   // Subscribe to ROOM_UPDATED — populate players and room state
   useEffect(() => {
