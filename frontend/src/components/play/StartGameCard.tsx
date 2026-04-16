@@ -15,7 +15,7 @@ export function StartGameCard({ tab, onTabChange, onPlay, onCreateClick }: Start
 
       {/* Floating action buttons — positioned above the card top edge */}
       <div className="sgc-actions">
-        <button className="sgc-play-btn" onClick={onPlay}>
+        <button className="sgc-play-btn" onClick={onPlay} disabled>
           <img src="/img/icons/play-button.svg" alt="Play" className="sgc-btn-icon" />
           <span>Play</span>
         </button>
