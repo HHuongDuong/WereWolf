@@ -26,7 +26,7 @@ import {
 export type WsStatus = "connecting" | "connected" | "disconnected";
 
 export type ServerMsg =
-  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; hostId: string; status: "waiting" | "in_game" | "finished"; players: Array<{ guestId: string; displayName: string }>; maxPlayers: number; config: any }
+  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; hostId: string; status: "waiting" | "in_game" | "finished"; players: Array<{ guestId: string; displayName: string }> }
   | { type: "ROOM_CANCELLED"; roomId: string }
   | { type: "role_assigned"; role: string }
   | { type: "phase_changed"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }
@@ -120,6 +120,7 @@ export function WsProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onmessage = (e: MessageEvent<string>) => {
+      console.log("[WS] raw:", e.data);
       try {
         const { event, data } = JSON.parse(e.data) as { event: string; data: Record<string, unknown> };
         dispatch({ type: event, ...data } as ServerMsg);

@@ -32,7 +32,7 @@ const DEFAULT_SPECIAL: RoleCard[] = [
 export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: PanelProps) {
   const { room, players, isHost } = useRoom();
 
-  const [maxPlayers, setMaxPlayers] = useState(room.maxPlayers);
+  const [maxPlayers, setMaxPlayers] = useState(8);
   const [composition, setComposition] = useState(50);
   const [primary, setPrimary] = useState<RoleCard[]>(DEFAULT_PRIMARY);
   const [special, setSpecial] = useState<RoleCard[]>(DEFAULT_SPECIAL);
@@ -67,7 +67,7 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
             </div>
             <span className="rp-state-name">Waiting</span>
             <span className="rp-state-count">
-              {players.length}<span>/{room.maxPlayers}</span>
+              {players.length}<span>/{maxPlayers}</span>
             </span>
           </div>
           {lobbyOpen && (

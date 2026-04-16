@@ -1,20 +1,35 @@
 /* Tailwind v4 utilities — regenerate with: bun run tw:build */
 @import "./styles/tw.css";
 
+/* ── Foundations ── */
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/animations.css";
-@import "./styles/header.css";
-@import "./styles/hero.css";
-@import "./styles/resume.css";
-@import "./styles/roles.css";
-@import "./styles/leaderboard.css";
-@import "./styles/skins.css";
-@import "./styles/app-download.css";
-@import "./styles/footer.css";
-@import "./styles/auth.css";
-@import "./styles/play-header.css";
-@import "./styles/rooms.css";
-@import "./styles/game.css";
+
+/* ── Layout ── */
+@import "./styles/layout/header.css";
+@import "./styles/layout/footer.css";
+@import "./styles/layout/play-header.css";
+
+/* ── Pages ── */
+@import "./styles/pages/hero.css";
+@import "./styles/pages/auth.css";
+@import "./styles/pages/resume.css";
+@import "./styles/pages/roles.css";
+@import "./styles/pages/leaderboard.css";
+@import "./styles/pages/skins.css";
+@import "./styles/pages/app-download.css";
+
+/* ── Rooms ── */
+@import "./styles/rooms/rooms-list.css";
+@import "./styles/rooms/room-lobby.css";
+@import "./styles/rooms/play-page.css";
+@import "./styles/rooms/lobby-scene.css";
+
+/* ── Game ── */
+@import "./styles/game/game-layout.css";
+@import "./styles/game/game-phases.css";
+
+/* ── Utilities ── */
 @import "./styles/toast.css";
 @import "./styles/responsive.css";

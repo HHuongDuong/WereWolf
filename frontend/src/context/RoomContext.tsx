@@ -1,7 +1,7 @@
 /**
  * RoomContext — active room / game-lobby state.
  *
- * Wraps individual room routes with <RoomProvider roomId={id}>.
+ * Wraps individual room routes with <RoomProvider roomCode={code}>.
  * On mount: fetches room info via REST, then emits JOIN_ROOM via WS.
  * Subscribes to ROOM_UPDATED for live player/status updates.
  */
@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useGuest } from "./AuthContext";
 import { useWs } from "./WsContext";
 import { useApi } from "./ApiContext";
@@ -72,55 +72,69 @@ interface RoomContextValue {
 const RoomContext = createContext<RoomContextValue | null>(null);
 
 export function RoomProvider({
-  roomId,
+  roomCode,
   children,
 }: {
-  roomId: string;
+  roomCode: string;
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const locationState = state as { isCreator?: boolean; initialRoom?: { roomId: string; roomCode: string; hostId: string; status: string; players: Array<{ guestId: string; displayName: string }> } } | null;
+  const isCreator = locationState?.isCreator ?? false;
+  const initialRoom = locationState?.initialRoom;
   const { guest } = useGuest();
   const { send, on } = useWs();
   const api = useApi();
   const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
   const [room, setRoom] = useState<RoomInfo>({
-    id: roomId,
-    code: "",
-    hostId: "",
-    maxPlayers: 12,
-    status: "waiting",
+    id: initialRoom?.roomId ?? "",
+    code: initialRoom?.roomCode ?? roomCode,
+    hostId: initialRoom?.hostId ?? "",
+    maxPlayers: 8,
+    status: (initialRoom?.status as RoomStatus) ?? "waiting",
     settings: [],
   });
 
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Player[]>(
+    initialRoom?.players.map(p => ({
+      guestId: p.guestId,
+      displayName: p.displayName,
+      isHost: p.guestId === initialRoom.hostId,
+      isYou: p.guestId === guest.guestId,
+    })) ?? []
+  );
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const msgCounter = useRef(Date.now());
 
-  // Register WS session via JOIN_ROOM immediately
+  // Guests send JOIN_ROOM; the host already has a session from CREATE_ROOM.
   useEffect(() => {
-    // Send JOIN_ROOM right away so the gateway emits ROOM_UPDATED.
+    if (isCreator) return;
     send({
       type: "JOIN_ROOM",
       guestId: guest.guestId,
       displayName: guest.displayName,
-      roomCode: room.code || roomId,
+      roomCode,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomCode]);
 
   // Subscribe to ROOM_UPDATED — populate players and room state
   useEffect(() => {
     return on("ROOM_UPDATED", (msg) => {
+      console.log("[RoomContext] ROOM_UPDATED received:", msg);
       const newPlayers: Player[] = msg.players.map(p => ({
         guestId: p.guestId,
         displayName: p.displayName,
         isHost: p.guestId === msg.hostId,
         isYou: p.guestId === guest.guestId,
       }));
+      console.log("[RoomContext] newPlayers:", newPlayers);
       setPlayers(newPlayers);
       setRoom(r => ({
         ...r,
+        id: msg.roomId,
         code: msg.roomCode,
         hostId: msg.hostId,
         status: msg.status as RoomStatus,
@@ -165,12 +179,12 @@ export function RoomProvider({
       nextRound();
       setPhase("night");
     }, 5000);
-  }, [canStart, send, roomId, guest.guestId, players, setPhase, setMyRole, setGamePlayers, nextRound]);
+  }, [canStart, send, room.id, guest.guestId, players, setPhase, setMyRole, setGamePlayers, nextRound]);
 
   const leaveRoom = useCallback(() => {
-    send({ type: "LEAVE_ROOM", roomId, guestId: guest.guestId });
+    send({ type: "LEAVE_ROOM", roomId: room.id, guestId: guest.guestId });
     navigate("/rooms");
-  }, [send, roomId, guest.guestId, navigate]);
+  }, [send, room.id, guest.guestId, navigate]);
 
   const updateSettings = useCallback((settings: SettingRow[]) => {
     setRoom(r => ({ ...r, settings }));

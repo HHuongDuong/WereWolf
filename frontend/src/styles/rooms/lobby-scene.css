@@ -187,7 +187,7 @@
   bottom: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -204,8 +204,8 @@
   top: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   z-index: 2;
   filter: drop-shadow(0 0 4px rgba(212,175,55,0.8));
 }
@@ -217,7 +217,7 @@
 
 /* "You" tag */
 .camp-char-you {
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--cta);
   background: rgba(91,94,247,0.25);
@@ -231,8 +231,8 @@
   position: absolute;
   top: 4px;
   right: -4px;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: none;
   background: rgba(196,58,58,0.9);
@@ -247,7 +247,7 @@
   pointer-events: all;
 }
 
-.camp-char-kick img { width: 7px; height: 7px; filter: invert(1); }
+.camp-char-kick img { width: 11px; height: 11px; filter: invert(1); }
 .camp-char:hover .camp-char-kick { opacity: 1; }
 
 /* ── Lobby Action Message ── */
@@ -257,19 +257,18 @@
   left: 36.5%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 14px;
+  gap: 22px;
   z-index: 5;
-  text-align: center;
-  background: rgba(14, 14, 20, 0.78);
+  background: rgba(14, 14, 20, 0.82);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 22px;
-  padding: 28px 36px 24px;
-  min-width: 280px;
-  max-width: 340px;
+  padding: 24px 28px;
+  min-width: 420px;
+  max-width: 560px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.55);
   animation: lamIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -279,35 +278,67 @@
   to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
+/* Left column: icon or QR */
+.lam-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .lam-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255,255,255,0.7);
-  margin-bottom: 2px;
 }
 
-.lam-icon img { width: 22px; height: 22px; object-fit: contain; opacity: 0.8; }
+.lam-icon img { width: 40px; height: 40px; object-fit: contain; opacity: 0.8; }
+
+/* QR code wrapper */
+.lam-qr {
+  width: 112px;
+  height: 112px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+/* Right column: title, desc, actions */
+.lam-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
 
 .lam-title {
   font-family: 'Cinzel', serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--moon-white);
   letter-spacing: 0.06em;
+  margin: 0;
 }
 
 .lam-desc {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
   line-height: 1.5;
-  max-width: 220px;
-  text-align: center;
+  margin: 0;
 }
 
 /* Public / Private visibility toggle */
@@ -320,12 +351,12 @@
 }
 
 .lam-vis-btn {
-  padding: 6px 18px;
+  padding: 5px 16px;
   border: none;
   background: transparent;
   color: var(--text-dim);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
@@ -337,18 +368,20 @@
 }
 
 .lam-open-btn {
-  padding: 11px 32px;
+  padding: 9px 26px;
   border: none;
   border-radius: 99px;
   background: linear-gradient(135deg, #f5a623 0%, #e8902a 100%);
   color: #1a0e00;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(245,166,35,0.4);
   transition: transform 0.15s, box-shadow 0.2s;
+  align-self: stretch;
+  text-align: center;
 }
 
 .lam-open-btn:hover {
@@ -360,20 +393,27 @@
 .lam-invite-link {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 99px;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 10px;
   border: 1px solid rgba(94,83,213,0.35);
   background: rgba(94,83,213,0.1);
   color: #a8a4f8;
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s, color 0.18s;
-  word-break: break-all;
+  align-self: stretch;
   text-align: left;
+  overflow: hidden;
+}
+
+.lam-invite-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lam-invite-link:hover {
@@ -435,7 +475,7 @@
 }
 
 .lcp-msg-user {
-  font-size: 0.72rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: rgba(255,255,255,0.5);
 }
@@ -443,12 +483,12 @@
 .lcp-msg--own .lcp-msg-user { color: #8b86e8; }
 
 .lcp-msg-time {
-  font-size: 0.62rem;
+  font-size: 0.93rem;
   color: rgba(255,255,255,0.2);
 }
 
 .lcp-msg-body {
-  font-size: 0.85rem;
+  font-size: 1.275rem;
   color: #fff;
   line-height: 1.45;
   word-break: break-word;
@@ -481,7 +521,7 @@
   padding: 0 52px 0 28px;
   color: #fff;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1.35rem;
   outline: none;
 }
 
@@ -491,8 +531,8 @@
 .lcp-send-btn {
   position: absolute;
   right: 30px;
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
   border-radius: 50px;
   border: none;
@@ -505,7 +545,7 @@
   transition: opacity 0.2s;
 }
 
-.lcp-send-btn img { width: 14px; height: 14px; object-fit: contain; filter: invert(1); margin-left: 2px; }
+.lcp-send-btn img { width: 21px; height: 21px; object-fit: contain; filter: invert(1); margin-left: 2px; }
 .lcp-send-btn:not(:disabled):hover { opacity: 0.8; }
 .lcp-send-btn:disabled { opacity: 0; pointer-events: none; }
 
@@ -523,7 +563,7 @@
   align-items: center;
   background-color: #1f1f2e;
   border-radius: 50px;
-  height: 32px;
+  height: 48px;
   cursor: pointer;
   text-decoration: none;
   border: none;
@@ -531,8 +571,8 @@
 }
 
 .ltl-hub-icon {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   background-color: #0e0e14;
   border-radius: 50px;
   display: flex;
@@ -542,8 +582,8 @@
 }
 
 .ltl-hub-icon img {
-  width: 14px;
-  height: 14px;
+  width: 21px;
+  height: 21px;
   object-fit: contain;
   padding-bottom: 2px;
   filter: invert(1);
@@ -552,7 +592,7 @@
 
 .ltl-hub-name {
   padding: 0 14px 0 12px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 800;
   font-family: 'Cinzel', serif;
   color: #fff;
@@ -595,8 +635,8 @@
   top: 50%;
   transform: translateY(-50%);
   left: 0;
-  width: 36px;
-  height: 36px;
+  width: 54px;
+  height: 54px;
   border-radius: 100px;
   background-color: #0e0e14;
   display: flex;
@@ -606,21 +646,21 @@
 }
 
 .rp-state-icon img {
-  width: 18px;
-  height: 18px;
+  width: 27px;
+  height: 27px;
   object-fit: contain;
   filter: invert(1);
   opacity: 0.7;
 }
 
 .rp-state-name {
-  margin-left: 48px;
-  font-size: 14px;
+  margin-left: 66px;
+  font-size: 21px;
   font-weight: 800;
 }
 
 .rp-state-count {
-  font-size: 14px;
+  font-size: 21px;
   font-weight: 500;
   text-align: right;
   margin-left: 12px;
@@ -646,8 +686,8 @@
 }
 
 .rp-toggle-btn img {
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   filter: invert(1);
 }
@@ -657,8 +697,8 @@
 
 .rp-settings-btn {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 54px;
+  height: 54px;
   background-color: #0e0e14;
   border: none;
   border-radius: 100px;
@@ -671,8 +711,8 @@
 }
 
 .rp-settings-btn img {
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   filter: invert(1);
   opacity: 0.8;
@@ -721,7 +761,7 @@
 }
 
 .lsp-section-title {
-  font-size: 0.75rem;
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -729,7 +769,7 @@
 }
 
 .lsp-composition-label {
-  font-size: 0.75rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -742,13 +782,13 @@
 }
 
 .lsp-stepper-arrow {
-  width: 30px;
-  height: 30px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.05);
   color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 1.65rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -760,14 +800,14 @@
 .lsp-stepper-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .lsp-stepper-num {
-  width: 36px;
-  height: 36px;
+  width: 54px;
+  height: 54px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.04);
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1.35rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.18s, color 0.18s, border-color 0.18s;
@@ -779,7 +819,7 @@
   color: #fff;
 }
 
-.lsp-stepper-spacer { width: 36px; }
+.lsp-stepper-spacer { width: 54px; }
 
 /* Composition slider */
 .lsp-slider {
@@ -808,7 +848,7 @@
 /* Role cards grid */
 .lsp-roles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: 10px;
 }
 
@@ -827,8 +867,8 @@
 
 .lsp-role-portrait {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 78px;
+  height: 78px;
   border-radius: 12px;
   background: rgba(255,255,255,0.05);
   display: flex;
@@ -855,12 +895,12 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 18px;
-  height: 18px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
   background: #5e53d5;
   border: 2px solid #1f1f2e;
-  font-size: 0.65rem;
+  font-size: 0.975rem;
   font-weight: 800;
   color: #fff;
   display: flex;
@@ -869,7 +909,7 @@
 }
 
 .lsp-role-name {
-  font-size: 0.65rem;
+  font-size: 0.975rem;
   font-weight: 600;
   color: var(--text-muted);
   text-align: center;
@@ -882,13 +922,13 @@
 }
 
 .lsp-role-btns button {
-  width: 22px;
-  height: 22px;
+  width: 33px;
+  height: 33px;
   border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.05);
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 1.275rem;
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -43,12 +43,14 @@ export function RoomsPage() {
 
     // Navigate on first ROOM_UPDATED after CREATE_ROOM
     const unsubRoom = on("ROOM_UPDATED", (msg) => {
+      console.log("[RoomsPage] ROOM_UPDATED received:", msg);
       cleanup();
-      navigate(`/rooms/${msg.roomId}`);
+      navigate(`/rooms/${msg.roomCode}`, { state: { isCreator: true, initialRoom: msg } });
     });
 
     // Surface gateway validation / service errors immediately
     const unsubErr = on("ERROR", (msg) => {
+      console.log("[RoomsPage] ERROR received:", msg);
       cleanup();
       toast(`${msg.code}: ${msg.message}`, "error");
     });
@@ -59,6 +61,7 @@ export function RoomsPage() {
       toast("No response from gateway. Check that Kafka and gateway_service are running.", "error");
     }, 8000);
 
+    console.log("[RoomsPage] sending CREATE_ROOM", { guestId: guest.guestId, displayName: guest.displayName });
     send({
       type: "CREATE_ROOM",
       guestId: guest.guestId,
