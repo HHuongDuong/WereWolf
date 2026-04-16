@@ -110,7 +110,9 @@ services:
     networks:
       - werewolf-net
     healthcheck:
+
       test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep Mode"]
+
       interval: 10s
       timeout: 5s
       retries: 5
