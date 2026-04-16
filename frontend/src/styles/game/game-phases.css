@@ -1,30 +1,3 @@
-/* ══════════════════════════════════════════════════════════════════════════════
-   game.css — In-game phase UI styles
-   All game screens are position:fixed and cover the full viewport (z-index 50)
-   so they overlay the Header/Footer without modifying the route structure.
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-/* ── Layout shell ─────────────────────────────────────────────────────────── */
-
-.game-view {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: var(--bg-deep);
-  overflow: hidden;
-}
-
-.phase-fullscreen {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-}
-
 /* ── Role Reveal Phase ────────────────────────────────────────────────────── */
 
 .role-reveal {
@@ -104,7 +77,6 @@
   border: 1.5px solid rgba(46, 204, 113, 0.4);
 }
 
-/* compact variant used in elimination reveal */
 .role-reveal-badge.compact {
   font-size: 1rem;
   padding: 8px 16px;
@@ -222,7 +194,7 @@
   50%       { opacity: 1;   }
 }
 
-/* Seer result reveal */
+/* Seer result */
 .seer-result-reveal {
   text-align: center;
 }
@@ -240,194 +212,6 @@
 
 .seer-result.wolf     { color: var(--wolf-red);    background: var(--wolf-red-bg); }
 .seer-result.villager { color: var(--village-blue); background: var(--village-blue-bg); }
-
-/* ── Game HUD ─────────────────────────────────────────────────────────────── */
-
-.game-hud {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  width: 100%;
-  padding: 10px 24px;
-  background: rgba(14, 13, 28, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-}
-
-.hud-round {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-}
-
-.hud-phase-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 99px;
-}
-
-.hud-phase-badge.phase-day    { color: var(--solo-gold);   background: var(--solo-gold-bg); }
-.hud-phase-badge.phase-voting { color: var(--wolf-red);    background: var(--wolf-red-bg); }
-
-/* ── Phase Timer ──────────────────────────────────────────────────────────── */
-
-.phase-timer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-  flex: 1;
-  max-width: 280px;
-}
-
-.phase-timer-label {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  transition: color 0.4s;
-}
-
-.phase-timer-label.warning {
-  color: var(--wolf-red);
-  font-weight: 700;
-}
-
-.phase-timer-track {
-  width: 100%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 99px;
-  overflow: hidden;
-}
-
-.phase-timer-fill {
-  height: 100%;
-  background: var(--village-blue);
-  border-radius: 99px;
-  transition: width 1s linear, background 0.5s;
-}
-
-.phase-timer-fill.warning {
-  background: var(--wolf-red);
-  animation: timerPulse 0.8s ease-in-out infinite;
-}
-
-@keyframes timerPulse {
-  0%, 100% { opacity: 1;   }
-  50%       { opacity: 0.5; }
-}
-
-/* ── Shared PlayerCard (game context) ─────────────────────────────────────── */
-
-.game-player-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-md);
-  transition: border-color 0.2s, background 0.2s;
-  cursor: default;
-}
-
-.game-player-card.clickable { cursor: pointer; }
-
-.game-player-card.clickable:hover {
-  border-color: rgba(196, 58, 58, 0.3);
-  background: rgba(196, 58, 58, 0.04);
-}
-
-.game-player-card.selected {
-  border-color: var(--wolf-red);
-  background: rgba(196, 58, 58, 0.07);
-}
-
-.game-player-card.dead {
-  opacity: 0.4;
-  text-decoration: line-through;
-}
-
-.game-player-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.game-player-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.game-player-card-name {
-  font-size: 0.87rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.game-player-card-you {
-  font-size: 0.65rem;
-  color: var(--cta);
-  background: rgba(91, 94, 247, 0.12);
-  padding: 1px 5px;
-  border-radius: 4px;
-  width: fit-content;
-}
-
-.game-player-card-status {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.game-player-action-btn {
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border: 1px solid rgba(196, 58, 58, 0.5);
-  background: transparent;
-  color: var(--wolf-red);
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.game-player-action-btn:hover {
-  background: var(--wolf-red-bg);
-}
-
-.game-player-action-btn.selected {
-  background: var(--wolf-red);
-  color: #fff;
-  border-color: var(--wolf-red);
-}
-
-.game-player-action-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 
 /* ── Day Phase ────────────────────────────────────────────────────────────── */
 
@@ -834,7 +618,7 @@
   gap: 12px;
 }
 
-.game-over-result.wolves   { --result-color: var(--wolf-red);    --result-glow: rgba(196, 58, 58, 0.3);   }
+.game-over-result.wolves    { --result-color: var(--wolf-red);    --result-glow: rgba(196, 58, 58, 0.3);   }
 .game-over-result.villagers { --result-color: var(--village-blue); --result-glow: rgba(61, 139, 196, 0.3); }
 
 .game-over-title {
@@ -944,37 +728,6 @@
 .game-over-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* ── DEV Skip Bar ─────────────────────────────────────────────────────────── */
-
-.dev-skip-bar {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  display: flex;
-  gap: 6px;
-  z-index: 100;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  max-width: 320px;
-}
-
-.dev-skip-btn {
-  background: rgba(91, 94, 247, 0.85);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: background 0.15s;
-}
-
-.dev-skip-btn:hover {
-  background: var(--cta);
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
