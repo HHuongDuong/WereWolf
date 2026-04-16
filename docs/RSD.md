@@ -221,7 +221,7 @@ CREATE INDEX idx_messages_room_channel
 | Topic | Producer | Consumer | Payload |
 |-------|----------|----------|---------|
 | `room.started` | room-service | gameplay-service | `{ roomId, roomCode, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
-| `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, players: [{ guestId, displayName }] }` |
+| `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, maxPlayers, config, players: [{ guestId, displayName }] }` |
 | `room.deleted` | room-service | gateway-service | `{ roomId }` |
 | `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], eliminatedId?: string } }` |
 | `game.chat.channel.updated` | gameplay-service | chat-service | `{ roomId, channel, enabled, allowedGuestIds: [] }` |
@@ -255,10 +255,9 @@ CREATE INDEX idx_messages_room_channel
 | `reconnect` | `{ guestId, roomId }` | | Chưa implement |
 
 ### Gateway → Client
-
 | Event | Payload | Gửi tới | Ghi chú |
 |-------|---------|---------|---------|
-| `ROOM_UPDATED` | `{ players[], hostId, status, roomCode, maxPlayers, config }` | Broadcast room | Mỗi khi có người join/out hoặc config thay đổi |
+| `ROOM_UPDATED` | `{ roomId, roomCode, hostId, status, maxPlayers, config, players: [{ guestId, displayName }] }` | Broadcast room | Mỗi khi phòng được tạo, có người join/out hoặc cấu hình phòng thay đổi |
 | `ROOM_CANCELLED` | `{ roomId }` | Broadcast room | Khi host cancel phòng |
 | `ERROR` | `{ code, message }` | **Private** 1 player | Validation fail, action không hợp lệ |
 # CÁC CÁI SAU LÀ BE CHƯA IMPLEMENT
