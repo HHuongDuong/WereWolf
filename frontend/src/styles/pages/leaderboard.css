@@ -2,7 +2,7 @@
 .leaderboard {
   position: relative;
   width: 100%;
-  padding: 100px 4vw;
+  padding: 6.25rem 4vw;
   background: #1c1b35;
   display: flex;
   justify-content: center;
@@ -10,18 +10,18 @@
 }
 
 .leaderboard-inner {
-  width: 1110px;
+  width: 69.375rem;
   max-width: 90%;
   display: flex;
   flex-direction: column;
 }
 
 .leaderboard-header {
-  margin-bottom: 70px;
+  margin-bottom: 4.375rem;
 }
 
 .leaderboard-header h2 {
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 1rem;
@@ -29,7 +29,7 @@
 }
 
 .leaderboard-header p {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 300;
   color: rgba(255,255,255,0.6);
   line-height: 1.5;
@@ -54,7 +54,7 @@
 
 .lb-podium {
   position: relative;
-  height: 280px;
+  height: 17.5rem;
   width: 100%;
 }
 
@@ -77,7 +77,7 @@
   width: 50%;
   background: #171721;
   border-radius: 45px;
-  padding: 36px 24px;
+  padding: 2.25rem 1.5rem;
 }
 
 /* Countdown pill */
@@ -87,11 +87,11 @@
   justify-content: center;
   align-items: center;
   top: 0;
-  left: 40px;
+  left: 2.5rem;
   transform: translateY(-50%);
-  padding: 0 28px;
+  padding: 0 1.75rem;
   background: #000;
-  height: 48px;
+  height: 3rem;
   border-radius: 100px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   z-index: 4;
@@ -99,7 +99,7 @@
 }
 
 .countdown-icon {
-  height: 18px;
+  height: 1.125rem;
   opacity: 0.8;
   filter: invert(1);
 }
@@ -139,7 +139,7 @@
 .lb-row {
   display: flex;
   align-items: center;
-  height: 78px;
+  height: 4.875rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .lb-row:last-of-type { border-bottom: none; }
@@ -165,10 +165,10 @@
   display: flex;
   background: #0e0e14;
   border-radius: 200px;
-  width: 29px;
-  height: 29px;
+  width: 1.8125rem;
+  height: 1.8125rem;
   flex-shrink: 0;
-  margin-right: 20px;
+  margin-right: 1.25rem;
 }
 
 .lb-avatar-container.lb-premium {
@@ -206,9 +206,9 @@
 }
 
 .lb-elo-icon {
-  width: 20px;
-  height: 18px;
-  margin-right: 10px;
+  width: 1.25rem;
+  height: 1.125rem;
+  margin-right: 0.625rem;
   opacity: 0.7;
   filter: invert(1);
 }
@@ -225,26 +225,26 @@
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 80px;
+  height: 5rem;
   background: linear-gradient(0deg, #171721, rgba(23,23,33,0));
   pointer-events: none;
 }
 
 @media (max-width: 900px) {
   .leaderboard-content { flex-direction: column; align-items: center; }
-  .lb-podium-container { width: 280px; max-width: 90%; }
-  .lb-podium { height: 200px; }
+  .lb-podium-container { width: 17.5rem; max-width: 90%; }
+  .lb-podium { height: 12.5rem; }
   .lb-second { bottom: 6.4vw; }
   .lb-first  { bottom: 10.6vw; }
   .lb-third  { bottom: 4.6vw; }
-  .leaderboard-box { width: 90%; margin-top: 50px; margin-bottom: 80px; }
+  .leaderboard-box { width: 90%; margin-top: 3.125rem; margin-bottom: 5rem; }
   .leaderboard-header h2 { font-size: 1.375rem; }
   .lb-rank-num { font-size: 1.875rem; }
   .lb-table-header, .lb-username { font-size: 0.8125rem; }
   .lb-elo-num { font-size: 0.8125rem; }
-  .lb-row { height: 70px; }
+  .lb-row { height: 4.375rem; }
   .lb-col-rank { width: 22%; }
   .lb-col-player { width: 48%; }
-  .lb-avatar-container { width: 24px; height: 24px; margin-right: 8px; }
-  .lb-scrollable { height: 190px; overflow: hidden; }
+  .lb-avatar-container { width: 1.5rem; height: 1.5rem; margin-right: 0.5rem; }
+  .lb-scrollable { height: 11.875rem; overflow: hidden; }
 }

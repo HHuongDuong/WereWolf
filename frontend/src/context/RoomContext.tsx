@@ -44,6 +44,15 @@ export interface SettingRow {
   accent?: "blue" | "red" | "gold" | "dim";
 }
 
+export interface PhaseConfig {
+  guardDuration?: number;
+  seerDuration?: number;
+  werewolfDuration?: number;
+  witchDuration?: number;
+  discussDuration?: number;
+  voteDuration?: number;
+}
+
 export interface RoomInfo {
   id: string;
   code: string;
@@ -65,6 +74,7 @@ interface RoomContextValue {
   startGame(): void;
   leaveRoom(): void;
   updateSettings(settings: SettingRow[]): void;
+  configureRoom(maxPlayers?: number, config?: PhaseConfig): void;
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -190,6 +200,11 @@ export function RoomProvider({
     setRoom(r => ({ ...r, settings }));
   }, []);
 
+  const configureRoom = useCallback((maxPlayers?: number, config?: PhaseConfig) => {
+    send({ type: "CONFIGURE_ROOM", guestId: guest.guestId, ...(maxPlayers !== undefined && { maxPlayers }), ...(config !== undefined && { config }) });
+    if (maxPlayers !== undefined) setRoom(r => ({ ...r, maxPlayers }));
+  }, [send, guest.guestId]);
+
   return (
     <RoomContext.Provider
       value={{
@@ -203,6 +218,7 @@ export function RoomProvider({
         startGame,
         leaveRoom,
         updateSettings,
+        configureRoom,
       }}
     >
       {children}

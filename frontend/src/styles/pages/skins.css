@@ -31,20 +31,20 @@
 .skins-inner {
   position: relative;
   z-index: 1;
-  padding: 80px 0 60px;
+  padding: 5rem 0 3.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .skins-title {
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   line-height: 1.23;
   text-align: center;
   color: #fff;
-  margin-bottom: 60px;
-  padding: 0 20px;
+  margin-bottom: 3.75rem;
+  padding: 0 1.25rem;
 }
 
 /* Main 3-column content */
@@ -52,8 +52,8 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 40px;
-  width: 1110px;
+  gap: 2.5rem;
+  width: 69.375rem;
   max-width: 90%;
 }
 
@@ -62,21 +62,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 1rem;
 }
 
 /* Color swatches row */
 .skin-colors {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
 .skin-color-swatch {
-  width: 22px;
-  height: 22px;
+  width: 1.375rem;
+  height: 1.375rem;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.2);
   cursor: pointer;
@@ -98,10 +98,10 @@
 
 .skin-item-group {
   position: relative;
-  margin-right: 26px;
-  margin-bottom: 26px;
-  width: 90px;
-  height: 90px;
+  margin-right: 1.625rem;
+  margin-bottom: 1.625rem;
+  width: 5.625rem;
+  height: 5.625rem;
 }
 
 .skin-item {
@@ -150,7 +150,7 @@
 
 .skins-display-platform {
   position: absolute;
-  bottom: -15px;
+  bottom: -0.9375rem;
   left: 50%;
   transform: translateX(-50%);
   width: 160%;
@@ -158,7 +158,7 @@
 .skins-display-platform img { width: 100%; }
 
 .skins-display-character {
-  height: 280px;
+  height: 17.5rem;
   position: relative;
   z-index: 2;
 }
@@ -168,18 +168,18 @@
 .skins-placement {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
   align-items: center;
 }
 
 .skins-placement-row {
   display: flex;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .skin-slot {
-  width: 110px;
-  height: 110px;
+  width: 6.875rem;
+  height: 6.875rem;
 }
 
 .skin-slot .skin-item { background-image: linear-gradient(-43deg, #1a4f96, #44b8de); }
@@ -187,8 +187,8 @@
 
 @media (max-width: 768px) {
   .skins-main { flex-direction: column; align-items: center; }
-  .skins-title { font-size: 22px; }
+  .skins-title { font-size: 1.375rem; }
   .skins-items-available { display: none; }
   .skins-placement { display: none; }
-  .skin-item-group { width: 70px; height: 70px; margin-right: 16px; margin-bottom: 16px; }
+  .skin-item-group { width: 4.375rem; height: 4.375rem; margin-right: 1rem; margin-bottom: 1rem; }
 }

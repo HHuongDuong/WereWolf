@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRoom } from "../../context/RoomContext";
+import type { PhaseConfig } from "../../context/RoomContext";
 
 interface PanelProps {
   lobbyOpen: boolean;
@@ -20,6 +21,32 @@ const DEFAULT_PRIMARY: RoleCard[] = [
   { name: "Villager",  card: "villager.svg",  count: 6, min: 2, max: 12 },
 ];
 
+interface DurationRow {
+  key: keyof PhaseConfig;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+}
+
+const DURATION_ROWS: DurationRow[] = [
+  { key: "werewolfDuration", label: "Werewolf phase",  min: 15, max: 120, step: 15 },
+  { key: "seerDuration",     label: "Seer phase",      min: 15, max: 120, step: 15 },
+  { key: "witchDuration",    label: "Witch phase",     min: 15, max: 120, step: 15 },
+  { key: "guardDuration",    label: "Guard phase",     min: 15, max: 120, step: 15 },
+  { key: "discussDuration",  label: "Discussion",      min: 30, max: 180, step: 15 },
+  { key: "voteDuration",     label: "Voting",          min: 15, max: 120, step: 15 },
+];
+
+const DEFAULT_DURATIONS: Required<PhaseConfig> = {
+  werewolfDuration: 45,
+  seerDuration:     30,
+  witchDuration:    30,
+  guardDuration:    30,
+  discussDuration:  60,
+  voteDuration:     30,
+};
+
 const DEFAULT_SPECIAL: RoleCard[] = [
   { name: "Seer",    card: "seer.svg",    count: 1, min: 0, max: 1 },
   { name: "Witch",   card: "witch.svg",   count: 0, min: 0, max: 1 },
@@ -30,10 +57,11 @@ const DEFAULT_SPECIAL: RoleCard[] = [
 ];
 
 export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: PanelProps) {
-  const { room, players, isHost } = useRoom();
+  const { room, players, isHost, configureRoom } = useRoom();
 
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [composition, setComposition] = useState(50);
+  const [durations, setDurations] = useState<Required<PhaseConfig>>(DEFAULT_DURATIONS);
   const [primary, setPrimary] = useState<RoleCard[]>(DEFAULT_PRIMARY);
   const [special, setSpecial] = useState<RoleCard[]>(DEFAULT_SPECIAL);
 
@@ -52,6 +80,23 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
       ),
     );
   }
+
+  const adjustMaxPlayers = useCallback((next: number) => {
+    if (!isHost) return;
+    setMaxPlayers(next);
+    configureRoom(next);
+  }, [isHost, configureRoom]);
+
+  const adjustDuration = useCallback((key: keyof PhaseConfig, delta: number) => {
+    if (!isHost) return;
+    setDurations(prev => {
+      const row = DURATION_ROWS.find(r => r.key === key)!;
+      const next = Math.max(row.min, Math.min(row.max, prev[key] + delta));
+      const updated = { ...prev, [key]: next };
+      configureRoom(undefined, { [key]: next });
+      return updated;
+    });
+  }, [isHost, configureRoom]);
 
   const compositionLabel =
     composition < 35 ? "Wolfpack" : composition > 65 ? "Village" : "Balanced";
@@ -98,7 +143,7 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
           <div className="lsp-stepper">
             <button
               className="lsp-stepper-arrow"
-              onClick={() => isHost && setMaxPlayers(n => Math.max(5, n - 1))}
+              onClick={() => adjustMaxPlayers(Math.max(5, maxPlayers - 1))}
               disabled={maxPlayers <= 5 || !isHost}
             >‹</button>
             {[-1, 0, 1].map(offset => {
@@ -108,7 +153,7 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
                 <button
                   key={offset}
                   className={`lsp-stepper-num ${offset === 0 ? "active" : ""}`}
-                  onClick={() => isHost && setMaxPlayers(n)}
+                  onClick={() => adjustMaxPlayers(n)}
                 >
                   {n}
                 </button>
@@ -116,7 +161,7 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
             })}
             <button
               className="lsp-stepper-arrow"
-              onClick={() => isHost && setMaxPlayers(n => Math.min(18, n + 1))}
+              onClick={() => adjustMaxPlayers(Math.min(18, maxPlayers + 1))}
               disabled={maxPlayers >= 18 || !isHost}
             >›</button>
           </div>
@@ -203,6 +248,30 @@ export function LobbySettingsPanel({ lobbyOpen, rightPanel, onTogglePanel }: Pan
                     >+</button>
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Phase durations */}
+        <div className="lsp-section">
+          <span className="lsp-section-title">Phase durations</span>
+          <div className="lsp-duration-list">
+            {DURATION_ROWS.map(row => (
+              <div key={row.key} className="lsp-duration-row">
+                <span className="lsp-duration-label">{row.label}</span>
+                <div className="lsp-duration-ctrl">
+                  <button
+                    className="lsp-dur-btn"
+                    onClick={() => adjustDuration(row.key, -row.step)}
+                    disabled={durations[row.key] <= row.min || !isHost}
+                  >−</button>
+                  <span className="lsp-dur-val">{durations[row.key]}s</span>
+                  <button
+                    className="lsp-dur-btn"
+                    onClick={() => adjustDuration(row.key, +row.step)}
+                    disabled={durations[row.key] >= row.max || !isHost}
+                  >+</button>
+                </div>
               </div>
             ))}
           </div>

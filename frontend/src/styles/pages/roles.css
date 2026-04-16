@@ -12,20 +12,20 @@
 }
 
 .roles-title {
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   line-height: 1.23;
   margin-bottom: 12vh;
   text-align: center;
-  padding: 0 20px;
+  padding: 0 1.25rem;
   color: #fff;
 }
 
 /* Role info bar */
 .role-container {
-  width: 1110px;
+  width: 69.375rem;
   max-width: 90%;
-  height: 72px;
+  height: 4.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -36,18 +36,18 @@
   flex-direction: column;
   align-items: flex-end;
   width: 26%;
-  min-width: 255px;
+  min-width: 15.9375rem;
 }
 
 .role-info-name {
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 500;
   text-align: right;
   color: #fff;
 }
 
 .role-team {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   text-align: right;
   margin-top: 3px;
@@ -59,9 +59,9 @@
 .role-description-box {
   position: relative;
   width: 26%;
-  min-width: 255px;
-  min-height: 72px;
-  font-size: 13px;
+  min-width: 15.9375rem;
+  min-height: 4.5rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.5;
   opacity: 0.9;
@@ -79,8 +79,8 @@
 }
 
 .role-help {
-  margin-top: 8px;
-  font-size: 16px;
+  margin-top: 0.5rem;
+  font-size: 1rem;
   font-weight: 300;
   font-style: italic;
   opacity: 0.5;
@@ -127,8 +127,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 63px;
-  padding: 10px;
+  width: 3.9375rem;
+  padding: 0.625rem;
   z-index: 10;
   cursor: pointer;
   transition: transform 0.3s, opacity 0.3s;
@@ -198,7 +198,7 @@
 
 .role-card-name {
   position: absolute;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
   text-align: center;
   opacity: 1;
@@ -232,13 +232,13 @@
 .role-pos-hidden { display: none; }
 
 @media (max-width: 768px) {
-  .roles-title { font-size: 22px; margin-bottom: 40px; }
-  .role-container { flex-direction: column; height: 140px; }
+  .roles-title { font-size: 1.375rem; margin-bottom: 2.5rem; }
+  .role-container { flex-direction: column; height: 8.75rem; }
   .role-info { align-items: center; width: 80%; }
-  .role-info-name { font-size: 22px; }
-  .role-team { font-size: 12px; }
-  .role-description-box { width: 80%; text-align: center; margin-top: 15px; }
-  .role-slider { height: 45vh; margin-top: 20px; }
+  .role-info-name { font-size: 1.375rem; }
+  .role-team { font-size: 0.75rem; }
+  .role-description-box { width: 80%; text-align: center; margin-top: 0.9375rem; }
+  .role-slider { height: 45vh; margin-top: 1.25rem; }
   .role-dash-round { width: 38vh; height: 38vh; }
   .role-arrow.left { transform: translate(calc(-50% - 120px), -50%); }
   .role-arrow.left:hover { transform: translate(calc(-50% - 120px), -50%); }

@@ -2,8 +2,8 @@
 
 .play-page {
   position: relative;
-  height: calc(100vh - 100px);
-  margin-top: 100px;
+  height: calc(100vh - 6.25rem);
+  margin-top: 6.25rem;
   display: flex;
   overflow: hidden;
   background-color: #14151e;
@@ -22,7 +22,7 @@
 
 /* ── Left Panel: 420px fixed ── */
 .play-left {
-  width: 420px;
+  width: 26.25rem;
   flex-shrink: 0;
   margin-right: 40px;
   position: relative;
@@ -57,7 +57,7 @@
   position: absolute;
   bottom: -57px;
   right: -20px;
-  width: 160px;
+  width: 10rem;
 }
 
 /* Floating action buttons */
@@ -77,13 +77,13 @@
   justify-content: center;
   background-color: #ffb027;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,.24);
-  height: 44px;
+  height: 2.75rem;
   padding: 0 32px;
   border-radius: 100px;
   border: none;
   cursor: pointer;
   font: inherit;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
   letter-spacing: .32px;
@@ -93,7 +93,7 @@
 .sgc-play-btn:hover { background-color: #ffa811; }
 
 .sgc-btn-icon {
-  width: 14px;
+  width: 0.875rem;
   margin-right: 12px;
   filter: brightness(10);
 }
@@ -105,8 +105,8 @@
   justify-content: center;
   background-color: #28949c;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,.24);
-  height: 44px;
-  width: 44px;
+  height: 2.75rem;
+  width: 2.75rem;
   border-radius: 100px;
   border: none;
   cursor: pointer;
@@ -116,15 +116,15 @@
 }
 
 .sgc-create-btn:hover {
-  width: 139px;
+  width: 8.6875rem;
   background-color: #2fa8b1;
   transition: width .3s, background-color .3s;
 }
 
-.sgc-create-btn .sgc-btn-icon { width: 20px; flex-shrink: 0; margin-right: 0; }
+.sgc-create-btn .sgc-btn-icon { width: 1.25rem; flex-shrink: 0; margin-right: 0; }
 
 .sgc-create-text {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
   letter-spacing: .32px;
@@ -138,7 +138,7 @@
 
 .sgc-create-btn:hover .sgc-create-text {
   opacity: 1;
-  width: 50px;
+  width: 3.125rem;
   margin-left: 12px;
   pointer-events: auto;
   transition: width .3s, margin-left .3s, opacity .3s .1s;
@@ -150,7 +150,7 @@
   display: flex;
   background-color: #242433;
   width: 100%;
-  height: 44px;
+  height: 2.75rem;
   border-radius: 100px;
   box-shadow: 0 3px 6px 0 rgba(0,0,0,.16);
   margin-bottom: 12px;
@@ -177,7 +177,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
   cursor: pointer;
@@ -192,13 +192,13 @@
   justify-content: space-between;
   align-items: flex-end;
   flex-shrink: 0;
-  height: 24px;
+  height: 1.5rem;
   margin-top: 4px;
 }
 
 .play-list-title {
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: hsla(0,0%,100%,.3);
   line-height: 1.5;
   margin-bottom: 2px;
@@ -206,7 +206,7 @@
 
 .play-list {
   width: 100%;
-  min-height: 250px;
+  min-height: 15.625rem;
   overflow-y: auto;
   padding-right: 5px;
   margin: 0 0 auto;
@@ -221,7 +221,7 @@
 .game-list-item {
   width: 100%;
   position: relative;
-  height: 68px;
+  height: 4.25rem;
   display: flex;
   margin-bottom: 12px;
   border-radius: 100px;
@@ -239,8 +239,8 @@
 
 /* Creator avatar circle */
 .gli-creator-avatar {
-  width: 68px;
-  height: 68px;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: 100px;
   flex-shrink: 0;
   overflow: hidden;
@@ -249,12 +249,12 @@
 /* Center section */
 .gli-properties {
   padding-left: 20px;
-  width: calc(100% - 68px - 100px);
+  width: calc(100% - 4.25rem - 6.25rem);
   overflow: hidden;
 }
 
 .gli-name {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: .32px;
   color: #e8e8e8;
@@ -272,8 +272,8 @@
 }
 
 .gli-role {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   margin-right: 6px;
   border-radius: 100px;
   flex-shrink: 0;
@@ -283,7 +283,7 @@
 
 /* Slot count pill */
 .gli-slots {
-  width: 100px;
+  width: 6.25rem;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -293,13 +293,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 23px;
+  height: 1.4375rem;
   padding: 0 10px;
   border-radius: 100px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #fff;
   font-weight: 300;
-  line-height: 32px;
+  line-height: 2rem;
   margin-right: 22px;
   gap: 1px;
   transition: all .4s;
@@ -311,14 +311,14 @@
 
 .gli-nb    { margin-right: 4px; font-weight: 400; }
 .gli-sep   { font-weight: 300; opacity: .7; }
-.gli-total { margin-left: 4px; font-weight: 800; font-size: 11px; }
+.gli-total { margin-left: 4px; font-weight: 800; font-size: 0.6875rem; }
 
 /* Skeleton states */
 .gli-skeleton { cursor: not-allowed; }
 
 .gli-sk-avatar {
-  width: 68px;
-  height: 68px;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: 100px;
   flex-shrink: 0;
   background-color: #14151e;
@@ -326,8 +326,8 @@
 }
 
 .gli-sk-name {
-  width: 100px;
-  height: 14px;
+  width: 6.25rem;
+  height: 0.875rem;
   border-radius: 50px;
   background-color: #14151e;
   margin-top: 14px;
@@ -336,8 +336,8 @@
 }
 
 .gli-sk-role {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 100px;
   background-color: #14151e;
   margin-right: 6px;
@@ -346,8 +346,8 @@
 }
 
 .gli-sk-pill {
-  width: 60px;
-  height: 23px;
+  width: 3.75rem;
+  height: 1.4375rem;
   border-radius: 100px;
   background-color: #14151e;
   margin-right: 22px;
@@ -362,7 +362,7 @@
 /* ── Moon Pass drop banner ── */
 .play-drop-banner {
   position: relative;
-  height: 145px;
+  height: 9.0625rem;
   display: flex;
   align-items: stretch;
   width: 100%;
@@ -425,7 +425,7 @@
   flex-direction: column;
   justify-content: center;
   margin-right: 16px;
-  width: 132px;
+  width: 8.25rem;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -438,11 +438,11 @@
   align-items: center;
   background-color: #000;
   border-radius: 14px;
-  height: 44px;
+  height: 2.75rem;
 }
 
 .pdb-timer-text {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #fff;
 }
@@ -453,13 +453,13 @@
   align-items: center;
   background-color: #5e53d5;
   border-radius: 100px;
-  height: 29px;
+  height: 1.8125rem;
   text-decoration: none;
   transition: background-color .3s;
 }
 
 .pdb-cta span {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
   color: #fff;
 }
@@ -475,7 +475,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: 900px;
+  max-height: 56.25rem;
   margin-bottom: 30px;
 }
 
@@ -487,7 +487,7 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  height: 40px;
+  height: 2.5rem;
   gap: 8px;
 }
 
@@ -501,21 +501,21 @@
 }
 
 .ap-level-badge {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 100px;
   background: linear-gradient(180deg, #a5a5a5, #3f3f3f);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
 }
 
 .ap-username {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
   margin: 0 0 0 12px;
@@ -523,8 +523,8 @@
 }
 
 .ap-settings-btn {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 100px;
   border: none;
   background-color: rgba(14,14,20,.8);
@@ -541,8 +541,8 @@
 .ap-settings-btn:hover .ap-settings-icon { transform: rotate(45deg); }
 
 .ap-settings-icon {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   filter: brightness(5);
   transition: transform .3s;
 }
@@ -583,9 +583,9 @@
   justify-content: center;
   color: #fff;
   border-radius: 100px;
-  min-width: 85px;
-  max-width: 120px;
-  min-height: 30px;
+  min-width: 5.3125rem;
+  max-width: 7.5rem;
+  min-height: 1.875rem;
   cursor: pointer;
   z-index: 8;
   box-shadow: 0 1px 6px 0 rgba(0,0,0,.25);
@@ -596,12 +596,12 @@
 .ap-elo-box::after {
   content: "";
   position: absolute;
-  width: 100px;
+  width: 6.25rem;
   left: -100px;
   top: 0;
   transform: skewX(-20deg);
   background-image: linear-gradient(90deg, transparent, hsla(0,0%,99%,.4), transparent);
-  height: 45px;
+  height: 2.8125rem;
   animation: eloShine 1.5s ease infinite;
   z-index: 3;
 }
@@ -622,13 +622,13 @@
 }
 
 .ap-elo-icon {
-  width: 17px;
+  width: 1.0625rem;
   margin-right: 8px;
   z-index: 2;
 }
 
 .ap-elo-num {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
   color: #fff;
   z-index: 2;
@@ -636,7 +636,7 @@
 
 /* ── Right: Social Panel ── */
 .play-right {
-  width: 420px;
+  width: 26.25rem;
   flex-shrink: 0;
   margin-left: 40px;
   position: relative;
@@ -665,8 +665,8 @@
 .sp-avatar-wrap { position: relative; flex-shrink: 0; }
 
 .sp-avatar {
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   border-radius: 50%;
   overflow: hidden;
 }
@@ -677,8 +677,8 @@
   position: absolute;
   bottom: 1px;
   right: 1px;
-  width: 10px;
-  height: 10px;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background: #28949c;
   border: 2px solid #1b1b28;
@@ -699,8 +699,8 @@
 .sp-search-icon {
   position: absolute;
   left: 22px;
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   color: var(--text-dim);
   pointer-events: none;
 }
@@ -778,8 +778,8 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 9px;
-  height: 9px;
+  width: 0.5625rem;
+  height: 0.5625rem;
   border-radius: 50%;
   background: var(--text-dim);
   border: 2px solid #1b1b28;
@@ -802,8 +802,8 @@
 .sp-friend.online .sp-friend-status { color: #28949c; }
 
 .sp-friend-invite {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border-radius: 100px;
   border: none;
   background: #5e53d5;
@@ -831,14 +831,14 @@
     flex-direction: column;
     overflow-y: auto;
     height: auto;
-    min-height: calc(100vh - 100px);
+    min-height: calc(100vh - 6.25rem);
   }
   .play-left, .play-right {
     width: 100%;
     margin: 0;
   }
   .play-center {
-    height: 440px;
+    height: 27.5rem;
     flex: none;
   }
   .play-right { display: none; }
