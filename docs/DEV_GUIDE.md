@@ -144,6 +144,12 @@ npm run dev   # http://localhost:3000
   "roomCode": "ABC123",
   "hostId": "guest_abc",
   "status": "waiting" | "in_game" | "finished",
+  "maxPlayers": 8,
+  "config": {
+    "guardDuration": 30,
+    "seerDuration": 30,
+    ...
+  },
   "players": [
     { "guestId": "guest_abc", "displayName": "Alice" },
     { "guestId": "guest_xyz", "displayName": "Bob" }
@@ -267,7 +273,7 @@ npm run dev   # http://localhost:3000
 
 | Event | Scope | Payload | Status | Ghi chú |
 |-------|-------|---------|--------|---------|
-| `ROOM_UPDATED` | broadcast | `{ roomId, roomCode, hostId, status, players[] }` | ✅ | Mỗi khi có người join/out/configure |
+| `ROOM_UPDATED` | broadcast | `{ roomId, roomCode, hostId, status, maxPlayers, config, players[] }` | ✅ | Mỗi khi phòng được tạo, có người join/out/configure |
 | `ROOM_CANCELLED` | broadcast | `{ roomId }` | ✅ | Khi host cancel phòng hoặc phòng trống |
 | `ERROR` | **private** | `{ code, message }` | ✅ | Validation fail hoặc action không hợp lệ |
 | `role_assigned` | **private** | `{ role }` | ⏳ | Đầu game, **chỉ gửi đúng socket!** |

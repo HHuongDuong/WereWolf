@@ -170,16 +170,7 @@
 
 ---
 
-## 7. Kafka Events
-
-| Topic | Producer | Consumer | Mô tả |
-|-------|----------|----------|-------|
-| `room.started` | room-service | gameplay-service | Host bấm Start |
-| `game.phase.changed` | gameplay-service | gateway-service | Chuyển phase đêm/ngày |
-| `game.chat.channel.updated` | gameplay-service | chat-service | Mở/đóng channel chat |
-| `game.vote.start` | gameplay-service | vote-service | Bắt đầu phase vote |
-| `vote.result` | vote-service | gameplay-service | Kết quả vote |
-| `game.ended` | gameplay-service | room-service | Kết thúc game, cập nhật trạng thái phòng |
+## 7. Kafka Events (xem ở RSD.md, DEV_GUIDE.md)
 
 ---
 

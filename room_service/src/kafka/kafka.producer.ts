@@ -74,6 +74,8 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
       roomCode: room.code,
       hostId: room.hostId,
       status: room.status,
+      maxPlayers: room.maxPlayers,
+      config: room.config,
       players: room.players.map((p) => ({
         guestId: p.playerId,
         displayName: p.displayName,
