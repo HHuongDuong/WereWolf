@@ -32,12 +32,12 @@ export function GameView() {
 
   // ── Inbound WS events ────────────────────────────────────────────────────────
 
-  useEffect(() => on("ROLE_ASSIGNED", msg => {
+  useEffect(() => on("role_assigned", msg => {
     setMyRole(msg.role);
     setPhase("role_reveal");
   }), [on, setMyRole, setPhase]);
 
-  useEffect(() => on("PHASE_CHANGED", msg => {
+  useEffect(() => on("phase_changed", msg => {
     if (msg.phase === "night") {
       nextRound();
       setDeadline(msg.deadlineTimestamp);
@@ -52,13 +52,13 @@ export function GameView() {
     }
   }), [on, setPhase, nextRound, setDeadline, eliminatePlayer]);
 
-  useEffect(() => on("VOTE_STARTED", msg => {
+  useEffect(() => on("vote_started", msg => {
     clearVotes();
     setDeadline(Date.now() + msg.durationSec * 1000);
     setPhase("voting");
   }), [on, clearVotes, setDeadline, setPhase]);
 
-  useEffect(() => on("VOTE_RESULT", msg => {
+  useEffect(() => on("vote_result", msg => {
     setEliminatedPlayer(msg.eliminatedId);
     if (msg.eliminatedId) {
       eliminatePlayer(msg.eliminatedId);
@@ -67,17 +67,17 @@ export function GameView() {
     setPhase("elimination");
   }), [on, setEliminatedPlayer, eliminatePlayer, clearVotes, setPhase]);
 
-  useEffect(() => on("GAME_ENDED", msg => {
+  useEffect(() => on("game_ended", msg => {
     setRevealedRoles(msg.roles);
     setWinner(msg.winner === "werewolf" ? "wolves" : "villagers");
     setPhase("ended");
   }), [on, setRevealedRoles, setWinner, setPhase]);
 
-  useEffect(() => on("SEER_RESULT", msg => {
+  useEffect(() => on("seer_result", msg => {
     setSeerResult(msg.role === "Werewolf" ? "wolf" : "villager");
   }), [on, setSeerResult]);
 
-  useEffect(() => on("NIGHT_ACTION_ACK", msg => {
+  useEffect(() => on("night_action_ack", msg => {
     setNightActionAck(msg.success);
   }), [on, setNightActionAck]);
 

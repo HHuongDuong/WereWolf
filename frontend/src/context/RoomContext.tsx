@@ -97,29 +97,14 @@ export function RoomProvider({
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const msgCounter = useRef(Date.now());
 
-  // Register WS session via JOIN_ROOM immediately, then enrich with REST data
+  // Register WS session via JOIN_ROOM immediately
   useEffect(() => {
-    // Send JOIN_ROOM right away so the gateway (real or mock) emits ROOM_UPDATED.
-    // roomCode starts empty — the real gateway will look it up from the session;
-    // the mock gateway ignores it entirely.
+    // Send JOIN_ROOM right away so the gateway emits ROOM_UPDATED.
     send({
       type: "JOIN_ROOM",
       guestId: guest.guestId,
       displayName: guest.displayName,
       roomCode: room.code || roomId,
-    });
-
-    // REST fetch is best-effort: enriches room info but is not required (fails in mock mode)
-    api.rooms.get(roomId).then(info => {
-      setRoom(r => ({
-        ...r,
-        code: info.roomCode,
-        hostId: info.hostId,
-        maxPlayers: info.maxPlayers,
-        status: info.status,
-      }));
-    }).catch(err => {
-      console.warn("[Room] REST fetch failed (expected in mock mode):", err);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
@@ -171,7 +156,7 @@ export function RoomProvider({
 
   const startGame = useCallback(() => {
     if (!canStart) return;
-    send({ type: "START_GAME", roomId, guestId: guest.guestId });
+    send({ type: "START_GAME", guestId: guest.guestId });
     // Local phase transition — will be replaced by ROLE_ASSIGNED / PHASE_CHANGED WS events
     setGamePlayers(players.map(p => ({ guestId: p.guestId, displayName: p.displayName, isAlive: true })));
     setMyRole("Werewolf");

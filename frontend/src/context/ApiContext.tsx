@@ -1,97 +1,45 @@
 /**
- * ApiContext — REST calls to room_service via fetch.
- *
- * Base URL: VITE_API_URL env var (default: /api).
- * guestId and displayName are injected automatically from GuestContext.
+ * ApiContext — Historically for REST, now redirected to WebSocket communication
+ * to adhere to the architecture where FE only communicates with the gateway 
+ * via WebSockets.
  */
 
 import { createContext, useContext, useMemo } from "react";
+import { useWs } from "./WsContext";
 import { useGuest } from "./AuthContext";
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-export type RoomStatus = "waiting" | "in_game" | "finished";
-
-export interface Room {
-  roomId: string;
-  roomCode: string;
-  hostId: string;
-  playerCount: number;
-  maxPlayers: number;
-  status: RoomStatus;
-}
 
 // ── Context shape ─────────────────────────────────────────────────────────────
 
 interface ApiContextValue {
   rooms: {
-    list(): Promise<Room[]>;
-    get(roomId: string): Promise<Room>;
-    create(): Promise<Room>;
-    join(roomCode: string): Promise<Room>;
-    leave(roomId: string): Promise<void>;
+    create(): void;
+    join(roomCode: string): void;
+    leave(roomId: string): void;
   };
 }
-
-// ── Internal helpers ──────────────────────────────────────────────────────────
-
-const BASE_URL = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? "/api";
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 const ApiContext = createContext<ApiContextValue | null>(null);
 
 export function ApiProvider({ children }: { children: React.ReactNode }) {
+  const { send } = useWs();
   const { guest } = useGuest();
-
-  function headers(): HeadersInit {
-    return { "Content-Type": "application/json" };
-  }
-
-  async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      ...init,
-      headers: { ...headers(), ...(init?.headers ?? {}) },
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error((body as { message?: string }).message ?? `HTTP ${res.status}`);
-    }
-    return res.json() as Promise<T>;
-  }
 
   const api = useMemo<ApiContextValue>(() => ({
     rooms: {
-      list() {
-        return request<Room[]>("/rooms");
-      },
-
-      get(roomId) {
-        return request<Room>(`/rooms/${roomId}`);
-      },
-
       create() {
-        return request<Room>("/rooms", {
-          method: "POST",
-          body: JSON.stringify({ guestId: guest.guestId, displayName: guest.displayName }),
-        });
+        send({ type: "CREATE_ROOM", guestId: guest.guestId, displayName: guest.displayName });
       },
-
       join(roomCode) {
-        return request<Room>("/rooms/join", {
-          method: "POST",
-          body: JSON.stringify({ guestId: guest.guestId, displayName: guest.displayName, roomCode }),
-        });
+        send({ type: "JOIN_ROOM", guestId: guest.guestId, displayName: guest.displayName, roomCode });
       },
-
-      async leave(roomId) {
-        await request<void>(`/rooms/${roomId}/players/${guest.guestId}`, {
-          method: "DELETE",
-        });
+      leave(roomId) {
+        send({ type: "LEAVE_ROOM", roomId, guestId: guest.guestId });
       },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [guest.guestId, guest.displayName]);
+  }), [send, guest.guestId, guest.displayName]);
 
   return <ApiContext.Provider value={api}>{children}</ApiContext.Provider>;
 }

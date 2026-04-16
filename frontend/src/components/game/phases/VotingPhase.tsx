@@ -32,7 +32,7 @@ export function VotingPhase() {
     if (voteLocked || targetId === myId || myVote) return;
     castVote(myId, targetId);
     setVoteLocked(true);
-    send({ type: "VOTE", roomId: room.id, round, targetId });
+    send({ type: "vote", round, targetId });
   }
 
   return (
