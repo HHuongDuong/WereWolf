@@ -27,7 +27,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly sockets = new Map<string, WebSocket>();
   private readonly socketIds = new Map<WebSocket, string>();
   private readonly roomMembers = new Map<string, Set<string>>();
-  private readonly pendingRoomUpdates = new Map<string, unknown>();
+  private readonly lastRoomState = new Map<string, unknown>();
 
   constructor(private readonly roomClient: RoomServiceClient) {}
 
@@ -213,11 +213,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   public broadcastRoomUpdated(roomId: string, data: any) {
+    this.lastRoomState.set(roomId, data);
+
     const members = this.roomMembers.get(roomId);
-    if (!members || members.size === 0) {
-      this.pendingRoomUpdates.set(roomId, data);
-      return;
-    }
+    if (!members || members.size === 0) return;
 
     this.broadcastToRoom(roomId, 'ROOM_UPDATED', data);
   }
@@ -225,7 +224,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public broadcastRoomDeleted(roomId: string) {
     this.broadcastToRoom(roomId, 'ROOM_CANCELLED', { roomId });
     this.roomMembers.delete(roomId);
-    this.pendingRoomUpdates.delete(roomId);
+    this.lastRoomState.delete(roomId);
   }
 
   private emitError(socket: WebSocket, code: string, message: string) {
@@ -258,11 +257,11 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     members.add(socketId);
     this.roomMembers.set(roomId, members);
 
-    const pending = this.pendingRoomUpdates.get(roomId);
-    if (pending) {
-      this.pendingRoomUpdates.delete(roomId);
-      this.broadcastToRoom(roomId, 'ROOM_UPDATED', pending);
-    }
+    const lastState = this.lastRoomState.get(roomId);
+    if (!lastState) return;
+
+    const socket = this.sockets.get(socketId);
+    if (socket) this.sendMessage(socket, 'ROOM_UPDATED', lastState);
   }
 
   private removeFromRoom(socketId: string, roomId: string) {
