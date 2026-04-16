@@ -26,7 +26,7 @@ import {
 export type WsStatus = "connecting" | "connected" | "disconnected";
 
 export type ServerMsg =
-  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; hostId: string; status: "waiting" | "in_game" | "finished"; players: Array<{ guestId: string; displayName: string }> }
+  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; hostId: string; status: "waiting" | "in_game" | "finished"; maxPlayers?: number; config?: Record<string, unknown>; players: Array<{ guestId: string; displayName: string }> }
   | { type: "ROOM_CANCELLED"; roomId: string }
   | { type: "role_assigned"; role: string }
   | { type: "phase_changed"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }

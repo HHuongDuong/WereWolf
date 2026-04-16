@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { RoomProvider } from "../context/RoomContext";
+import { RoomProvider, useRoom } from "../context/RoomContext";
 import { CampScene } from "../components/room/CampScene";
 import { CharacterRing } from "../components/room/CharacterRing";
 import { LobbyTopBar } from "../components/room/LobbyTopBar";
@@ -11,8 +11,9 @@ import { GameView } from "../components/game/GameView";
 import { useGameStore } from "../stores/gameStore";
 
 function LobbyScene() {
+  const { isHost } = useRoom();
   const [lobbyOpen, setLobbyOpen] = useState(false);
-  const [rightPanel, setRightPanel] = useState<"settings" | "chat">("settings");
+  const [rightPanel, setRightPanel] = useState<"settings" | "chat">(isHost ? "settings" : "chat");
 
   function handleOpenLobby() {
     setLobbyOpen(true);
@@ -38,9 +39,9 @@ function LobbyScene() {
       <LobbyActionMessage lobbyOpen={lobbyOpen} onOpenLobby={handleOpenLobby} />
 
       {/* z:10 — right panel, overlaid on scene */}
-      {rightPanel === "settings"
+      {isHost && rightPanel === "settings"
         ? <LobbySettingsPanel lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
-        : <LobbyChatPanel     lobbyOpen={lobbyOpen} rightPanel={rightPanel} onTogglePanel={handleTogglePanel} />
+        : <LobbyChatPanel     lobbyOpen={lobbyOpen} rightPanel={isHost ? rightPanel : "chat"} onTogglePanel={isHost ? handleTogglePanel : () => {}} />
       }
     </div>
   );
