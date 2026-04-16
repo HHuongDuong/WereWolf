@@ -194,6 +194,24 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.sessions.set(socketId, { guestId, roomId });
   }
 
+  public sendPrivateToGuest(
+    roomId: string,
+    guestId: string,
+    event: string,
+    data: unknown,
+  ) {
+    const socketId = this.findSocketIdByGuestInRoom(guestId, roomId);
+    if (!socketId) return { delivered: false, reason: 'SOCKET_NOT_FOUND' };
+
+    const socket = this.sockets.get(socketId);
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return { delivered: false, reason: 'SOCKET_NOT_OPEN' };
+    }
+
+    this.sendMessage(socket, event, data);
+    return { delivered: true };
+  }
+
   public broadcastRoomUpdated(roomId: string, data: any) {
     const members = this.roomMembers.get(roomId);
     if (!members || members.size === 0) {
@@ -223,6 +241,16 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private getSocketId(socket: WebSocket) {
     return this.socketIds.get(socket);
+  }
+
+  private findSocketIdByGuestInRoom(guestId: string, roomId: string) {
+    for (const [socketId, session] of this.sessions.entries()) {
+      if (session.guestId === guestId && session.roomId === roomId) {
+        return socketId;
+      }
+    }
+
+    return undefined;
   }
 
   private addToRoom(socketId: string, roomId: string) {
