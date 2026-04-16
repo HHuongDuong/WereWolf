@@ -1,14 +1,17 @@
 package com.werewolf.gameplay.kafka;
 
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+
+import com.werewolf.gameplay.gateway.InternalWsClient;
 import com.werewolf.gameplay.model.events.ChatChannelEvent;
 import com.werewolf.gameplay.model.events.GameEndedEvent;
 import com.werewolf.gameplay.model.events.PhaseChangedEvent;
 import com.werewolf.gameplay.model.events.RolesAssignedEvent;
 import com.werewolf.gameplay.model.events.VoteStartEvent;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class GameEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final InternalWsClient internalWsClient;
 
     public void publishPhaseChanged(PhaseChangedEvent event) {
         log.info("Publishing game.phase.changed for room {}: {}", event.getRoomId(), event.getPhase());
@@ -38,7 +42,16 @@ public class GameEventProducer {
     }
 
     public void publishRolesAssigned(RolesAssignedEvent event) {
-        log.info("Publishing game.roles.assigned for room {}", event.getRoomId());
-        kafkaTemplate.send("game.roles.assigned", event);
+        log.info("Sending role_assigned private events for room {}", event.getRoomId());
+        if (event.getPlayers() == null || event.getPlayers().isEmpty()) {
+            log.warn("No role assignments to send for room {}", event.getRoomId());
+            return;
+        }
+        event.getPlayers().forEach((guestId, role) -> {
+            boolean delivered = internalWsClient.sendRoleAssigned(event.getRoomId(), guestId, role);
+            if (!delivered) {
+                log.warn("role_assigned not delivered: roomId={}, guestId={}", event.getRoomId(), guestId);
+            }
+        });
     }
 }
