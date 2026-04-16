@@ -12,7 +12,7 @@ export function LobbyChatPanel({ lobbyOpen, rightPanel, onTogglePanel }: Props) 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState("");
 
-  const myUsername = players.find(p => p.isYou)?.username ?? "You";
+  const myUsername = players.find(p => p.isYou)?.displayName ?? "You";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

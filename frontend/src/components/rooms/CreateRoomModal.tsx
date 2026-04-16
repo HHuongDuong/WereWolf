@@ -4,9 +4,11 @@ import type { GameMode } from "./RoomCard";
 export function CreateRoomModal({
   onClose,
   onSubmit,
+  loading = false,
 }: {
   onClose: () => void;
   onSubmit: (data: { name: string; maxPlayers: string; mode: GameMode; password: string }) => void;
+  loading?: boolean;
 }) {
   const [newRoom, setNewRoom] = useState({
     name: "",
@@ -78,11 +80,15 @@ export function CreateRoomModal({
               onChange={e => setNewRoom(r => ({ ...r, password: e.target.value }))}
             />
           </div>
-          <button type="submit" className="rooms-create-submit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-            Enter the Village
+          <button type="submit" className="rooms-create-submit" disabled={loading}>
+            {loading ? "Creating..." : (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Enter the Village
+              </>
+            )}
           </button>
         </form>
       </div>

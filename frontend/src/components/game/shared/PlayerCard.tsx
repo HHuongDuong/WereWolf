@@ -9,9 +9,9 @@ interface PlayerCardProps {
   actionDisabled?: boolean;
 }
 
-function avatarHue(username: string): number {
+function avatarHue(displayName: string): number {
   let h = 0;
-  for (let i = 0; i < username.length; i++) h = (h * 31 + username.charCodeAt(i)) & 0xffff;
+  for (let i = 0; i < displayName.length; i++) h = (h * 31 + displayName.charCodeAt(i)) & 0xffff;
   return h % 360;
 }
 
@@ -23,8 +23,8 @@ export function PlayerCard({
   actionLabel,
   actionDisabled,
 }: PlayerCardProps) {
-  const hue = avatarHue(player.username);
-  const initial = player.username[0]?.toUpperCase() ?? "?";
+  const hue = avatarHue(player.displayName);
+  const initial = player.displayName[0]?.toUpperCase() ?? "?";
 
   return (
     <div
@@ -45,7 +45,7 @@ export function PlayerCard({
         {initial}
       </div>
       <div className="game-player-info">
-        <span className="game-player-card-name">{player.username}</span>
+        <span className="game-player-card-name">{player.displayName}</span>
         {isYou && <span className="game-player-card-you">You</span>}
       </div>
       {!player.isAlive && (

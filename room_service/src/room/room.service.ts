@@ -21,20 +21,22 @@ export class RoomService {
     private readonly roomRepo: RoomRepository,
     private readonly kafkaProducer: KafkaProducerService,
   ) {}
-
+  // user press btb CREATE ROOM
   // ── R-01: Tạo phòng ─────────────────────────────────────────────
   async createRoom(dto: CreateRoomDto) {
     const code = await this.generateUniqueCode();
     const room = await this.roomRepo.createRoom(dto.guestId, dto.displayName, code);
 
     this.logger.log(`Room created: code=${code} host=${dto.guestId}`);
+    await this.notifyRoomUpdated(room.id);
+
     return {
       roomId: room.id,
       roomCode: room.code,
       hostId: room.hostId,
     };
   }
-
+  // user press btn JOIN
   // ── R-02: Join phòng ────────────────────────────────────────────
   async joinRoom(dto: JoinRoomDto) {
     const code = dto.roomCode.toUpperCase();
@@ -63,6 +65,7 @@ export class RoomService {
     const alreadyIn = room.players.some((p) => p.playerId === dto.guestId);
     if (!alreadyIn) {
       await this.roomRepo.addPlayer(room.id, dto.guestId, dto.displayName);
+      await this.notifyRoomUpdated(room.id);
     }
 
     const updated = await this.roomRepo.findByCode(code);
@@ -74,7 +77,7 @@ export class RoomService {
       })),
     };
   }
-
+  // User cấu hình phòng
   // ── R-03: Cấu hình phòng ────────────────────────────────────────
   async configureRoom(roomId: string, dto: ConfigureRoomDto) {
     const room = await this.roomRepo.findByIdWithPlayers(roomId);
@@ -96,9 +99,11 @@ export class RoomService {
     }
 
     await this.roomRepo.updateConfig(roomId, dto.maxPlayers, dto.config);
+    await this.notifyRoomUpdated(roomId);
     return { updated: true };
   }
 
+  // User press start game
   // ── R-04: Start game ────────────────────────────────────────────
   async startGame(roomId: string, dto: StartGameDto) {
     const room = await this.roomRepo.findByIdWithPlayers(roomId);
@@ -121,6 +126,7 @@ export class RoomService {
 
     // Đổi status trước khi publish (tránh duplicate event nếu retry)
     await this.roomRepo.setStatus(roomId, 'in_game');
+    await this.notifyRoomUpdated(roomId);
 
     await this.kafkaProducer.publishRoomStarted(room);
     this.logger.log(`Game started: roomId=${roomId}`);
@@ -143,6 +149,7 @@ export class RoomService {
     }
 
     await this.roomRepo.deleteRoom(roomId);
+    await this.notifyRoomDeleted(roomId);
     this.logger.log(`Room cancelled: roomId=${roomId}`);
     return { cancelled: true };
   }
@@ -162,11 +169,22 @@ export class RoomService {
 
     await this.roomRepo.removePlayer(roomId, guestId);
 
-    // Nếu host rời và game chưa bắt đầu → assign host mới
+    // Check nếu phòng trống sau khi remove → xóa phòng ngay
+    const remainingPlayers = await this.roomRepo.getPlayerCount(roomId);
+    
+    if (remainingPlayers === 0) {
+      await this.roomRepo.deleteRoom(roomId);
+      await this.notifyRoomDeleted(roomId);
+      this.logger.log(`Room deleted (no players left): roomId=${roomId}`);
+      return { left: true, roomDeleted: true };
+    }
+
+    // Nếu host rời và còn người và phòng đang 'waiting' → assign host mới
     if (room.hostId === guestId && room.status === 'waiting') {
       return this.assignNewHost(roomId);
     }
 
+    await this.notifyRoomUpdated(roomId);
     return { left: true };
   }
 
@@ -177,11 +195,13 @@ export class RoomService {
     if (!earliest) {
       // Không còn ai → xóa phòng
       await this.roomRepo.deleteRoom(roomId);
+      await this.notifyRoomDeleted(roomId);
       this.logger.log(`Room deleted (no players left): roomId=${roomId}`);
       return { left: true, roomDeleted: true };
     }
 
     await this.roomRepo.updateHost(roomId, earliest.playerId);
+    await this.notifyRoomUpdated(roomId);
     this.logger.log(`New host assigned: roomId=${roomId} newHost=${earliest.playerId}`);
     return { left: true, newHostId: earliest.playerId };
   }
@@ -198,7 +218,27 @@ export class RoomService {
       return;
     }
     await this.roomRepo.setStatus(roomId, 'finished');
+    await this.notifyRoomUpdated(roomId);
     this.logger.log(`Room finished: roomId=${roomId}`);
+  }
+
+  // ── R-09-1: Lấy trạng thái phòng (internal) ─────────────────────
+  async getRoomState(roomId: string) {
+    const room = await this.roomRepo.findByIdWithPlayers(roomId);
+    if (!room) {
+      throw new NotFoundException({ code: 'ROOM_NOT_FOUND', message: 'Phòng không tồn tại' });
+    }
+
+    return {
+      roomId: room.id,
+      roomCode: room.code,
+      hostId: room.hostId,
+      status: room.status,
+      players: room.players.map((p) => ({
+        guestId: p.playerId,
+        displayName: p.displayName,
+      })),
+    };
   }
 
   // ── R-09: Quét dọn tự động (Cron Job) ───────────────────────────
@@ -226,5 +266,17 @@ export class RoomService {
       if (!existing) return code;
     }
     throw new Error('Failed to generate unique room code after 5 attempts');
+  }
+
+  // ── Helper: Thông báo cho Kafka ─────────────────────────────────
+  private async notifyRoomUpdated(roomId: string) {
+    const room = await this.roomRepo.findByIdWithPlayers(roomId);
+    if (room) {
+      await this.kafkaProducer.publishRoomUpdated(room);
+    }
+  }
+
+  private async notifyRoomDeleted(roomId: string) {
+    await this.kafkaProducer.publishRoomDeleted(roomId);
   }
 }

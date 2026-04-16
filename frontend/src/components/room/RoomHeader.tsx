@@ -23,8 +23,7 @@ export function RoomHeader() {
       </button>
 
       <div className="room-page-title-wrap">
-        <h1 className="room-page-title font-display">{room.name}</h1>
-        <span className="room-page-mode-badge">{room.mode}</span>
+        <h1 className="room-page-title font-display">Game Room</h1>
       </div>
 
       <div className="room-code-block">

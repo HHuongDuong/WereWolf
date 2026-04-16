@@ -10,10 +10,9 @@ import { PlayerCard } from "../shared/PlayerCard";
 const DAY_TOTAL = 180;
 
 export function DayPhase() {
-  const players     = useGameStore(s => s.players);
-  const dayTimeLeft = useGameStore(s => s.dayTimeLeft);
-  const setDayTimeLeft = useGameStore(s => s.setDayTimeLeft);
-  const setPhase    = useGameStore(s => s.setPhase);
+  const players           = useGameStore(s => s.players);
+  const deadlineTimestamp = useGameStore(s => s.deadlineTimestamp);
+  const setPhase          = useGameStore(s => s.setPhase);
 
   const { chat, sendMessage } = useRoom();
   const { guest } = useGuest();
@@ -21,17 +20,6 @@ export function DayPhase() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const myId = guest.guestId;
-
-  // Countdown
-  useEffect(() => {
-    if (dayTimeLeft <= 0) {
-      setPhase("voting");
-      // TODO: WS VOTE_PHASE event drives this instead
-      return;
-    }
-    const t = setInterval(() => setDayTimeLeft(dayTimeLeft - 1), 1000);
-    return () => clearInterval(t);
-  }, [dayTimeLeft, setDayTimeLeft, setPhase]);
 
   // Scroll chat to bottom on new messages
   useEffect(() => {
@@ -60,7 +48,7 @@ export function DayPhase() {
         <aside className="day-players-sidebar">
           <p className="day-sidebar-label">Players</p>
           {players.map(p => (
-            <PlayerCard key={p.id} player={p} isYou={p.id === myId} />
+            <PlayerCard key={p.guestId} player={p} isYou={p.guestId === myId} />
           ))}
         </aside>
 
@@ -68,7 +56,7 @@ export function DayPhase() {
         <main className="day-main">
           <div className="day-timer-row">
             <span className="day-timer-label">Discussion ends in</span>
-            <PhaseTimer seconds={dayTimeLeft} totalSeconds={DAY_TOTAL} />
+            <PhaseTimer deadlineTimestamp={deadlineTimestamp} totalSeconds={DAY_TOTAL} />
           </div>
 
           <div className="day-chat">

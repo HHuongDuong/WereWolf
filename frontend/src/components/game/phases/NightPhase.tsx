@@ -2,31 +2,45 @@ import { motion } from "framer-motion";
 import { useGameStore } from "../../../stores/gameStore";
 import { PlayerCard } from "../shared/PlayerCard";
 import { useGuest } from "../../../context/AuthContext";
+import { useWs } from "../../../context/WsContext";
+import { useRoom } from "../../../context/RoomContext";
+import { WitchActionPanel } from "../WitchActionPanel";
 
 export function NightPhase() {
-  const myRole      = useGameStore(s => s.myRole);
-  const players     = useGameStore(s => s.players);
-  const nightAction = useGameStore(s => s.nightAction);
-  const seerResult  = useGameStore(s => s.seerResult);
+  const myRole         = useGameStore(s => s.myRole);
+  const players        = useGameStore(s => s.players);
+  const nightAction    = useGameStore(s => s.nightAction);
+  const nightActionAck = useGameStore(s => s.nightActionAck);
+  const seerResult     = useGameStore(s => s.seerResult);
   const setNightAction = useGameStore(s => s.setNightAction);
-  const setSeerResult  = useGameStore(s => s.setSeerResult);
-  const setPhase    = useGameStore(s => s.setPhase);
+  const setPhase       = useGameStore(s => s.setPhase);
+
   const { guest } = useGuest();
+  const { send } = useWs();
+  const { room } = useRoom();
 
   const myId = guest.guestId;
-  const alivePlayers = players.filter(p => p.isAlive && p.id !== myId);
+  const alivePlayers = players.filter(p => p.isAlive && p.guestId !== myId);
 
   function handleWolfTarget(targetId: string) {
+    if (nightAction) return; // already acted
     setNightAction(targetId);
-    // TODO: emit WS { type: "WOLF_TARGET", targetId }
+    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "werewolf_kill", targetId });
   }
 
   function handleSeerInvestigate(targetId: string) {
+    if (nightAction) return;
     setNightAction(targetId);
-    // Mock result — TODO: replace with WS SEER_RESULT event
-    setSeerResult(Math.random() > 0.4 ? "villager" : "wolf");
-    // TODO: emit WS { type: "SEER_INVESTIGATE", targetId }
+    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "seer", targetId });
   }
+
+  function handleGuardProtect(targetId: string) {
+    if (nightAction) return;
+    setNightAction(targetId);
+    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "guard", targetId });
+  }
+
+  const acted = !!nightAction || nightActionAck;
 
   return (
     <motion.div
@@ -49,19 +63,17 @@ export function NightPhase() {
             <div className="night-targets">
               {alivePlayers.map(p => (
                 <PlayerCard
-                  key={p.id}
+                  key={p.guestId}
                   player={p}
-                  isSelected={nightAction === p.id}
-                  actionLabel={nightAction === p.id ? "Marked" : "Mark"}
-                  actionDisabled={!!nightAction && nightAction !== p.id}
-                  onClick={() => handleWolfTarget(p.id)}
+                  isSelected={nightAction === p.guestId}
+                  actionLabel={nightAction === p.guestId ? "Marked" : "Mark"}
+                  actionDisabled={acted && nightAction !== p.guestId}
+                  onClick={() => handleWolfTarget(p.guestId)}
                 />
               ))}
             </div>
-            {nightAction && (
-              <p className="night-action-confirm">
-                Target locked. Wait for dawn...
-              </p>
+            {acted && (
+              <p className="night-action-confirm">Target locked. Wait for dawn...</p>
             )}
           </div>
         )}
@@ -73,19 +85,19 @@ export function NightPhase() {
               <div className="night-targets">
                 {alivePlayers.map(p => (
                   <PlayerCard
-                    key={p.id}
+                    key={p.guestId}
                     player={p}
-                    isSelected={nightAction === p.id}
+                    isSelected={nightAction === p.guestId}
                     actionLabel="Inspect"
-                    actionDisabled={!!nightAction}
-                    onClick={() => handleSeerInvestigate(p.id)}
+                    actionDisabled={acted}
+                    onClick={() => handleSeerInvestigate(p.guestId)}
                   />
                 ))}
               </div>
             ) : (
               <div className="seer-result-reveal">
                 <p className="night-action-confirm">
-                  {players.find(p => p.id === nightAction)?.username} is a...
+                  {players.find(p => p.guestId === nightAction)?.displayName} is a...
                 </p>
                 <div className={`seer-result ${seerResult}`}>
                   {seerResult === "wolf" ? "🐺 Werewolf!" : "🏘️ Villager"}
@@ -98,7 +110,30 @@ export function NightPhase() {
           </div>
         )}
 
-        {myRole !== "Werewolf" && myRole !== "Seer" && (
+        {myRole === "Guard" && (
+          <div>
+            <p className="night-action-title">Protect a player</p>
+            <div className="night-targets">
+              {alivePlayers.map(p => (
+                <PlayerCard
+                  key={p.guestId}
+                  player={p}
+                  isSelected={nightAction === p.guestId}
+                  actionLabel={nightAction === p.guestId ? "Protected" : "Protect"}
+                  actionDisabled={acted && nightAction !== p.guestId}
+                  onClick={() => handleGuardProtect(p.guestId)}
+                />
+              ))}
+            </div>
+            {acted && (
+              <p className="night-action-confirm">Protection set. Sleep tight...</p>
+            )}
+          </div>
+        )}
+
+        {myRole === "Witch" && <WitchActionPanel />}
+
+        {myRole !== "Werewolf" && myRole !== "Seer" && myRole !== "Guard" && myRole !== "Witch" && (
           <div className="night-wait">
             <p className="night-wait-text">The village sleeps...</p>
             <p className="night-wait-sub">Wait for dawn to break.</p>

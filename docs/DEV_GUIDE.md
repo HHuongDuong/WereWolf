@@ -105,7 +105,8 @@ npm run dev   # http://localhost:3000
 ## 📨 Kafka Event Contract
 
 > **Quy tắc vàng:** Không tự ý thêm/sửa event schema mà không báo team.  
-> Mọi thay đổi phải update bảng này trước khi code.
+> Mọi thay đổi phải update bảng này trước khi code.  
+> **Nguồn chuẩn:** RSD mục 5 — Kafka Events Specification
 
 ### Topics & Payload
 
@@ -130,6 +131,40 @@ npm run dev   # http://localhost:3000
   }
 }
 ```
+> Gameplay-service nhận event này để khởi tạo game, phân vai, và bắt đầu phase ROLE_REVEAL.
+
+---
+
+#### `room.updated`
+- **Producer:** room-service  
+- **Consumer:** gateway-service  
+```json
+{
+  "roomId": "uuid",
+  "roomCode": "ABC123",
+  "hostId": "guest_abc",
+  "status": "waiting" | "in_game" | "finished",
+  "players": [
+    { "guestId": "guest_abc", "displayName": "Alice" },
+    { "guestId": "guest_xyz", "displayName": "Bob" }
+  ]
+}
+```
+> Gateway broadcast `ROOM_UPDATED` đến tất cả WebSocket clients trong phòng. Được publish mỗi khi có thay đổi: join, leave, configure, start game, game ended.
+
+---
+
+#### `room.deleted`
+- **Producer:** room-service  
+- **Consumer:** gateway-service  
+```json
+{
+  "roomId": "uuid"
+}
+```
+> Gateway broadcast `ROOM_CANCELLED` và cleanup room members. Được publish khi: host cancel phòng, phòng rỗng (tất cả leave), hoặc cronjob cleanup zombie rooms.
+
+---
 
 #### `game.phase.changed`
 - **Producer:** gameplay-service  
@@ -146,8 +181,9 @@ npm run dev   # http://localhost:3000
   }
 }
 ```
+> Gateway broadcast `phase_changed` đến tất cả players. `metadata.deadIds`: người chết đêm. `metadata.eliminatedId`: người bị vote. `metadata.reasons`: chỉ dùng debug, **không gửi ra client** theo thiết kế game.
 
-> `reasons[]` được gameplay-service tính nội bộ (G-08) nhưng **không gửi ra client** theo thiết kế game. Players chỉ biết ai chết, không biết lý do.
+---
 
 #### `game.chat.channel.updated`
 - **Producer:** gameplay-service  
@@ -161,8 +197,9 @@ npm run dev   # http://localhost:3000
   "round": 1
 }
 ```
+> Chat-service dùng để validate sender. `allowedGuestIds`: danh sách player được phép dùng channel.
 
-> `allowedGuestIds`: danh sách player được phép dùng channel. Chat-service dùng để validate sender.
+---
 
 #### `game.vote.start`
 - **Producer:** gameplay-service  
@@ -175,8 +212,9 @@ npm run dev   # http://localhost:3000
   "durationSec": 30
 }
 ```
+> Vote-service khởi tạo phiên vote. `alivePlayerIds`: vừa là danh sách voter hợp lệ, vừa là danh sách target hợp lệ.
 
-> `alivePlayerIds`: vừa là danh sách voter hợp lệ, vừa là danh sách target hợp lệ (trừ voter tự vote cho mình — vote-service tự validate).
+---
 
 #### `vote.result`
 - **Producer:** vote-service  
@@ -193,8 +231,9 @@ npm run dev   # http://localhost:3000
   "tied": false
 }
 ```
+> Gameplay-service nhận kết quả vote để xử lý elimination. Nếu `tied = true` thì `eliminatedId = null` (không random tiebreak).
 
-> Nếu `tied = true` thì `eliminatedId = null`. Gameplay-service không random tiebreak.
+---
 
 #### `game.ended`
 - **Producer:** gameplay-service  
@@ -206,47 +245,64 @@ npm run dev   # http://localhost:3000
   "round": 4
 }
 ```
+> **room-service:** UPDATE `rooms SET status='finished', ended_at=NOW()`
 
-> Room-service nhận event này để UPDATE `rooms SET status='finished', ended_at=NOW()`.
+---
+
+### Quy tắc chung (RSD mục 5)
+
+- ✅ Tất cả payload dùng **camelCase**
+- ✅ Tất cả timestamp là **Unix milliseconds** (`number`)
+- ❌ **Không bao giờ** đặt `role` vào bất kỳ Kafka topic nào (trừ khi game đã kết thúc)
+- ✅ Mọi event phải có `roomId` để routing
+- ✅ Consumer phải implement **idempotency** (check processed events)
 
 ---
 
 ## 🌐 WebSocket Event Contract (Gateway ↔ Frontend)
 
-> **Nguồn chuẩn:** RSD mục 6. Dùng `snake_case` cho tên event.
+> **Nguồn chuẩn:** RSD mục 6. Dùng `UPPERCASE` cho tên event.
 
-### Server → Client
+### Server → Client (✅ = đã implement)
 
-| Event | Scope | Payload | Ghi chú |
-|-------|-------|---------|--------|
-| `room_updated` | broadcast | `{ players[], hostId, status }` | Mỗi khi có người join/out |
-| `role_assigned` | **private** | `{ role }` | Đầu game, **chỉ gửi đúng socket!** |
-| `phase_changed` | broadcast | `{ phase, round, deadlineTimestamp, metadata }` | `metadata` chứa deadIds, reasons |
-| `night_action_ack` | **private** | `{ actionType, success, reason? }` | Confirm hành động đêm của từng role |
-| `seer_result` | **private** | `{ targetId, role }` | Kết quả tiên tri, chỉ Seer thấy |
-| `witch_info` | **private** | `{ werewolfKillTargetId }` | Ai bị sói chọn đêm đó, chỉ Witch thấy |
-| `hunter_trigger` | **private** | `{ hunterId }` | Hunter chọn người chết theo |
-| `chat_message` | channel | `{ senderName, channel, content, sentAt }` | `channel`: `wolves` hoặc `all` |
-| `vote_started` | broadcast | `{ round, durationSec, candidates: [] }` | |
-| `vote_result` | broadcast | `{ round, counts, eliminatedId, tied }` | |
-| `game_ended` | broadcast | `{ winner, roles: { [guestId]: role } }` | Lúc này mới reveal toàn bộ role |
-| `player_disconnected` | broadcast | `{ guestId, reconnectDeadline }` | `reconnectDeadline`: Unix ms |
-| `player_reconnected` | broadcast | `{ guestId }` | |
-| `error` | **private** | `{ code, message }` | Validation fail hoặc action không hợp lệ |
+| Event | Scope | Payload | Status | Ghi chú |
+|-------|-------|---------|--------|---------|
+| `ROOM_UPDATED` | broadcast | `{ roomId, roomCode, hostId, status, players[] }` | ✅ | Mỗi khi có người join/out/configure |
+| `ROOM_CANCELLED` | broadcast | `{ roomId }` | ✅ | Khi host cancel phòng hoặc phòng trống |
+| `ERROR` | **private** | `{ code, message }` | ✅ | Validation fail hoặc action không hợp lệ |
+| `role_assigned` | **private** | `{ role }` | ⏳ | Đầu game, **chỉ gửi đúng socket!** |
+| `phase_changed` | broadcast | `{ phase, round, deadlineTimestamp, metadata }` | ⏳ | `metadata` chứa deadIds |
+| `night_action_ack` | **private** | `{ actionType, success, reason? }` | ⏳ | Confirm hành động đêm của từng role |
+| `seer_result` | **private** | `{ targetId, role }` | ⏳ | Kết quả tiên tri, chỉ Seer thấy |
+| `witch_info` | **private** | `{ werewolfKillTargetId }` | ⏳ | Ai bị sói chọn đêm đó, chỉ Witch thấy |
+| `hunter_trigger` | **private** | `{ hunterId }` | ⏳ | Hunter chọn người chết theo |
+| `chat_message` | channel | `{ senderName, channel, content, sentAt }` | ⏳ | `channel`: `wolves` hoặc `all` |
+| `vote_started` | broadcast | `{ round, durationSec, candidates: [] }` | ⏳ | |
+| `vote_result` | broadcast | `{ round, counts, eliminatedId, tied }` | ⏳ | |
+| `game_ended` | broadcast | `{ winner, roles: { [guestId]: role } }` | ⏳ | Lúc này mới reveal toàn bộ role |
+| `player_disconnected` | broadcast | `{ guestId, reconnectDeadline }` | ⏳ | `reconnectDeadline`: Unix ms |
+| `player_reconnected` | broadcast | `{ guestId }` | ⏳ | |
 
-### Client → Server
+### Client → Server (✅ = đã implement)
 
-| Event | Payload | Validate | Ghi chú |
-|-------|---------|----------|---------|
-| `create_room` | `{ guestId, displayName, maxPlayers }` | displayName 1–20 ký tự | |
-| `join_room` | `{ guestId, displayName, roomCode }` | roomCode 6 ký tự | |
-| `configure_room` | `{ roomId, guestId, maxPlayers, config }` | Chỉ host | `config` theo spec 2.6 trong RSD |
-| `leave_room` | `{ roomId, guestId }` | | |
-| `start_game` | `{ roomId, guestId }` | Chỉ host, đủ người | |
-| `night_action` | `{ roomId, actionType, targetId }` | | `actionType`: `guard`\|`seer`\|`werewolf_kill`\|`witch` |
-| `chat_message` | `{ roomId, channel, content }` | content max 200 ký tự | |
-| `vote` | `{ roomId, round, targetId }` | | |
-| `reconnect` | `{ guestId, roomId }` | | Gửi trong vòng 60s sau disconnect |
+| Event | Payload | Status | Validate | Ghi chú |
+|-------|---------|--------|----------|---------|
+| `CREATE_ROOM` | `{ guestId, displayName }` | ✅ | guestId: `guest_` + 10 chars, displayName 1–20 ký tự | maxPlayers mặc định = 8 |
+| `JOIN_ROOM` | `{ guestId, displayName, roomCode }` | ✅ | roomCode đúng 6 ký tự | |
+| `CONFIGURE_ROOM` | `{ guestId, maxPlayers?, config? }` | ✅ | Chỉ host. roomId lấy từ session | `config`: `{ guardDuration?, seerDuration?, werewolfDuration?, witchDuration?, discussDuration?, voteDuration? }` |
+| `LEAVE_ROOM` | `{ roomId, guestId }` | ✅ | | |
+| `START_GAME` | `{ guestId }` | ✅ | Chỉ host, đủ người. roomId lấy từ session | |
+| `CANCEL_ROOM` | `{ guestId }` | ✅ | Chỉ host, status = waiting. roomId lấy từ session | |
+| `night_action` | `{ roomId, actionType, targetId }` | ⏳ | | `actionType`: `guard`\|`seer`\|`werewolf_kill`\|`witch` |
+| `chat_message` | `{ roomId, channel, content }` | ⏳ | content max 200 ký tự | |
+| `vote` | `{ roomId, round, targetId }` | ⏳ | | |
+| `reconnect` | `{ guestId, roomId }` | ⏳ | | Gửi trong vòng 60s sau disconnect |
+
+**Lưu ý quan trọng:**
+- ✅ Event đã implement và test được
+- ⏳ Event chưa implement (sẽ làm khi phát triển gameplay/chat/vote)
+- Gateway lưu session `{ guestId, roomId }` cho mỗi socket → một số event không cần gửi `roomId`
+- Tất cả event names dùng `UPPERCASE` để dễ phân biệt với Kafka topics (dùng `dot.case`)
 
 ---
 

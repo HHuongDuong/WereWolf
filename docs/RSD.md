@@ -61,7 +61,7 @@ Chỉ khi `status = waiting` |
 
 | ID | Yêu cầu | Input | Output | Ghi chú |
 |----|---------|-------|--------|---------|
-| G-09 | Broadcast kết quả đêm | `{ deadIds[] }` | `game.phase.changed { phase: "day", metadata: { deadIds } }` | Cập nhật `isAlive` trong Redis trước khi broadcast. `reasons[]` lưu nội bộ (debug), không gửi ra client |
+| G-09 | Broadcast kết quả đêm | `{ deadIds[] }` | `game.phase.changed { phase: "day", metadata: { deadIds } }` | Cập nhật `isAlive` trong Redis trước khi broadcast. **Không gửi `reasons[]` ra client** theo thiết kế game (GDD mục 3.2) |
 | G-10 | Mở thảo luận | `{ roomId }` | `game.chat.channel.updated { channel: "all", enabled: true }` | Kèm `deadline` timestamp |
 | G-11 | Bắt đầu vote | `{ roomId, round }` | Publish `game.vote.start` | Sau khi hết thời gian thảo luận |
 | G-12 | Nhận kết quả vote | Kafka `vote.result` | Xác định người bị loại, trigger Hunter nếu cần | Tie → không ai bị loại |
@@ -220,12 +220,14 @@ CREATE INDEX idx_messages_room_channel
 
 | Topic | Producer | Consumer | Payload |
 |-------|----------|----------|---------|
-| `room.started` | room-service | gameplay-service | `{ roomId, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
-| `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], reasons?: [], eliminatedId?: string } }` |
+| `room.started` | room-service | gameplay-service | `{ roomId, roomCode, players: [{ guestId, displayName }], config: { maxPlayers, guardDuration, seerDuration, werewolfDuration, witchDuration, discussDuration, voteDuration } }` |
+| `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, players: [{ guestId, displayName }] }` |
+| `room.deleted` | room-service | gateway-service | `{ roomId }` |
+| `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], eliminatedId?: string } }` |
 | `game.chat.channel.updated` | gameplay-service | chat-service | `{ roomId, channel, enabled, allowedGuestIds: [] }` |
 | `game.vote.start` | gameplay-service | vote-service | `{ roomId, round, alivePlayerIds: [], durationSec }` |
 | `vote.result` | vote-service | gameplay-service | `{ roomId, round, counts: { [guestId]: number }, eliminatedId: string \| null, tied: bool }` |
-| `game.ended` | gameplay-service | room-service | `{ roomId, winner: "werewolf" \| "villager" }` |
+| `game.ended` | gameplay-service | room-service | `{ roomId, winner: "werewolf" \| "villager", round: number }` |
 
 **Quy tắc chung:**
 - Tất cả payload dùng `camelCase`
@@ -240,21 +242,26 @@ CREATE INDEX idx_messages_room_channel
 
 | Event | Payload | Validate | Ghi chú |
 |-------|---------|----------|---------|
-| `create_room` | `{ guestId, displayName, maxPlayers }` | displayName 1–20 ký tự, maxPlayers 6–12 | |
-| `join_room` | `{ guestId, displayName, roomCode }` | roomCode 6 ký tự | |
-| `configure_room` | `{ roomId, maxPlayers, config }` | Chỉ host | |
-| `leave_room` | `{ roomId, guestId }` | | |
-| `start_game` | `{ roomId }` | Chỉ host, đủ người | |
-| `night_action` | `{ roomId, actionType, targetId }` | actionType: guard\|seer\|werewolf_kill\|witch | |
-| `chat_message` | `{ roomId, channel, content }` | content max 200 ký tự | |
-| `vote` | `{ roomId, round, targetId }` | | |
-| `reconnect` | `{ guestId, roomId }` | | |
+| `CREATE_ROOM` | `{ guestId, displayName }` | guestId: `guest_` + 10 ký tự alphanumeric, displayName 1–20 ký tự | maxPlayers được set mặc định = 8, có thể config sau (tức là phía FE gửi đúng payload còn maxPlayers = 8 là BE tự set default lúc tạo phòng, về sau muốn sửa maxPlayers thì đã có CONFIGURE_ROOM) |
+| `JOIN_ROOM` | `{ guestId, displayName, roomCode }` | guestId: `guest_` + 10 ký tự alphanumeric, displayName 1–20 ký tự, roomCode đúng 6 ký tự | |
+| `CONFIGURE_ROOM` | `{ guestId, maxPlayers?, config? }` | Chỉ host. maxPlayers 6–12. config: `{ guardDuration?, seerDuration?, werewolfDuration?, witchDuration?, discussDuration?, voteDuration? }` | roomId lấy từ session, không cần gửi (xem trong room.gateway.ts)|
+| `LEAVE_ROOM` | `{ roomId, guestId }` | guestId: `guest_` + 10 ký tự alphanumeric | |
+| `START_GAME` | `{ guestId }` | Chỉ host, đủ người. guestId: `guest_` + 10 ký tự alphanumeric | roomId lấy từ session |
+| `CANCEL_ROOM` | `{ guestId }` | Chỉ host, chỉ khi status = waiting. guestId: `guest_` + 10 ký tự alphanumeric | roomId lấy từ session |
+# các phần dưới đây là dự kiến , BE chưa hề implement nên CHƯA CHỐT
+| `night_action` | `{ roomId, actionType, targetId }` | actionType: guard\|seer\|werewolf_kill\|witch | Chưa implement |
+| `chat_message` | `{ roomId, channel, content }` | content max 200 ký tự | Chưa implement |
+| `vote` | `{ roomId, round, targetId }` | | Chưa implement |
+| `reconnect` | `{ guestId, roomId }` | | Chưa implement |
 
 ### Gateway → Client
 
 | Event | Payload | Gửi tới | Ghi chú |
 |-------|---------|---------|---------|
-| `room_updated` | `{ players[], hostId, status }` | Broadcast room | Mỗi khi có người join/out |
+| `ROOM_UPDATED` | `{ players[], hostId, status, roomCode, maxPlayers, config }` | Broadcast room | Mỗi khi có người join/out hoặc config thay đổi |
+| `ROOM_CANCELLED` | `{ roomId }` | Broadcast room | Khi host cancel phòng |
+| `ERROR` | `{ code, message }` | **Private** 1 player | Validation fail, action không hợp lệ |
+# CÁC CÁI SAU LÀ BE CHƯA IMPLEMENT
 | `role_assigned` | `{ role }` | **Private** 1 player | Đầu game, không broadcast |
 | `phase_changed` | `{ phase, round, deadlineTimestamp, metadata }` | Broadcast room | |
 | `night_action_ack` | `{ actionType, success, reason? }` | **Private** 1 player | Xác nhận đã nhận action |
@@ -267,7 +274,6 @@ CREATE INDEX idx_messages_room_channel
 | `game_ended` | `{ winner, roles: { [guestId]: role } }` | Broadcast room | Lúc này reveal hết role |
 | `player_disconnected` | `{ guestId, reconnectDeadline }` | Broadcast room | |
 | `player_reconnected` | `{ guestId }` | Broadcast room | |
-| `error` | `{ code, message }` | **Private** 1 player | Validation fail, action không hợp lệ |
 
 ---
 
