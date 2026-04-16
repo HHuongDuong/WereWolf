@@ -1,14 +1,8 @@
 /**
- * ApiContext — centralised API gateway stub.
+ * ApiContext — REST calls to room_service via fetch.
  *
- * All fetch calls should go through this context so that:
- *   - Guest ID is injected automatically from GuestContext
- *   - The base URL is configured in one place
- *   - Error handling is uniform
- *
- * Replace the `// TODO` bodies with real fetch/WebSocket calls when the
- * backend is ready. The hook signatures intentionally match what the pages
- * already expect so wiring up is a one-file change.
+ * Base URL: VITE_API_URL env var (default: /api).
+ * guestId and displayName are injected automatically from GuestContext.
  */
 
 import { createContext, useContext, useMemo } from "react";
@@ -16,46 +10,32 @@ import { useGuest } from "./AuthContext";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type RoomStatus = "waiting" | "in-progress" | "full";
-export type GameMode   = "Classic" | "Extended" | "Speed";
+export type RoomStatus = "waiting" | "in_game" | "finished";
 
 export interface Room {
-  id: string;
-  name: string;
-  host: string;
-  players: number;
+  roomId: string;
+  roomCode: string;
+  hostId: string;
+  playerCount: number;
   maxPlayers: number;
   status: RoomStatus;
-  mode: GameMode;
-  hasPassword: boolean;
-}
-
-export interface CreateRoomPayload {
-  name: string;
-  maxPlayers: number;
-  mode: GameMode;
-  password?: string;
 }
 
 // ── Context shape ─────────────────────────────────────────────────────────────
 
 interface ApiContextValue {
-  /** Room / lobby endpoints */
   rooms: {
     list(): Promise<Room[]>;
-    create(payload: CreateRoomPayload): Promise<Room>;
-    join(id: string, password?: string): Promise<void>;
-    leave(id: string): Promise<void>;
+    get(roomId: string): Promise<Room>;
+    create(): Promise<Room>;
+    join(roomCode: string): Promise<Room>;
+    leave(roomId: string): Promise<void>;
   };
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
-const BASE_URL = import.meta.env?.VITE_API_URL ?? "/api";
-
-function stub(name: string): never {
-  throw new Error(`[Api] ${name} — not yet wired to backend`);
-}
+const BASE_URL = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? "/api";
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -64,15 +44,10 @@ const ApiContext = createContext<ApiContextValue | null>(null);
 export function ApiProvider({ children }: { children: React.ReactNode }) {
   const { guest } = useGuest();
 
-  /** Builds fetch options with JSON headers + guest identity header. */
   function headers(): HeadersInit {
-    return {
-      "Content-Type": "application/json",
-      "X-Guest-Id": guest.guestId,
-    };
+    return { "Content-Type": "application/json" };
   }
 
-  /** Thin wrapper: throws on non-2xx, returns parsed JSON. */
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`${BASE_URL}${path}`, {
       ...init,
@@ -87,28 +62,36 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
   const api = useMemo<ApiContextValue>(() => ({
     rooms: {
-      async list() {
-        // TODO: wire to backend — GET /api/rooms
-        stub("rooms.list");
+      list() {
+        return request<Room[]>("/rooms");
       },
-      async create(payload) {
-        // TODO: wire to backend — POST /api/rooms
-        void payload;
-        stub("rooms.create");
+
+      get(roomId) {
+        return request<Room>(`/rooms/${roomId}`);
       },
-      async join(id, password) {
-        // TODO: wire to backend — POST /api/rooms/:id/join
-        void id; void password;
-        stub("rooms.join");
+
+      create() {
+        return request<Room>("/rooms", {
+          method: "POST",
+          body: JSON.stringify({ guestId: guest.guestId, displayName: guest.displayName }),
+        });
       },
-      async leave(id) {
-        // TODO: wire to backend — POST /api/rooms/:id/leave
-        void id;
-        stub("rooms.leave");
+
+      join(roomCode) {
+        return request<Room>("/rooms/join", {
+          method: "POST",
+          body: JSON.stringify({ guestId: guest.guestId, displayName: guest.displayName, roomCode }),
+        });
+      },
+
+      async leave(roomId) {
+        await request<void>(`/rooms/${roomId}/players/${guest.guestId}`, {
+          method: "DELETE",
+        });
       },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [guest.guestId]);
+  }), [guest.guestId, guest.displayName]);
 
   return <ApiContext.Provider value={api}>{children}</ApiContext.Provider>;
 }

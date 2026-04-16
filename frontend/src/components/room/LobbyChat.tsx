@@ -16,7 +16,7 @@ export function LobbyChat() {
     setMsg("");
   }
 
-  const myUsername = players.find(p => p.isYou)?.username ?? "You";
+  const myUsername = players.find(p => p.isYou)?.displayName ?? "You";
 
   return (
     <div className="room-chat-card">

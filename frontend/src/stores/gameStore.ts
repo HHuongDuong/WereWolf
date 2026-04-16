@@ -9,7 +9,7 @@
  *   const { on } = useWs();
  *   const { setPhase, eliminatePlayer } = useGameStore();
  *
- *   useEffect(() => on("GAME_STARTED", () => setPhase("day")), [on, setPhase]);
+ *   useEffect(() => on("ROLE_ASSIGNED", msg => setMyRole(msg.role)), [on, setMyRole]);
  */
 
 import { create } from "zustand";
@@ -26,8 +26,8 @@ export type GamePhase =
   | "ended";
 
 export interface GamePlayer {
-  id: string;
-  username: string;
+  guestId: string;
+  displayName: string;
   isAlive: boolean;
 }
 
@@ -48,12 +48,16 @@ interface GameState {
   eliminatedPlayerId: string | null;
   /** Winning faction — populated when phase = "ended" */
   winnerFaction: "wolves" | "villagers" | null;
-  /** Seconds remaining in the day discussion timer */
-  dayTimeLeft: number;
+  /** Unix ms deadline for the current phase timer (replaces dayTimeLeft) */
+  deadlineTimestamp: number | null;
   /** Target selected by the current player during night phase */
   nightAction: string | null;
   /** Result revealed to the Seer after investigating a player */
   seerResult: "wolf" | "villager" | null;
+  /** True after NIGHT_ACTION_ACK received with success=true */
+  nightActionAck: boolean;
+  /** guestId → role, populated from GAME_ENDED */
+  revealedRoles: Record<string, string>;
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   setPhase: (phase: GamePhase) => void;
@@ -62,20 +66,22 @@ interface GameState {
   setPlayers: (players: GamePlayer[]) => void;
   castVote: (voterId: string, targetId: string) => void;
   clearVotes: () => void;
-  eliminatePlayer: (playerId: string) => void;
+  eliminatePlayer: (guestId: string) => void;
   setEliminatedPlayer: (id: string | null) => void;
   setWinner: (faction: "wolves" | "villagers" | null) => void;
-  setDayTimeLeft: (seconds: number) => void;
+  setDeadline: (timestamp: number | null) => void;
   setNightAction: (targetId: string | null) => void;
   setSeerResult: (result: "wolf" | "villager" | null) => void;
+  setNightActionAck: (ack: boolean) => void;
+  setRevealedRoles: (roles: Record<string, string>) => void;
   reset: () => void;
 }
 
 const initialState: Pick<
   GameState,
   | "phase" | "round" | "myRole" | "players" | "votes"
-  | "eliminatedPlayerId" | "winnerFaction" | "dayTimeLeft"
-  | "nightAction" | "seerResult"
+  | "eliminatedPlayerId" | "winnerFaction" | "deadlineTimestamp"
+  | "nightAction" | "seerResult" | "nightActionAck" | "revealedRoles"
 > = {
   phase: "lobby",
   round: 0,
@@ -84,9 +90,11 @@ const initialState: Pick<
   votes: {},
   eliminatedPlayerId: null,
   winnerFaction: null,
-  dayTimeLeft: 180,
+  deadlineTimestamp: null,
   nightAction: null,
   seerResult: null,
+  nightActionAck: false,
+  revealedRoles: {},
 };
 
 export const useGameStore = create<GameState>()((set) => ({
@@ -105,10 +113,10 @@ export const useGameStore = create<GameState>()((set) => ({
 
   clearVotes: () => set({ votes: {} }),
 
-  eliminatePlayer: (playerId) =>
+  eliminatePlayer: (guestId) =>
     set((s) => ({
       players: s.players.map((p) =>
-        p.id === playerId ? { ...p, isAlive: false } : p,
+        p.guestId === guestId ? { ...p, isAlive: false } : p,
       ),
     })),
 
@@ -116,11 +124,15 @@ export const useGameStore = create<GameState>()((set) => ({
 
   setWinner: (faction) => set({ winnerFaction: faction }),
 
-  setDayTimeLeft: (seconds) => set({ dayTimeLeft: seconds }),
+  setDeadline: (timestamp) => set({ deadlineTimestamp: timestamp }),
 
   setNightAction: (targetId) => set({ nightAction: targetId }),
 
   setSeerResult: (result) => set({ seerResult: result }),
+
+  setNightActionAck: (ack) => set({ nightActionAck: ack }),
+
+  setRevealedRoles: (roles) => set({ revealedRoles: roles }),
 
   reset: () => set(initialState),
 }));

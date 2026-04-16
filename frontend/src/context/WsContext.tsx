@@ -26,7 +26,8 @@ import {
 export type WsStatus = "connecting" | "connected" | "disconnected";
 
 export type ServerMsg =
-  | { type: "ROOM_UPDATED"; players: Array<{ guestId: string; displayName: string }>; hostId: string; status: string }
+  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; players: Array<{ guestId: string; displayName: string }>; hostId: string; status: string }
+  | { type: "ROOM_CANCELLED"; roomId: string }
   | { type: "ROLE_ASSIGNED"; role: string }
   | { type: "PHASE_CHANGED"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }
   | { type: "NIGHT_ACTION_ACK"; actionType: string; success: boolean; reason?: string }
@@ -53,7 +54,7 @@ export type ServerMsg =
   // | { type: "GAME_OVER" }               // renamed → GAME_ENDED
 
 export type ClientMsg =
-  | { type: "CREATE_ROOM"; guestId: string; displayName: string; maxPlayers: number }
+  | { type: "CREATE_ROOM"; guestId: string; displayName: string }
   | { type: "JOIN_ROOM"; guestId: string; displayName: string; roomCode: string }
   | { type: "CONFIGURE_ROOM"; roomId: string; guestId: string; maxPlayers: number; config: import("../index").RoomConfig }
   | { type: "LEAVE_ROOM"; roomId: string; guestId: string }
@@ -98,10 +99,7 @@ interface WsContextValue {
 
 const WsContext = createContext<WsContextValue | null>(null);
 
-const WS_URL =
-  typeof window !== "undefined"
-    ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`
-    : "";
+const WS_URL = import.meta.env?.VITE_GATEWAY_WS_URL ?? "ws://localhost:3001";
 
 const RECONNECT_DELAY_MS = 3_000;
 
@@ -133,7 +131,8 @@ export function WsProvider({ children }: { children: ReactNode }) {
 
     ws.onmessage = (e: MessageEvent<string>) => {
       try {
-        dispatch(JSON.parse(e.data) as ServerMsg);
+        const { event, data } = JSON.parse(e.data) as { event: string; data: Record<string, unknown> };
+        dispatch({ type: event, ...data } as ServerMsg);
       } catch {
         console.error("[WS] failed to parse:", e.data);
       }
@@ -159,7 +158,8 @@ export function WsProvider({ children }: { children: ReactNode }) {
 
   const send = useCallback((msg: ClientMsg) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
+      const { type, ...data } = msg;
+      wsRef.current.send(JSON.stringify({ event: type, data }));
     } else {
       console.warn("[WS] dropped (not connected):", msg.type);
     }

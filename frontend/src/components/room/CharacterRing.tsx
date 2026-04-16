@@ -17,16 +17,15 @@ function roleCard(role?: string) {
 }
 
 interface SlotPlayer {
-  id: string;
-  username: string;
+  guestId: string;
+  displayName: string;
   isHost: boolean;
-  isReady: boolean;
   isYou?: boolean;
   role?: string;
 }
 
 interface EmptySlot {
-  id: string;
+  guestId: string;
   isEmpty: true;
 }
 
@@ -35,13 +34,9 @@ type Slot = SlotPlayer | EmptySlot;
 function CharSlot({
   slot,
   lineClass,
-  isHost: isHostUser,
-  kickPlayer,
 }: {
   slot: Slot;
   lineClass: string;
-  isHost: boolean;
-  kickPlayer: (id: string) => void;
 }) {
   if ("isEmpty" in slot) {
     return (
@@ -59,9 +54,8 @@ function CharSlot({
   const p = slot as SlotPlayer;
   return (
     <div
-      className={`camp-char ${p.isReady ? "camp-char--ready" : ""} ${p.isYou ? "camp-char--you" : ""} ${lineClass}`}
+      className={`camp-char ${p.isYou ? "camp-char--you" : ""} ${lineClass}`}
     >
-      {/* Host badge */}
       {p.isHost && (
         <img
           className="camp-char-badge"
@@ -72,49 +66,34 @@ function CharSlot({
         />
       )}
 
-      {/* Character image */}
       <img
         className="camp-char-img"
         src={roleCard(p.role)}
-        alt={p.username}
+        alt={p.displayName}
         draggable={false}
       />
 
-      {/* Name label */}
       <span className="camp-char-name">
-        {p.username}
+        {p.displayName}
         {p.isYou && <span className="camp-char-you">You</span>}
       </span>
-
-      {/* Kick button — host only, not self */}
-      {isHostUser && !p.isYou && (
-        <button
-          className="camp-char-kick"
-          title={`Kick ${p.username}`}
-          onClick={() => kickPlayer(p.id)}
-        >
-          <img src="/img/icons/cross.svg" alt="kick" draggable={false} />
-        </button>
-      )}
     </div>
   );
 }
 
 export function CharacterRing() {
-  const { players, room, isHost, kickPlayer } = useRoom();
+  const { players, room } = useRoom();
 
   const totalSlots = room.maxPlayers;
   const filled: SlotPlayer[] = players as SlotPlayer[];
   const emptyCount = Math.max(0, totalSlots - filled.length);
   const empties: EmptySlot[] = Array.from({ length: emptyCount }, (_, i) => ({
-    id: `empty-${i}`,
+    guestId: `empty-${i}`,
     isEmpty: true as const,
   }));
 
   const allSlots: Slot[] = [...filled, ...empties];
 
-  // Distribute across 2 lines: back (smaller) and front (larger)
-  // Front row: up to 6 slots; back row: the rest (up to 6)
   const frontCount = Math.min(allSlots.length, 6);
   const backCount  = Math.min(allSlots.length - frontCount, 6);
 
@@ -123,30 +102,24 @@ export function CharacterRing() {
 
   return (
     <>
-      {/* Back row — secondLine sizing */}
       {backSlots.length > 0 && (
         <div className="camp-line camp-line--second">
           {backSlots.map(slot => (
             <CharSlot
-              key={slot.id}
+              key={slot.guestId}
               slot={slot}
               lineClass=""
-              isHost={isHost}
-              kickPlayer={kickPlayer}
             />
           ))}
         </div>
       )}
 
-      {/* Front row — firstLine sizing */}
       <div className="camp-line camp-line--first">
         {frontSlots.map(slot => (
           <CharSlot
-            key={slot.id}
+            key={slot.guestId}
             slot={slot}
             lineClass=""
-            isHost={isHost}
-            kickPlayer={kickPlayer}
           />
         ))}
       </div>

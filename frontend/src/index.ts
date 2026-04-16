@@ -21,7 +21,7 @@ export type RoomConfig = {
 /** Messages sent from the browser → server (snake_case doc names → UPPER_SNAKE here) */
 export type ClientMsg =
   // | { type: "PING" }                                    // no heartbeat in contract
-  | { type: "CREATE_ROOM"; guestId: string; displayName: string; maxPlayers: number }
+  | { type: "CREATE_ROOM"; guestId: string; displayName: string }
   | { type: "JOIN_ROOM"; guestId: string; displayName: string; roomCode: string }
   | { type: "CONFIGURE_ROOM"; roomId: string; guestId: string; maxPlayers: number; config: RoomConfig }
   | { type: "LEAVE_ROOM"; roomId: string; guestId: string }
@@ -133,7 +133,7 @@ server = serve<WsData>({
         // ── Room lifecycle ─────────────────────────────────────────────────────
         case "CREATE_ROOM": {
           // TODO: call room_service POST /rooms, then broadcast ROOM_UPDATED
-          console.log(`[WS] ${msg.guestId} wants to create room (maxPlayers: ${msg.maxPlayers})`);
+          console.log(`[WS] ${msg.guestId} wants to create room`);
           break;
         }
 
