@@ -19,7 +19,7 @@ export function HunterModal() {
   const [chosen, setChosen] = useState<string | null>(null);
 
   useEffect(() => {
-    return on("HUNTER_TRIGGER", msg => {
+    return on("hunter_trigger", msg => {
       if (msg.hunterId === guest.guestId) {
         setVisible(true);
       }
@@ -32,7 +32,7 @@ export function HunterModal() {
     if (chosen) return;
     setChosen(targetId);
     // Confirm exact actionType with BE dev — using "guard" as per CLAUDE.md note
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "guard", targetId });
+    send({ type: "night_action", actionType: "guard", targetId });
     setTimeout(() => setVisible(false), 2000);
   }
 

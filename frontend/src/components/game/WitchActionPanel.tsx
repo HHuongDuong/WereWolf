@@ -22,7 +22,7 @@ export function WitchActionPanel() {
   const [poisonTargetId, setPoisonTargetId] = useState<string | null>(null);
 
   useEffect(() => {
-    return on("WITCH_INFO", msg => {
+    return on("witch_info", msg => {
       setKillTargetId(msg.werewolfKillTargetId);
     });
   }, [on]);
@@ -35,7 +35,7 @@ export function WitchActionPanel() {
     if (acted || !killTargetId) return;
     setChoice("save");
     setNightAction(killTargetId);
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "witch", targetId: killTargetId });
+    send({ type: "night_action", actionType: "witch", targetId: killTargetId });
   }
 
   function handlePoison(targetId: string) {
@@ -43,7 +43,7 @@ export function WitchActionPanel() {
     setPoisonTargetId(targetId);
     setChoice("poison");
     setNightAction(targetId);
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "witch", targetId });
+    send({ type: "night_action", actionType: "witch", targetId });
   }
 
   function handleSkip() {
@@ -52,7 +52,7 @@ export function WitchActionPanel() {
     setNightAction("skip");
     // Skipping — send with empty string or a designated "skip" target
     // Confirm exact payload with BE dev; using empty string as placeholder
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "witch", targetId: "" });
+    send({ type: "night_action", actionType: "witch", targetId: "" });
   }
 
   if (!killTargetId) {

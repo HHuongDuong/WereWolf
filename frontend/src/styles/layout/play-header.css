@@ -2,7 +2,7 @@
 
 .ph-header {
   width: 100vw;
-  height: 100px;
+  height: 6.25rem;
   background-color: #1b1b28;
   display: flex;
   align-items: center;
@@ -21,12 +21,12 @@
 }
 
 .ph-nav {
-  margin-left: 80px;
+  margin-left: 5rem;
   display: flex;
   align-items: center;
 }
 
-@media (max-width: 1600px) { .ph-nav { margin-left: 30px; } }
+@media (max-width: 1600px) { .ph-nav { margin-left: 1.875rem; } }
 
 .ph-nav-item {
   position: relative;
@@ -34,10 +34,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 15px;
-  margin-right: 14px;
+  padding: 0 0.9375rem;
+  margin-right: 0.875rem;
   cursor: pointer;
-  height: 100px;
+  height: 6.25rem;
   text-decoration: none;
   transition: opacity .2s;
   user-select: none;
@@ -46,8 +46,8 @@
 .ph-nav-item:last-child { margin-right: 0; }
 
 .ph-nav-icon {
-  height: 25px;
-  margin-bottom: 8px;
+  height: 1.5625rem;
+  margin-bottom: 0.5rem;
   object-fit: contain;
 }
 
@@ -56,7 +56,7 @@
 }
 
 .ph-nav-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: .4px;
   color: #fff;
@@ -79,23 +79,23 @@
 /* "New" badge */
 .ph-nav-badge {
   position: absolute;
-  top: 13px;
-  left: 46px;
+  top: 0.8125rem;
+  left: 2.875rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 38px;
-  height: 19px;
+  width: 2.375rem;
+  height: 1.1875rem;
   border: 2px solid #1b1b28;
   border-radius: 6px;
   background-color: #9e2024;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 800;
   color: #fff;
 }
 
 @media (max-width: 1200px) {
-  .ph-nav-badge { left: 26px; }
+  .ph-nav-badge { left: 1.625rem; }
 }
 
 /* ── Right: wallet + notifications ── */
@@ -103,10 +103,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  margin-right: 80px;
+  margin-right: 5rem;
 }
 
-@media (max-width: 1600px) { .ph-right { margin-right: 30px; } }
+@media (max-width: 1600px) { .ph-right { margin-right: 1.875rem; } }
 
 .ph-money-box {
   display: flex;
@@ -121,8 +121,8 @@
   justify-content: center;
   color: #fff;
   border-radius: 10px;
-  width: 66px;
-  height: 48px;
+  width: 4.125rem;
+  height: 3rem;
   cursor: pointer;
   text-decoration: none;
   transition: background .2s;
@@ -131,14 +131,14 @@
 .ph-money-item:hover { background: rgba(255,255,255,.06); }
 
 .ph-money-icon {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   object-fit: contain;
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
 }
 
 .ph-money-count {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #fff;
 }
@@ -147,8 +147,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   cursor: pointer;
   transition: background .2s;
@@ -157,7 +157,7 @@
 .ph-notifications:hover { background: rgba(255,255,255,.06); }
 
 .ph-notif-icon {
-  width: 22px;
-  height: 22px;
+  width: 1.375rem;
+  height: 1.375rem;
   object-fit: contain;
 }

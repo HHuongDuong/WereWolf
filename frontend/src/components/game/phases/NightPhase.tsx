@@ -25,19 +25,19 @@ export function NightPhase() {
   function handleWolfTarget(targetId: string) {
     if (nightAction) return; // already acted
     setNightAction(targetId);
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "werewolf_kill", targetId });
+    send({ type: "night_action", actionType: "werewolf_kill", targetId });
   }
 
   function handleSeerInvestigate(targetId: string) {
     if (nightAction) return;
     setNightAction(targetId);
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "seer", targetId });
+    send({ type: "night_action", actionType: "seer", targetId });
   }
 
   function handleGuardProtect(targetId: string) {
     if (nightAction) return;
     setNightAction(targetId);
-    send({ type: "NIGHT_ACTION", roomId: room.id, actionType: "guard", targetId });
+    send({ type: "night_action", actionType: "guard", targetId });
   }
 
   const acted = !!nightAction || nightActionAck;

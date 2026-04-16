@@ -1,7 +1,7 @@
 /**
  * RoomContext — active room / game-lobby state.
  *
- * Wraps individual room routes with <RoomProvider roomId={id}>.
+ * Wraps individual room routes with <RoomProvider roomCode={code}>.
  * On mount: fetches room info via REST, then emits JOIN_ROOM via WS.
  * Subscribes to ROOM_UPDATED for live player/status updates.
  */
@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useGuest } from "./AuthContext";
 import { useWs } from "./WsContext";
 import { useApi } from "./ApiContext";
@@ -44,6 +44,15 @@ export interface SettingRow {
   accent?: "blue" | "red" | "gold" | "dim";
 }
 
+export interface PhaseConfig {
+  guardDuration?: number;
+  seerDuration?: number;
+  werewolfDuration?: number;
+  witchDuration?: number;
+  discussDuration?: number;
+  voteDuration?: number;
+}
+
 export interface RoomInfo {
   id: string;
   code: string;
@@ -65,6 +74,7 @@ interface RoomContextValue {
   startGame(): void;
   leaveRoom(): void;
   updateSettings(settings: SettingRow[]): void;
+  configureRoom(maxPlayers?: number, config?: PhaseConfig): void;
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -72,70 +82,69 @@ interface RoomContextValue {
 const RoomContext = createContext<RoomContextValue | null>(null);
 
 export function RoomProvider({
-  roomId,
+  roomCode,
   children,
 }: {
-  roomId: string;
+  roomCode: string;
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const locationState = state as { isCreator?: boolean; initialRoom?: { roomId: string; roomCode: string; hostId: string; status: string; players: Array<{ guestId: string; displayName: string }> } } | null;
+  const isCreator = locationState?.isCreator ?? false;
+  const initialRoom = locationState?.initialRoom;
   const { guest } = useGuest();
   const { send, on } = useWs();
   const api = useApi();
   const { setPhase, setMyRole, setPlayers: setGamePlayers, nextRound } = useGameStore();
 
   const [room, setRoom] = useState<RoomInfo>({
-    id: roomId,
-    code: "",
-    hostId: "",
-    maxPlayers: 12,
-    status: "waiting",
+    id: initialRoom?.roomId ?? "",
+    code: initialRoom?.roomCode ?? roomCode,
+    hostId: initialRoom?.hostId ?? "",
+    maxPlayers: 8,
+    status: (initialRoom?.status as RoomStatus) ?? "waiting",
     settings: [],
   });
 
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Player[]>(
+    initialRoom?.players.map(p => ({
+      guestId: p.guestId,
+      displayName: p.displayName,
+      isHost: p.guestId === initialRoom.hostId,
+      isYou: p.guestId === guest.guestId,
+    })) ?? []
+  );
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const msgCounter = useRef(Date.now());
 
-  // Register WS session via JOIN_ROOM immediately, then enrich with REST data
+  // Guests send JOIN_ROOM; the host already has a session from CREATE_ROOM.
   useEffect(() => {
-    // Send JOIN_ROOM right away so the gateway (real or mock) emits ROOM_UPDATED.
-    // roomCode starts empty — the real gateway will look it up from the session;
-    // the mock gateway ignores it entirely.
+    if (isCreator) return;
     send({
       type: "JOIN_ROOM",
       guestId: guest.guestId,
       displayName: guest.displayName,
-      roomCode: room.code || roomId,
-    });
-
-    // REST fetch is best-effort: enriches room info but is not required (fails in mock mode)
-    api.rooms.get(roomId).then(info => {
-      setRoom(r => ({
-        ...r,
-        code: info.roomCode,
-        hostId: info.hostId,
-        maxPlayers: info.maxPlayers,
-        status: info.status,
-      }));
-    }).catch(err => {
-      console.warn("[Room] REST fetch failed (expected in mock mode):", err);
+      roomCode,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomCode]);
 
   // Subscribe to ROOM_UPDATED — populate players and room state
   useEffect(() => {
     return on("ROOM_UPDATED", (msg) => {
+      console.log("[RoomContext] ROOM_UPDATED received:", msg);
       const newPlayers: Player[] = msg.players.map(p => ({
         guestId: p.guestId,
         displayName: p.displayName,
         isHost: p.guestId === msg.hostId,
         isYou: p.guestId === guest.guestId,
       }));
+      console.log("[RoomContext] newPlayers:", newPlayers);
       setPlayers(newPlayers);
       setRoom(r => ({
         ...r,
+        id: msg.roomId,
         code: msg.roomCode,
         hostId: msg.hostId,
         status: msg.status as RoomStatus,
@@ -171,7 +180,7 @@ export function RoomProvider({
 
   const startGame = useCallback(() => {
     if (!canStart) return;
-    send({ type: "START_GAME", roomId, guestId: guest.guestId });
+    send({ type: "START_GAME", guestId: guest.guestId });
     // Local phase transition — will be replaced by ROLE_ASSIGNED / PHASE_CHANGED WS events
     setGamePlayers(players.map(p => ({ guestId: p.guestId, displayName: p.displayName, isAlive: true })));
     setMyRole("Werewolf");
@@ -180,16 +189,21 @@ export function RoomProvider({
       nextRound();
       setPhase("night");
     }, 5000);
-  }, [canStart, send, roomId, guest.guestId, players, setPhase, setMyRole, setGamePlayers, nextRound]);
+  }, [canStart, send, room.id, guest.guestId, players, setPhase, setMyRole, setGamePlayers, nextRound]);
 
   const leaveRoom = useCallback(() => {
-    send({ type: "LEAVE_ROOM", roomId, guestId: guest.guestId });
+    send({ type: "LEAVE_ROOM", roomId: room.id, guestId: guest.guestId });
     navigate("/rooms");
-  }, [send, roomId, guest.guestId, navigate]);
+  }, [send, room.id, guest.guestId, navigate]);
 
   const updateSettings = useCallback((settings: SettingRow[]) => {
     setRoom(r => ({ ...r, settings }));
   }, []);
+
+  const configureRoom = useCallback((maxPlayers?: number, config?: PhaseConfig) => {
+    send({ type: "CONFIGURE_ROOM", guestId: guest.guestId, ...(maxPlayers !== undefined && { maxPlayers }), ...(config !== undefined && { config }) });
+    if (maxPlayers !== undefined) setRoom(r => ({ ...r, maxPlayers }));
+  }, [send, guest.guestId]);
 
   return (
     <RoomContext.Provider
@@ -204,6 +218,7 @@ export function RoomProvider({
         startGame,
         leaveRoom,
         updateSettings,
+        configureRoom,
       }}
     >
       {children}

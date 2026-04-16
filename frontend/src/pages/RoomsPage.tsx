@@ -5,22 +5,12 @@ import { StartGameCard } from "../components/play/StartGameCard";
 import { GameListItem } from "../components/play/GameListItem";
 import { AvatarPreview } from "../components/play/AvatarPreview";
 import { SocialPanel } from "../components/play/SocialPanel";
-import { CreateRoomModal } from "../components/rooms/CreateRoomModal";
 import { useWs } from "../context/WsContext";
 import { useGuest } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import type { Room, GameMode } from "../components/rooms/RoomCard";
 
-const MOCK_ROOMS: Room[] = [
-  { id: "r1", name: "Midnight Hunt",       host: "LunaWolf",    players: 7,  maxPlayers: 12, status: "waiting",     mode: "Classic",  hasPassword: false },
-  { id: "r2", name: "Village at Dusk",     host: "SeerMaster",  players: 12, maxPlayers: 12, status: "full",        mode: "Extended", hasPassword: false },
-  { id: "r3", name: "Blood Moon Rising",   host: "AlphaHowl",   players: 4,  maxPlayers: 8,  status: "in-progress", mode: "Speed",    hasPassword: true  },
-  { id: "r4", name: "Forest of Shadows",   host: "CursedOne",   players: 3,  maxPlayers: 10, status: "waiting",     mode: "Classic",  hasPassword: false },
-  { id: "r5", name: "Silver Blade Guild",  host: "HunterX",     players: 9,  maxPlayers: 16, status: "waiting",     mode: "Extended", hasPassword: true  },
-  { id: "r6", name: "Howling Pit",         host: "PackLeader",  players: 6,  maxPlayers: 8,  status: "waiting",     mode: "Speed",    hasPassword: false },
-  { id: "r7", name: "Witch's Cauldron",    host: "WitchKraft",  players: 5,  maxPlayers: 10, status: "waiting",     mode: "Classic",  hasPassword: false },
-  { id: "r8", name: "Dark Forest Run",     host: "ShadowPaw",   players: 2,  maxPlayers: 8,  status: "waiting",     mode: "Speed",    hasPassword: false },
-];
+const ROOMS: Room[] = [];
 
 export function RoomsPage() {
   const navigate = useNavigate();
@@ -28,20 +18,18 @@ export function RoomsPage() {
   const { guest } = useGuest();
   const { toast } = useToast();
   const [tab, setTab] = useState<"public" | "private">("public");
-  const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const visibleRooms = MOCK_ROOMS.filter(r =>
+  const visibleRooms = ROOMS.filter(r =>
     tab === "private" ? r.hasPassword : !r.hasPassword
   );
 
   function handlePlay() {
-    const open = MOCK_ROOMS.find(r => r.status === "waiting");
-    if (open) navigate(`/rooms/${open.id}`);
+    // disabled — no room auto-join yet
   }
 
-  function handleCreate(data: { name: string; maxPlayers: string; mode: GameMode; password: string }) {
+  function handleCreate(data?: { name: string; maxPlayers: string; mode: GameMode; password: string }) {
     void data;
     if (creating) return;
     setCreating(true);
@@ -55,13 +43,14 @@ export function RoomsPage() {
 
     // Navigate on first ROOM_UPDATED after CREATE_ROOM
     const unsubRoom = on("ROOM_UPDATED", (msg) => {
+      console.log("[RoomsPage] ROOM_UPDATED received:", msg);
       cleanup();
-      setShowCreate(false);
-      navigate(`/rooms/${msg.roomId}`);
+      navigate(`/rooms/${msg.roomCode}`, { state: { isCreator: true, initialRoom: msg } });
     });
 
     // Surface gateway validation / service errors immediately
     const unsubErr = on("ERROR", (msg) => {
+      console.log("[RoomsPage] ERROR received:", msg);
       cleanup();
       toast(`${msg.code}: ${msg.message}`, "error");
     });
@@ -72,6 +61,7 @@ export function RoomsPage() {
       toast("No response from gateway. Check that Kafka and gateway_service are running.", "error");
     }, 8000);
 
+    console.log("[RoomsPage] sending CREATE_ROOM", { guestId: guest.guestId, displayName: guest.displayName });
     send({
       type: "CREATE_ROOM",
       guestId: guest.guestId,
@@ -92,7 +82,7 @@ export function RoomsPage() {
           tab={tab}
           onTabChange={setTab}
           onPlay={handlePlay}
-          onCreateClick={() => setShowCreate(true)}
+          onCreateClick={() => handleCreate()}
         />
 
         <div className="play-list-header">
@@ -103,7 +93,7 @@ export function RoomsPage() {
           {visibleRooms.length === 0 ? (
             <>
               {[0, 1, 2, 3].map(i => (
-                <GameListItem key={i} room={MOCK_ROOMS[0]!} onJoin={() => {}} skeleton />
+                <GameListItem key={i} room={{} as Room} onJoin={() => {}} skeleton />
               ))}
             </>
           ) : (
@@ -148,13 +138,6 @@ export function RoomsPage() {
         <SocialPanel />
       </aside>
 
-      {showCreate && (
-        <CreateRoomModal
-          onClose={() => !creating && setShowCreate(false)}
-          onSubmit={handleCreate}
-          loading={creating}
-        />
-      )}
     </section>
     </>
   );

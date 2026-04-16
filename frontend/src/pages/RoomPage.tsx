@@ -47,11 +47,11 @@ function LobbyScene() {
 }
 
 export function RoomPage() {
-  const { id = "unknown" } = useParams();
+  const { id: roomCode = "unknown" } = useParams();
   const phase = useGameStore(s => s.phase);
 
   return (
-    <RoomProvider roomId={id}>
+    <RoomProvider roomCode={roomCode}>
       {phase === "lobby" ? <LobbyScene /> : <GameView />}
     </RoomProvider>
   );

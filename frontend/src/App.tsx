@@ -9,13 +9,13 @@ import { WsProvider } from "./context/WsContext";
 export function App() {
   return (
     <GuestProvider>
-      <ApiProvider>
-        <ToastProvider>
-          <WsProvider>
+      <WsProvider>
+        <ApiProvider>
+          <ToastProvider>
             {useRoutes(routes)}
-          </WsProvider>
-        </ToastProvider>
-      </ApiProvider>
+          </ToastProvider>
+        </ApiProvider>
+      </WsProvider>
     </GuestProvider>
   );
 }

@@ -26,43 +26,33 @@ import {
 export type WsStatus = "connecting" | "connected" | "disconnected";
 
 export type ServerMsg =
-  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; players: Array<{ guestId: string; displayName: string }>; hostId: string; status: string }
+  | { type: "ROOM_UPDATED"; roomId: string; roomCode: string; hostId: string; status: "waiting" | "in_game" | "finished"; players: Array<{ guestId: string; displayName: string }> }
   | { type: "ROOM_CANCELLED"; roomId: string }
-  | { type: "ROLE_ASSIGNED"; role: string }
-  | { type: "PHASE_CHANGED"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }
-  | { type: "NIGHT_ACTION_ACK"; actionType: string; success: boolean; reason?: string }
-  | { type: "SEER_RESULT"; targetId: string; role: string }
-  | { type: "WITCH_INFO"; werewolfKillTargetId: string }
-  | { type: "HUNTER_TRIGGER"; hunterId: string }
-  | { type: "CHAT_MESSAGE"; senderName: string; channel: "wolves" | "all"; content: string; sentAt: string }
-  | { type: "VOTE_STARTED"; round: number; durationSec: number; candidates: string[] }
-  | { type: "VOTE_RESULT"; round: number; counts: Record<string, number>; eliminatedId: string | null; tied: boolean }
-  | { type: "GAME_ENDED"; winner: "werewolf" | "villager"; roles: Record<string, string> }
-  | { type: "PLAYER_DISCONNECTED"; guestId: string; reconnectDeadline: number }
-  | { type: "PLAYER_RECONNECTED"; guestId: string }
+  | { type: "role_assigned"; role: string }
+  | { type: "phase_changed"; phase: "night" | "day"; round: number; deadlineTimestamp: number; metadata: { deadIds: string[]; eliminatedId: string | null } }
+  | { type: "night_action_ack"; actionType: string; success: boolean; reason?: string }
+  | { type: "seer_result"; targetId: string; role: string }
+  | { type: "witch_info"; werewolfKillTargetId: string }
+  | { type: "hunter_trigger"; hunterId: string }
+  | { type: "chat_message"; senderName: string; channel: "wolves" | "all"; content: string; sentAt: string }
+  | { type: "vote_started"; round: number; durationSec: number; candidates: string[] }
+  | { type: "vote_result"; round: number; counts: Record<string, number>; eliminatedId: string | null; tied: boolean }
+  | { type: "game_ended"; winner: "werewolf" | "villager"; roles: Record<string, string> }
+  | { type: "player_disconnected"; guestId: string; reconnectDeadline: number }
+  | { type: "player_reconnected"; guestId: string }
   | { type: "ERROR"; code: string; message: string };
-  // | { type: "PONG" }                    // no heartbeat in contract
-  // | { type: "ROOM_JOINED" }             // replaced by ROOM_UPDATED
-  // | { type: "ROOM_LEFT" }               // replaced by ROOM_UPDATED
-  // | { type: "PLAYER_READY" }            // not in contract
-  // | { type: "GAME_STARTED" }            // not in contract — implied by ROLE_ASSIGNED
-  // | { type: "PLAYER_KICKED" }           // not in contract
-  // | { type: "ROLE_DEALT" }              // renamed → ROLE_ASSIGNED
-  // | { type: "NIGHT_STARTED" }           // replaced by PHASE_CHANGED (phase: "night")
-  // | { type: "DAY_STARTED" }             // replaced by PHASE_CHANGED (phase: "day")
-  // | { type: "VOTE_PHASE" }              // replaced by VOTE_STARTED
-  // | { type: "GAME_OVER" }               // renamed → GAME_ENDED
 
 export type ClientMsg =
   | { type: "CREATE_ROOM"; guestId: string; displayName: string }
   | { type: "JOIN_ROOM"; guestId: string; displayName: string; roomCode: string }
-  | { type: "CONFIGURE_ROOM"; roomId: string; guestId: string; maxPlayers: number; config: import("../index").RoomConfig }
+  | { type: "CONFIGURE_ROOM"; guestId: string; maxPlayers?: number; config?: any }
   | { type: "LEAVE_ROOM"; roomId: string; guestId: string }
-  | { type: "START_GAME"; roomId: string; guestId: string }
-  | { type: "NIGHT_ACTION"; roomId: string; actionType: "guard" | "seer" | "werewolf_kill" | "witch"; targetId: string }
-  | { type: "CHAT_MESSAGE"; roomId: string; channel: "wolves" | "all"; content: string }
-  | { type: "VOTE"; roomId: string; round: number; targetId: string }
-  | { type: "RECONNECT"; guestId: string; roomId: string };
+  | { type: "CANCEL_ROOM"; guestId: string }
+  | { type: "START_GAME"; guestId: string }
+  | { type: "night_action"; actionType: "guard" | "seer" | "werewolf_kill" | "witch"; targetId: string }
+  | { type: "chat_message"; channel: "wolves" | "all"; content: string }
+  | { type: "vote"; round: number; targetId: string }
+  | { type: "reconnect"; guestId: string; roomId: string };
   // | { type: "PING" }                    // no heartbeat in contract
   // | { type: "READY_TOGGLE" }            // not in contract
   // | { type: "KICK_PLAYER" }             // not in contract
@@ -130,6 +120,7 @@ export function WsProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onmessage = (e: MessageEvent<string>) => {
+      console.log("[WS] raw:", e.data);
       try {
         const { event, data } = JSON.parse(e.data) as { event: string; data: Record<string, unknown> };
         dispatch({ type: event, ...data } as ServerMsg);
