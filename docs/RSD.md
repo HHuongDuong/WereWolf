@@ -265,7 +265,7 @@ CREATE INDEX idx_messages_room_channel
 | `phase_changed` | `{ phase, round, deadlineTimestamp, metadata }` | Broadcast room | |
 | `night_action_ack` | `{ actionType, success, reason? }` | **Private** 1 player | Xác nhận đã nhận action |
 | `seer_result` | `{ targetId, role }` | **Private** Seer | |
-| `witch_info` | `{ soidKillTargetId }` | **Private** Witch | Ai bị sói chọn đêm đó |
+| `witch_info` | `{ werewolfKillTargetId }` | **Private** Witch | Ai bị sói chọn đêm đó |
 | `hunter_trigger` | `{ hunterId }` | **Private** Hunter | Hunter chọn người chết theo |
 | `chat_message` | `{ senderName, channel, content, sentAt }` | Broadcast theo channel | |
 | `vote_started` | `{ round, durationSec, candidates: [] }` | Broadcast room | |
