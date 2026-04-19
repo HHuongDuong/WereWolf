@@ -25,6 +25,12 @@ export function useGameSocket() {
 
     const onError = (data: any) => {
       setToast(data.message || "Đã xảy ra lỗi", "error");
+      // Reset loading states on error
+      const state = useGameStore.getState();
+      if (state.roomStatus === 'idle') {
+        // User is on landing page, likely failed CREATE_ROOM or JOIN_ROOM
+        // The page components will handle their own loading state reset via timeout
+      }
     };
 
     const onRoomCancelled = () => {

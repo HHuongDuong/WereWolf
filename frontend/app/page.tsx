@@ -21,6 +21,15 @@ export default function LandingPage() {
   useEffect(() => {
     const savedName = localStorage.getItem("displayName");
     if (savedName) setDisplayName(savedName);
+
+    // Auto-fill room code from URL query parameter
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const joinCode = params.get('join');
+      if (joinCode) {
+        setRoomCode(joinCode.toUpperCase());
+      }
+    }
   }, []);
 
   // When room is created or joined successfully, WS sends ROOM_UPDATED -> roomStatus changes

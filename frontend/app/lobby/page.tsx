@@ -49,6 +49,14 @@ export default function LobbyPage() {
     }
   };
 
+  const copyShareLink = () => {
+    if (roomCode) {
+      const shareLink = `${window.location.origin}/?join=${roomCode}`;
+      navigator.clipboard.writeText(shareLink);
+      setToast("Đã copy link mời!", "success");
+    }
+  };
+
   const handleLeaveRoom = () => {
     socketManger.emit("LEAVE_ROOM", { roomId, guestId: myGuestId });
     router.replace("/");
@@ -103,18 +111,43 @@ export default function LobbyPage() {
       <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto flex flex-col items-center">
         
         {/* Room Code Section */}
-        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-          <p className="text-text-secondary uppercase tracking-widest text-sm mb-2 font-semibold">
-            Mã Phòng
-          </p>
-          <div 
-            onClick={copyRoomCode}
-            className="group flex items-center justify-center space-x-4 bg-bg-surface/50 border border-bg-elevated rounded-sm px-8 py-4 cursor-pointer hover:bg-bg-elevated/50 hover:border-wolf-red/50 transition-all shadow-lg"
-          >
-            <h2 className="font-mono text-5xl md:text-6xl font-bold tracking-widest text-text-primary group-hover:text-village-gold transition-colors drop-shadow-md">
-              {roomCode}
-            </h2>
-            <Copy className="h-6 w-6 text-text-muted group-hover:text-village-gold transition-colors" />
+        <div className="text-center mb-6 animate-in fade-in slide-in-from-top-4 duration-500 space-y-4">
+          <div>
+            <p className="text-text-secondary uppercase tracking-widest text-xs mb-2 font-semibold">
+              Mã Phòng
+            </p>
+            <div 
+              onClick={copyRoomCode}
+              className="group flex items-center justify-center space-x-3 bg-bg-surface/50 border border-bg-elevated rounded-sm px-6 py-3 cursor-pointer hover:bg-bg-elevated/50 hover:border-wolf-red/50 transition-all shadow-lg"
+            >
+              <h2 className="font-mono text-4xl md:text-5xl font-bold tracking-widest text-text-primary group-hover:text-village-gold transition-colors drop-shadow-md">
+                {roomCode}
+              </h2>
+              <Copy className="h-5 w-5 text-text-muted group-hover:text-village-gold transition-colors" />
+            </div>
+          </div>
+
+          {/* Share Link Section */}
+          <div className="max-w-2xl mx-auto">
+            <p className="text-text-secondary uppercase tracking-widest text-[10px] mb-1.5 font-semibold">
+              Hoặc chia sẻ link
+            </p>
+            <div className="flex items-center gap-2 bg-bg-surface/50 border border-bg-elevated rounded-sm px-3 py-2 shadow-lg">
+              <div className="flex-1 overflow-hidden">
+                <p className="text-text-muted text-xs font-mono truncate">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/?join=${roomCode}` : ''}
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={copyShareLink}
+                className="shrink-0 hover:bg-village-gold/10 hover:text-village-gold h-7 px-2 text-xs"
+              >
+                <Copy className="h-3 w-3 mr-1.5" />
+                Copy
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -151,7 +184,7 @@ export default function LobbyPage() {
         </Card>
 
         {/* Footer Actions */}
-        <div className="mt-8 mb-12 w-full max-w-sm flex justify-center animate-in fade-in duration-700 delay-300">
+        <div className="mt-6 mb-8 w-full max-w-sm flex justify-center animate-in fade-in duration-700 delay-300">
           {isHost ? (
             <div className="w-full relative">
               {/* Glow effect behind button */}
