@@ -23,7 +23,7 @@ import { RoomPlayer } from './room/entities/room-player.entity';
         url: config.get<string>('DATABASE_URL'),
         entities: [Room, RoomPlayer],
         synchronize: false,
-        logging: config.get<string>('NODE_ENV') !== 'production',
+        logging: config.get<string>('NODE_ENV') !== 'production' ? ['error', 'warn'] : false,
       }),
       inject: [ConfigService],
     }),

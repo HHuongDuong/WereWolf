@@ -12,6 +12,19 @@ export function useGameSocket() {
 
     // Handlers
     const onRoomUpdated = (data: any) => {
+      const state = useGameStore.getState();
+      
+      // Phòng hờ Race condition: Backend xử lý rời phòng và bắn Kafka event (ROOM_UPDATED) 
+      // NHANH HƠN việc Gateway xoá socket khỏi roomMembers, dẫn đến FE nhận được 
+      // cục state phòng dù đã ấn Rời Phòng. 
+      // => Check xem guestId của mìnnh còn trong list players trả về không.
+      const isMeInRoom = data.players?.some((p: any) => p.guestId === state.myGuestId);
+      if (!isMeInRoom) {
+        // Nếu không có mình trong phòng, chắc chắn mình đã out. Force update status về idle.
+        useGameStore.getState().reset();
+        return;
+      }
+
       setRoomState({
         roomId: data.roomId,
         roomCode: data.roomCode,
@@ -24,13 +37,16 @@ export function useGameSocket() {
     };
 
     const onError = (data: any) => {
-      setToast(data.message || "Đã xảy ra lỗi", "error");
-      // Reset loading states on error
       const state = useGameStore.getState();
-      if (state.roomStatus === 'idle') {
-        // User is on landing page, likely failed CREATE_ROOM or JOIN_ROOM
-        // The page components will handle their own loading state reset via timeout
+      
+      // Lúc trước chúng ta chặn mọi ERROR nếu roomStatus === 'idle' (tức là đang ở màn Home).
+      // Nhưng việc này vô tình chặn luôn cả các lỗi VALIDATION khi người dùng dán mã Join hoặc sai tên.
+      // Giải pháp: Chỉ bỏ qua nếu đó là lỗi do disconnect/leave room đồng thời đang ở màn Home.
+      if (state.roomStatus === 'idle' && (data.code === 'ROOM_NOT_FOUND' || data.code === 'SOCKET_NOT_FOUND')) {
+        return;
       }
+      
+      setToast(data.message || "Đã xảy ra lỗi", "error");
     };
 
     const onRoomCancelled = () => {

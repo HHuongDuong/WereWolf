@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PlayerCard } from "@/components/ui/player-card";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { Copy, Settings, Play, ArrowLeft, Users } from "lucide-react";
+import { Copy, Settings, Play, ArrowLeft, Users, Trash2 } from "lucide-react";
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -21,11 +21,41 @@ export default function LobbyPage() {
     hostId, 
     players, 
     maxPlayers, 
+    config,
     setToast 
   } = useGameStore();
 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [configMaxPlayers, setConfigMaxPlayers] = useState(maxPlayers);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [localConfig, setLocalConfig] = useState<Record<string, number | string>>({
+    maxPlayers: maxPlayers || 8,
+    guardDuration: config?.guardDuration || 30,
+    seerDuration: config?.seerDuration || 30,
+    werewolfDuration: config?.werewolfDuration || 45,
+    witchDuration: config?.witchDuration || 30,
+    discussDuration: config?.discussDuration || 60,
+    voteDuration: config?.voteDuration || 30,
+  });
+
+  // Reset values when opening modal
+  useEffect(() => {
+    if (isConfigOpen) {
+      setLocalConfig({
+        maxPlayers: maxPlayers || 8,
+        guardDuration: config?.guardDuration || 30,
+        seerDuration: config?.seerDuration || 30,
+        werewolfDuration: config?.werewolfDuration || 45,
+        witchDuration: config?.witchDuration || 30,
+        discussDuration: config?.discussDuration || 60,
+        voteDuration: config?.voteDuration || 30,
+      });
+    }
+  }, [isConfigOpen, maxPlayers, config]);
+
+  const updateLocalConfig = (field: string, value: string) => {
+    const parsed = value === "" ? "" : parseInt(value, 10);
+    setLocalConfig(prev => ({ ...prev, [field]: isNaN(parsed as number) ? "" : parsed }));
+  };
 
   // Redirection guards
   useEffect(() => {
@@ -58,23 +88,66 @@ export default function LobbyPage() {
   };
 
   const handleLeaveRoom = () => {
+    // Emit leave event first
     socketManger.emit("LEAVE_ROOM", { roomId, guestId: myGuestId });
-    router.replace("/");
+    // Reset state immediately
+    useGameStore.getState().reset();
+    // Force redirect (backup in case useEffect doesn't trigger fast enough)
+    setTimeout(() => router.replace("/"), 0);
   };
 
   const handleSaveConfig = () => {
-    const parsed = parseInt(configMaxPlayers.toString(), 10);
-    if (isNaN(parsed) || parsed < 6 || parsed > 12) {
+    const { maxPlayers: parsedMax, ...phaseConfig } = localConfig;
+    const maxPlayersNum = Number(parsedMax);
+    if (isNaN(maxPlayersNum) || maxPlayersNum < 6 || maxPlayersNum > 12) {
       setToast("Số lượng người chơi phải từ 6 đến 12", "error");
       return;
     }
     
+    // Cast and validate rules matching backend DTO
+    const guardDur = Number(phaseConfig.guardDuration);
+    const seerDur = Number(phaseConfig.seerDuration);
+    const witchDur = Number(phaseConfig.witchDuration);
+    const voteDur = Number(phaseConfig.voteDuration);
+    const werewolfDur = Number(phaseConfig.werewolfDuration);
+    const discussDur = Number(phaseConfig.discussDuration);
+
+    if (guardDur < 20 || guardDur > 60 ||
+        seerDur < 20 || seerDur > 60 ||
+        witchDur < 20 || witchDur > 60 ||
+        voteDur < 20 || voteDur > 60) {
+      setToast("Thời gian các role (Bảo vệ, Tiên tri, Phù thuỷ) và Vote phải từ 20s-60s", "error");
+      return;
+    }
+    if (werewolfDur < 30 || werewolfDur > 60) {
+      setToast("Thời gian của Sói phải từ 30s-60s", "error");
+      return;
+    }
+    if (discussDur < 30 || discussDur > 180) {
+      setToast("Thời gian Thảo luận ngày phải từ 30s-180s", "error");
+      return;
+    }
+
     socketManger.emit("CONFIGURE_ROOM", {
       guestId: myGuestId,
-      maxPlayers: parsed,
-      config: {} // Can be expanded with duration configs if needed
+      maxPlayers: maxPlayersNum,
+      config: {
+        guardDuration: guardDur,
+        seerDuration: seerDur,
+        werewolfDuration: werewolfDur,
+        witchDuration: witchDur,
+        discussDuration: discussDur,
+        voteDuration: voteDur
+      }
     });
     setIsConfigOpen(false);
+  };
+
+  const handleCancelRoom = () => {
+    socketManger.emit("CANCEL_ROOM", { guestId: myGuestId });
+    setIsCancelConfirmOpen(false);
+    // Khi emit xong, backend xử lý và tát cả members dều sẽ nhận được sự kiện ROOM_CANCELLED.
+    // Sự kiện này đã được xử lý trong useGameSocket.ts -> gọi reset() -> đá văng về Home.
   };
 
   const handleStartGame = () => {
@@ -93,10 +166,23 @@ export default function LobbyPage() {
 
       {/* Header Bar */}
       <header className="relative z-10 w-full max-w-5xl mx-auto flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={handleLeaveRoom} size="sm">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Rời phòng
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" onClick={handleLeaveRoom} size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Rời phòng
+          </Button>
+          {isHost && (
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsCancelConfirmOpen(true)} 
+              size="sm"
+              className="text-wolf-red hover:text-red-400 hover:bg-wolf-red/10 transition-colors"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hủy phòng
+            </Button>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           {isHost && (
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
@@ -132,21 +218,16 @@ export default function LobbyPage() {
             <p className="text-text-secondary uppercase tracking-widest text-[10px] mb-1.5 font-semibold">
               Hoặc chia sẻ link
             </p>
-            <div className="flex items-center gap-2 bg-bg-surface/50 border border-bg-elevated rounded-sm px-3 py-2 shadow-lg">
+            <div 
+              onClick={copyShareLink}
+              className="group flex items-center gap-2 bg-bg-surface/50 border border-bg-elevated rounded-sm px-3 py-2 shadow-lg cursor-pointer hover:bg-bg-elevated/50 hover:border-village-gold/50 transition-all"
+            >
               <div className="flex-1 overflow-hidden">
-                <p className="text-text-muted text-xs font-mono truncate">
+                <p className="text-text-muted group-hover:text-village-gold text-xs font-mono truncate transition-colors">
                   {typeof window !== 'undefined' ? `${window.location.origin}/?join=${roomCode}` : ''}
                 </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={copyShareLink}
-                className="shrink-0 hover:bg-village-gold/10 hover:text-village-gold h-7 px-2 text-xs"
-              >
-                <Copy className="h-3 w-3 mr-1.5" />
-                Copy
-              </Button>
+              <Copy className="h-3 w-3 text-text-muted group-hover:text-village-gold transition-colors shrink-0" />
             </div>
           </div>
         </div>
@@ -218,24 +299,94 @@ export default function LobbyPage() {
       <Modal 
         isOpen={isConfigOpen} 
         onClose={() => setIsConfigOpen(false)}
-        title="Cấu Hình Phòng"
-        description="Đổi số lượng người chơi tối đa (từ 6 đến 12)"
+        title="Cấu Hình Tham Số Trò Chơi"
+        description="Tinh chỉnh chi tiết cấu hình và thời gian của các giai đoạn"
       >
-        <div className="space-y-6 mt-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-text-secondary">Số Người Tối Đa</label>
-            <Input 
-              type="number" 
-              min={6} 
-              max={12} 
-              value={configMaxPlayers} 
-              onChange={(e) => setConfigMaxPlayers(Number(e.target.value))}
-            />
+        <div className="space-y-4 mt-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          {/* Section 1: Cấu hình chung */}
+          <div className="pb-2 border-b border-bg-elevated/50">
+            <h3 className="text-village-gold font-body font-bold uppercase tracking-wider text-sm mb-3">Thông số chung</h3>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <label className="text-sm font-medium text-text-secondary">Số Người Chơi (6-12)</label>
+              <Input 
+                type="number" 
+                min={6} 
+                max={12} 
+                value={localConfig.maxPlayers} 
+                onChange={(e) => updateLocalConfig("maxPlayers", e.target.value)}
+                className="h-9"
+              />
+            </div>
           </div>
-          <div className="flex justify-end space-x-3">
+
+          {/* Section 2: Thời gian màn đêm */}
+          <div className="pb-2 border-b border-bg-elevated/50">
+            <h3 className="text-wolf-red font-body font-bold uppercase tracking-wider text-sm mb-3">Thời Gian Đêm (Giây)</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Sói Cắn (30-60)</label>
+                <Input type="number" min={30} max={60} className="h-9"
+                  value={localConfig.werewolfDuration} 
+                  onChange={(e) => updateLocalConfig("werewolfDuration", e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Bảo Vệ (20-60)</label>
+                <Input type="number" min={20} max={60} className="h-9"
+                  value={localConfig.guardDuration} 
+                  onChange={(e) => updateLocalConfig("guardDuration", e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Tiên Tri (20-60)</label>
+                <Input type="number" min={20} max={60} className="h-9"
+                  value={localConfig.seerDuration} 
+                  onChange={(e) => updateLocalConfig("seerDuration", e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Phù Thủy (20-60)</label>
+                <Input type="number" min={20} max={60} className="h-9"
+                  value={localConfig.witchDuration} 
+                  onChange={(e) => updateLocalConfig("witchDuration", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Thời gian ban ngày */}
+          <div>
+            <h3 className="text-village-gold font-body font-bold uppercase tracking-wider text-sm mb-3">Thời Gian Ngày (Giây)</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Thảo Luận (30-180)</label>
+                <Input type="number" min={30} max={180} className="h-9"
+                  value={localConfig.discussDuration} 
+                  onChange={(e) => updateLocalConfig("discussDuration", e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="text-sm font-medium text-text-secondary">Bỏ Phiếu (20-60)</label>
+                <Input type="number" min={20} max={60} className="h-9"
+                  value={localConfig.voteDuration} 
+                  onChange={(e) => updateLocalConfig("voteDuration", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-bg-elevated/50 mt-4">
             <Button variant="ghost" onClick={() => setIsConfigOpen(false)}>Hủy</Button>
             <Button variant="gold" onClick={handleSaveConfig}>Lưu Cấu Hình</Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Cancel Confirmation Modal */}
+      <Modal 
+        isOpen={isCancelConfirmOpen} 
+        onClose={() => setIsCancelConfirmOpen(false)}
+        title="Xác Nhận Hủy Phòng"
+        description="Bạn có chắc chắn muốn đánh sập phòng này không? Toàn bộ người chơi sẽ bị Kick ra ngoài màn hình chờ."
+      >
+        <div className="flex justify-end space-x-3 mt-6">
+          <Button variant="ghost" onClick={() => setIsCancelConfirmOpen(false)}>Quay Lại</Button>
+          <Button variant="danger" onClick={handleCancelRoom}>Đồng Ý Hủy</Button>
         </div>
       </Modal>
     </div>

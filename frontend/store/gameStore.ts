@@ -73,7 +73,7 @@ interface GameStore extends GameState {
   setRole: (role: string) => void;
   setRoomState: (state: Partial<GameState>) => void;
   updateChat: (channel: 'wolves' | 'all', msg: ChatMessage) => void;
-  setToast: (message: string, type?: "error" | "info") => void;
+  setToast: (message: string, type?: "error" | "info" | "success") => void;
   clearToast: () => void;
   reset: () => void;
 }
@@ -90,7 +90,7 @@ export const useGameStore = create<GameStore>((set) => ({
       [channel]: [...s.chat[channel], msg]
     }
   })),
-  setToast: (message, type = "error") => set({ toast: { message, type } }),
+  setToast: (message, type = "error") => set({ toast: { message, type } as any }),
   clearToast: () => set({ toast: null }),
   reset: () => set({ ...initialState, myGuestId: useGameStore.getState().myGuestId }) // Keep guestId on reset
 }));
