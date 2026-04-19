@@ -64,6 +64,17 @@ export class RoomService {
     // Idempotent: nếu đã trong phòng thì trả về state hiện tại
     const alreadyIn = room.players.some((p) => p.playerId === dto.guestId);
     if (!alreadyIn) {
+      // Check displayName trùng lặp
+      const displayNameExists = room.players.some(
+        (p) => p.displayName.toLowerCase() === dto.displayName.toLowerCase()
+      );
+      if (displayNameExists) {
+        throw new BadRequestException({
+          code: 'DISPLAY_NAME_TAKEN',
+          message: 'Tên hiển thị đã được sử dụng trong phòng này',
+        });
+      }
+
       await this.roomRepo.addPlayer(room.id, dto.guestId, dto.displayName);
       await this.notifyRoomUpdated(room.id);
     }

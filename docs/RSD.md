@@ -297,6 +297,7 @@ CREATE INDEX idx_messages_room_channel
 | E-13 | Sói chọn kill người đã được Guard bảo vệ | Không ai chết. Log rõ lý do trong `reasons[]` |
 | E-14 | Host disconnect trong lúc game đang chạy | Assign host mới (room-service), game tiếp tục bình thường |
 | E-15 | Tất cả player cùng team disconnect | Sau 60s, gameplay-service kết thúc game, không xác định winner |
+| E-16 | Player join với displayName trùng người đã có trong phòng | Từ chối với error `DISPLAY_NAME_TAKEN`. So sánh case-insensitive |
 
 ### 7.2 Constraints (cứng, không được thay đổi)
 
