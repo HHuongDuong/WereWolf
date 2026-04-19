@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: #0d0d14;
+  --color-bg-surface: #13131f;
+  --color-bg-elevated: #1a1a2e;
+  --color-bg-overlay: #0d0d14cc;
+
+  --color-wolf-red: #c0392b;
+  --color-wolf-red-glow: #e74c3c;
+
+  --color-village-gold: #f39c12;
+  --color-village-gold-glow: #f1c40f;
+
+  --color-night-blue: #1a1a3e;
+  --color-night-purple: #2d1b69;
+
+  --color-day-amber: #2d1f00;
+
+  --color-text-primary: #e8e8f0;
+  --color-text-secondary: #8888aa;
+  --color-text-muted: #44445a;
+
+  --color-alive-green: #27ae60;
+  --color-dead-gray: #555566;
+  --color-danger-red: #e74c3c;
+  --color-warning-amber: #f39c12;
+
+  --font-display: var(--font-cinzel), serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  --font-card-title: var(--font-playfair), serif;
+  --font-card-body: var(--font-lora), serif;
+  
+  /* Animations */
+  --animate-flip-in: flip-in 0.4s ease-out forwards;
+}
+
+@keyframes flip-in {
+  from { transform: rotateY(90deg); opacity: 0; }
+  to   { transform: rotateY(0deg);  opacity: 1; }
+}
+
+:root {
+  --background: var(--color-bg-base);
+  --foreground: var(--color-text-primary);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+@layer utilities {
+  .role-reveal {
+    animation: var(--animate-flip-in);
+  }
+}
