@@ -599,6 +599,34 @@
   letter-spacing: 0.04em;
 }
 
+.ltl-leave-btn {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0 18px;
+  margin-left: 8px;
+  background-color: #1f1f2e;
+  border: none;
+  border-radius: 50px;
+  color: #ff5c5c;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.ltl-leave-btn:hover {
+  background-color: #8b181a;
+  color: #fff;
+}
+
+.ltl-leave-btn:active {
+  background-color: #6e1214;
+}
+
 /* ── Right Panel Shared Header ── */
 .rp-header {
   display: flex;

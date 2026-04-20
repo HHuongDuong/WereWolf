@@ -153,6 +153,7 @@ export function RoomProvider({
         code: msg.roomCode,
         hostId: msg.hostId,
         status: msg.status as RoomStatus,
+        ...(msg.maxPlayers !== undefined && { maxPlayers: msg.maxPlayers }),
       }));
     });
   }, [on, guest.guestId]);
