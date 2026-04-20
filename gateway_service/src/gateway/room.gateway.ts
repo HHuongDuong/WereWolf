@@ -227,6 +227,11 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.lastRoomState.delete(roomId);
   }
 
+  public broadcastPhaseChanged(roomId: string, data: any) {
+    this.logger.debug(`Broadcasting phase_changed to room ${roomId}: phase=${data.phase}, round=${data.round}`);
+    this.broadcastToRoom(roomId, 'phase_changed', data);
+  }
+
   private emitError(socket: WebSocket, code: string, message: string) {
     this.sendMessage(socket, 'ERROR', { code, message });
   }

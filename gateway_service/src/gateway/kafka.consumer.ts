@@ -25,6 +25,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
 
     await this.consumer.subscribe({ topic: 'room.updated', fromBeginning: false });
     await this.consumer.subscribe({ topic: 'room.deleted', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'game.phase.changed', fromBeginning: false });
     
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {
@@ -37,6 +38,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         } else if (topic === 'room.deleted') {
             this.logger.debug(`[Kafka] Received room.deleted for roomId=${payload.roomId}`);
             this.roomGateway.broadcastRoomDeleted(payload.roomId);
+        } else if (topic === 'game.phase.changed') {
+            this.logger.debug(`[Kafka] Received game.phase.changed for roomId=${payload.roomId}, phase=${payload.phase}`);
+            this.roomGateway.broadcastPhaseChanged(payload.roomId, payload);
         }
       },
     });
