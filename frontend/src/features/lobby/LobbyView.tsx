@@ -1,4 +1,3 @@
-// src/features/lobby/LobbyView.tsx
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -6,53 +5,25 @@ import { RoomList } from "@/components/lobby/RoomList";
 import { CreateRoomModal } from "@/components/lobby/CreateRoomModal";
 import { JoinRoomModal } from "@/components/lobby/JoinRoomModal";
 
-const mockRooms = [
-  {
-    id: "1",
-    name: "The Howling Table",
-    code: "WOLF-4831",
-    hostName: "Ánh Dương",
-    currentPlayers: 7,
-    maxPlayers: 12,
-  },
-  {
-    id: "2",
-    name: "Blood Moon Pack",
-    code: "WOLF-7294",
-    hostName: "Luna",
-    currentPlayers: 4,
-    maxPlayers: 12,
-  },
-];
+import { useLobbyStore } from "@/shared/store/useLobbyStore";
 
 export default function LobbyView() {
+  const rooms = useLobbyStore((state) => state.rooms);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
   const handleCreateRoom = (name: string) => {
     console.log("Creating room:", name);
-    // TODO: Call API later
+    // Sau này sẽ gọi API hoặc WebSocket
   };
 
   const handleJoinRoom = (code: string) => {
     console.log("Joining room with code:", code);
-    // TODO: Navigate to room
+    // Sau này sẽ điều hướng vào phòng
   };
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <h1 className="text-5xl lg:text-6xl font-black tracking-widest text-white">
-          Under the Full Moon
-        </h1>
-        <p className="mt-3 text-[#9CA3AF] text-lg">
-          The moon is watching. Choose your fate.
-        </p>
-        <p className="text-[#9CA3AF] mt-2">
-          Welcome to the Werewolf lobby. Create a room or join an existing table.
-        </p>
-      </div>
-
+    <div className="w-full">
       <div className="flex flex-wrap gap-4 mb-12">
         <Button 
           variant="primary" 
@@ -71,7 +42,7 @@ export default function LobbyView() {
       </div>
 
       <RoomList 
-        rooms={mockRooms} 
+        rooms={rooms} 
         onJoinRoom={handleJoinRoom} 
       />
 

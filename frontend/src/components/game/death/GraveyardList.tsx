@@ -36,7 +36,7 @@ export function GraveyardList({ deadPlayers }: GraveyardListProps) {
             <div className="relative">
               <PlayerAvatar
                 name={player.name}
-                isDead={true}
+                isAlive={false}
                 size="md"
               />
               <div className="absolute -top-1 -right-1 text-2xl">🪦</div>

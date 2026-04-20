@@ -1,25 +1,25 @@
-"use client";
-
 import { ReactNode } from "react";
-import { AppLayout } from "./AppLayout";
 
 interface LobbyLayoutProps {
+  title: string;
   children: ReactNode;
-  title?: string;
 }
 
-export function LobbyLayout({ children, title = "The Gathering" }: LobbyLayoutProps) {
+export function LobbyLayout({ title, children }: LobbyLayoutProps) {
   return (
-    <AppLayout>
-      <div className="p-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <h1 className="text-6xl font-black tracking-widest text-white">{title}</h1>
-            <p className="text-[#9CA3AF] mt-3 text-xl">The moon is watching. Choose your fate.</p>
-          </div>
-          {children}
+    <div className="min-h-screen bg-brand-background p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-12">
+          <h1 className="text-5xl lg:text-6xl font-black tracking-widest text-white">
+            {title}
+          </h1>
+          <p className="mt-3 text-brand-text-muted text-lg">
+            The moon is watching. Choose your fate.
+          </p>
         </div>
+        
+        {children}
       </div>
-    </AppLayout>
+    </div>
   );
-}
+}

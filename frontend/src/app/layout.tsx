@@ -1,12 +1,24 @@
-import { ReactNode } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+// src/app/layout.tsx
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Werewolf Nightfall",
+  description: "Dark Fantasy Werewolf Game",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body>
-        <AppLayout>{children}</AppLayout>
+    <html lang="vi">
+      <body className={inter.className}>
+        {children}
       </body>
     </html>
   );

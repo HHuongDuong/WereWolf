@@ -39,7 +39,7 @@ export function DeathAnimation({ player, isVisible, onComplete }: DeathAnimation
             >
               <PlayerAvatar
                 name={player.name}
-                isDead={true}
+                isAlive={false}
                 size="xl"
               />
             </motion.div>
