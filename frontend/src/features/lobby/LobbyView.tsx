@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLobbyStore } from "@/entities/room/model/lobbyStore";
+import { useGameStore } from "@/entities/game/model/gameStore";
 import { PlayerIdentityGate } from "@/features/lobby/set-player-name/ui/PlayerIdentityGate";
 import { LobbyBrowser } from "@/widgets/lobby-browser/ui/LobbyBrowser";
 import { RoomDetailsView } from "@/widgets/room-details/ui/RoomDetailsView";
@@ -18,6 +20,10 @@ export default function LobbyView() {
   const removeRoom = useLobbyStore((state) => state.removeRoom);
   const lastError = useLobbyStore((state) => state.lastError);
   const setLastError = useLobbyStore((state) => state.setLastError);
+  const bootstrapGame = useGameStore((state) => state.bootstrapGame);
+  const startSequence = useGameStore((state) => state.startSequence);
+  const setAssignedRole = useGameStore((state) => state.setAssignedRole);
+  const applyPhaseChanged = useGameStore((state) => state.applyPhaseChanged);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -27,6 +33,7 @@ export default function LobbyView() {
 
   const currentUserId = useMemo(() => getOrCreateGuestId(), []);
   const socket = useMemo(() => getRoomGatewaySocket(), []);
+  const router = useRouter();
 
   useEffect(() => {
     socket.connect();
@@ -39,6 +46,15 @@ export default function LobbyView() {
         }
         if (!useLobbyStore.getState().currentRoomId) {
           setCurrentRoomId(message.data.roomId);
+        }
+        const activeRoomId = useLobbyStore.getState().currentRoomId;
+        if (message.data.status === "in_game" && activeRoomId === message.data.roomId) {
+          const gameState = useGameStore.getState();
+          gameState.bootstrapGame(message.data.roomId);
+          if (gameState.startSequenceStep === "idle") {
+            gameState.startSequence();
+          }
+          router.push("/game");
         }
         return;
       }
@@ -53,6 +69,25 @@ export default function LobbyView() {
 
       if (message.event === "ERROR") {
         setLastError(message.data.message);
+        return;
+      }
+
+      if (message.event === "role_assigned") {
+        const currentActiveRoomId = useLobbyStore.getState().currentRoomId;
+        if (currentActiveRoomId) {
+          bootstrapGame(currentActiveRoomId);
+        }
+        if (useGameStore.getState().startSequenceStep === "idle") {
+          startSequence();
+        }
+        setAssignedRole(message.data.role);
+        router.push("/game");
+        return;
+      }
+
+      if (message.event === "phase_changed") {
+        applyPhaseChanged(message.data);
+        router.push("/game");
       }
     });
 
@@ -67,6 +102,11 @@ export default function LobbyView() {
     setLastError,
     setRoomName,
     socket,
+    router,
+    applyPhaseChanged,
+    bootstrapGame,
+    setAssignedRole,
+    startSequence,
     upsertRoomFromGateway,
   ]);
 
@@ -126,6 +166,25 @@ export default function LobbyView() {
     });
   };
 
+  const handleStartGame = (roomId: string) => {
+    if (!playerName) return;
+    const activeRoomId = useLobbyStore.getState().currentRoomId;
+    if (!activeRoomId || activeRoomId !== roomId) {
+      setLastError("Không thể bắt đầu game vì chưa xác định phòng hiện tại.");
+      return;
+    }
+
+    setLastError(null);
+    socket.send("START_GAME", {
+      guestId: currentUserId,
+    });
+    bootstrapGame(roomId);
+    if (useGameStore.getState().startSequenceStep === "idle") {
+      startSequence();
+    }
+    router.push("/game");
+  };
+
   if (!playerName) {
     return (
       <PlayerIdentityGate
@@ -152,9 +211,7 @@ export default function LobbyView() {
           socket.send("LEAVE_ROOM", { roomId: room.id, guestId: currentUserId });
           setCurrentRoomId(null);
         }}
-        onStartGame={() => {
-          socket.send("START_GAME", { guestId: currentUserId });
-        }}
+        onStartGame={() => handleStartGame(room.id)}
         onConfigureRoom={handleConfigureRoom}
       />
     );

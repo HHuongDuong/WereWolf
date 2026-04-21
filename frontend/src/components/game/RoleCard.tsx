@@ -1,6 +1,7 @@
 import { Role } from "@/shared/types/game";
 import { Card } from "@/components/ui/Card";
 import { RoleBadge } from "./RoleBadge";
+import { roleCardFrontImageByRole } from "@/shared/lib/roleCardAssets";
 
 const roleVisuals = {
   [Role.WEREWOLF]: {
@@ -66,7 +67,11 @@ export function RoleCard({ role, isRevealed = true, onClick }: RoleCardProps) {
           className="text-8xl mb-6 transition-transform group-hover:scale-110"
           style={{ filter: `drop-shadow(0 0 30px ${visual.accent})` }}
         >
-          {visual.emoji}
+          <img
+            src={roleCardFrontImageByRole[role]}
+            alt={`${role} card`}
+            className="w-28 h-40 object-cover rounded-lg border border-white/20"
+          />
         </div>
 
         <RoleBadge role={role} size="lg" />

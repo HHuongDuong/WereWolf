@@ -14,6 +14,13 @@ export enum GamePhase {
   END = "END",
 }
 
+export type GameStartSequenceStep =
+  | "idle"
+  | "starting"
+  | "dealing"
+  | "roleReveal"
+  | "readyForPhase";
+
 export interface Player {
   id: string;
   name: string;
@@ -31,4 +38,17 @@ export interface GameContextType {
   isAlive: boolean;
   hasActed: boolean;
   isHost?: boolean;
+}
+
+export interface PhaseChangedMetadata {
+  deadIds?: string[];
+  eliminatedId?: string;
+}
+
+export interface PhaseChangedPayload {
+  roomId: string;
+  phase: GamePhase;
+  round: number;
+  deadlineTimestamp: number;
+  metadata?: PhaseChangedMetadata;
 }

@@ -17,7 +17,7 @@ export function GameLayout({ children, phase, day }: GameLayoutProps) {
         <div className="px-8 py-4 border-b border-white/10 bg-[#0B0F1A]/80 backdrop-blur">
           <div className="flex items-center justify-between">
             <div className="text-sm uppercase tracking-widest text-[#9CA3AF]">DAY {day} • {phase}</div>
-            <div className="text-[#7C3AED]">Night Phase Active</div>
+            <div className="text-[#7C3AED]">{phase || GamePhase.NIGHT} Phase Active</div>
           </div>
         </div>
 
