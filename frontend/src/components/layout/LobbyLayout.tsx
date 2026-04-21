@@ -3,10 +3,14 @@
 import { ReactNode } from "react";
 import Image from "next/image";
 import { Moon, Bell, Settings } from "lucide-react";
-import { useLobbyStore } from "@/shared/store/useLobbyStore";
 
-export function LobbyLayout({ children }: { children: ReactNode }) {
-  const playerName = useLobbyStore((state) => state.playerName);
+interface LobbyLayoutProps {
+  children: ReactNode;
+  playerName?: string | null;
+  title?: string;
+}
+
+export function LobbyLayout({ children, playerName, title }: LobbyLayoutProps) {
 
   return (
     <div className="h-screen bg-brand-background text-white font-sans overflow-hidden flex flex-col relative select-none">
@@ -43,7 +47,7 @@ export function LobbyLayout({ children }: { children: ReactNode }) {
         {/* Center */}
         <div className="flex flex-col items-center w-1/3">
           <div className="text-brand-moonlight text-sm tracking-widest font-semibold animate-pulse drop-shadow-[0_0_5px_rgba(168,192,214,0.6)]">
-            312 VILLAGERS AWAKE TONIGHT
+            {title || "312 VILLAGERS AWAKE TONIGHT"}
           </div>
         </div>
 

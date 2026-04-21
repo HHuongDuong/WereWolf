@@ -9,7 +9,7 @@ interface RoomListProps {
 }
 
 export function RoomList({ rooms, onJoinRoom }: RoomListProps) {
-  // Sắp xếp các điểm neo theo giá trị top giảm dần (những điểm ở dưới cùng màn hình sẽ ở đầu mảng)
+  // Sort anchors so lower screen positions are rendered first.
   const sortedAnchors = [
     { top: "82%", left: "25%" },
     { top: "73%", left: "57%" },
@@ -18,13 +18,13 @@ export function RoomList({ rooms, onJoinRoom }: RoomListProps) {
     { top: "65%", left: "31%" },
   ].sort((a, b) => parseFloat(b.top) - parseFloat(a.top));
 
-  // Lấy 5 phòng và sắp xếp theo maxPlayers giảm dần, nếu bằng nhau thì ưu tiên currentPlayers lớn hơn
+  // Take top five rooms by capacity, then by active players.
   const visibleRooms = [...rooms]
     .sort((a, b) => {
       if (b.maxPlayers !== a.maxPlayers) {
         return b.maxPlayers - a.maxPlayers;
       }
-      return b.currentPlayers - a.currentPlayers;
+      return b.players.length - a.players.length;
     })
     .slice(0, 5);
 

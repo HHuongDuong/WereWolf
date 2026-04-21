@@ -21,7 +21,6 @@ export interface Player {
   isAlive: boolean;
   isActive?: boolean;
   isRevealed?: boolean;
-  isReady?: boolean;
 }
 
 export type UserRole = Role;

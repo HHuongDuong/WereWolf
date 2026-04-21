@@ -3,9 +3,10 @@
 import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
 import { Card } from "@/components/ui/Card";
+import { Message } from "./types";
 
 interface PrivateMessagePanelProps {
-  messages: any[];
+  messages: Message[];
   onSend: (message: string) => void;
 }
 

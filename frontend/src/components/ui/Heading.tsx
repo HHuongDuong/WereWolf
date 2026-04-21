@@ -22,14 +22,10 @@ export function Heading({
   };
 
   const glowClass = glow ? "drop-shadow-[0_0_15px_rgb(124,58,237)]" : "";
-  const Component = `h${level}` as keyof JSX.IntrinsicElements;
+  const classes = `${baseClasses} ${levelClasses[level]} ${glowClass} ${className || ""}`;
 
-  return (
-    <Component
-      className={`${baseClasses} ${levelClasses[level]} ${glowClass} ${className || ""}`}
-      {...props}
-    >
-      {children}
-    </Component>
-  );
+  if (level === 1) return <h1 className={classes} {...props}>{children}</h1>;
+  if (level === 2) return <h2 className={classes} {...props}>{children}</h2>;
+  if (level === 3) return <h3 className={classes} {...props}>{children}</h3>;
+  return <h4 className={classes} {...props}>{children}</h4>;
 }

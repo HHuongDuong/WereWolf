@@ -1,8 +1,6 @@
-import { Role } from "@/shared/types/game";
-
 interface AvatarProps {
   name: string;
-  role?: Role;
+  role?: string;
   isDead?: boolean;
   isActive?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
@@ -57,8 +55,8 @@ export function Avatar({
   );
 }
 
-function RoleIcon({ role }: { role: Role }) {
-  const emojis: Record<Role, string> = {
+function RoleIcon({ role }: { role: string }) {
+  const emojis: Record<string, string> = {
     WEREWOLF: "🐺",
     SEER: "🔮",
     WITCH: "🧙",
@@ -66,5 +64,5 @@ function RoleIcon({ role }: { role: Role }) {
     GUARD: "🛡️",
     HUNTER: "🏹",
   };
-  return <span className="text-xl">{emojis[role]}</span>;
+  return <span className="text-xl">{emojis[role] || "👤"}</span>;
 }

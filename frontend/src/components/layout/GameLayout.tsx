@@ -2,10 +2,11 @@
 
 import { ReactNode } from "react";
 import { AppLayout } from "./AppLayout";
+import { GamePhase } from "@/shared/types/game";
 
 interface GameLayoutProps {
   children: ReactNode;
-  phase?: any;
+  phase?: GamePhase;
   day?: number;
 }
 

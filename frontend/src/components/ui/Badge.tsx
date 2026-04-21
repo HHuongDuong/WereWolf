@@ -1,14 +1,13 @@
 import { ReactNode } from "react";
-import { Role } from "@/shared/types/game";
 
 interface BadgeProps {
-  role?: Role;
+  role?: string;
   variant?: "default" | "alive" | "dead" | "active" | "warning";
   children: ReactNode;
   className?: string;
 }
 
-const roleColors: Record<Role, string> = {
+const roleColors: Record<string, string> = {
   WEREWOLF: "bg-[#991B1B] text-white border-[#EF4444]",
   SEER: "bg-[#1E3A8A] text-white border-[#60A5FA]",
   WITCH: "bg-[#6B21A8] text-white border-[#C084FC]",
@@ -21,7 +20,7 @@ export function Badge({ role, variant = "default", children, className = "" }: B
   let baseClasses = "inline-flex items-center px-4 py-1 text-xs font-bold uppercase tracking-widest rounded-2xl border";
 
   if (role) {
-    baseClasses += ` ${roleColors[role]}`;
+    baseClasses += ` ${roleColors[role] || "bg-[#374151] text-[#D1D5DB] border-[#4B5563]"}`;
   } else {
     switch (variant) {
       case "alive":

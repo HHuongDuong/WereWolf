@@ -1,10 +1,11 @@
-import { Badge } from "@/components/ui/Badge";
+import { Badge } from "@/shared/ui";
+import { Role } from "@/shared/types/game";
 
 interface PlayerStatusProps {
   isAlive: boolean;
   isActive?: boolean;
   isRevealed?: boolean;
-  role?: string;
+  role?: Role;
 }
 
 export function PlayerStatus({ isAlive, isActive, isRevealed, role }: PlayerStatusProps) {
@@ -17,7 +18,7 @@ export function PlayerStatus({ isAlive, isActive, isRevealed, role }: PlayerStat
   }
 
   if (isRevealed && role) {
-    return <Badge role={role as any}>{role}</Badge>;
+    return <Badge role={role}>{role}</Badge>;
   }
 
   return null;

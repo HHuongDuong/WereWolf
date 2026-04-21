@@ -7,8 +7,9 @@ interface RoomCardProps {
 }
 
 export function RoomCard({ room, onJoin }: RoomCardProps) {
-  const isFull = room.currentPlayers >= room.maxPlayers;
-  const fullnessRatio = room.currentPlayers / room.maxPlayers;
+  const currentPlayers = room.players.length;
+  const isFull = currentPlayers >= room.maxPlayers;
+  const fullnessRatio = currentPlayers / room.maxPlayers;
 
   // Calculate flame size and glow based on players
   const flameSize = 18 + (fullnessRatio * 24); // 24px to 56px
@@ -26,7 +27,7 @@ export function RoomCard({ room, onJoin }: RoomCardProps) {
 
         {/* Player Dots (Silhouettes sitting around the actual background fire) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {[...Array(room.currentPlayers)].map((_, i) => {
+          {[...Array(currentPlayers)].map((_, i) => {
             const angle = (i / room.maxPlayers) * 360;
             const radius = 25 + (flameSize / 2);
             const x = (Math.cos(angle * Math.PI / 180) * radius).toFixed(2);
@@ -52,7 +53,7 @@ export function RoomCard({ room, onJoin }: RoomCardProps) {
             <div className="w-5 h-5 bg-blue-500/20 border border-blue-500/30 rounded-md flex items-center justify-center text-[10px] shadow-[0_0_10px_rgba(59,130,246,0.2)]">👁️</div>
           </div>
           <div className="text-xs font-bold text-[#FFB82E] bg-[#FFB82E]/10 border border-[#FFB82E]/30 px-2 py-1 rounded-lg">
-            {room.currentPlayers}/{room.maxPlayers}
+            {currentPlayers}/{room.maxPlayers}
           </div>
         </div>
 

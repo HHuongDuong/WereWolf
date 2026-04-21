@@ -5,12 +5,14 @@ import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
 import { PrivateMessagePanel } from "./PrivateMessagePanel";
 import { Card } from "@/components/ui/Card";
+import { Message } from "./types";
+import { Role } from "@/shared/types/game";
 
 interface ChatBoxProps {
-  messages: any[];
-  werewolfMessages?: any[];
+  messages: Message[];
+  werewolfMessages?: Message[];
   onSendMessage: (message: string, channel?: "global" | "werewolf") => void;
-  currentRole?: string;
+  currentRole?: Role | string;
 }
 
 export function ChatBox({
