@@ -4,9 +4,22 @@ class SocketManager {
   private handlers = new Map<string, Function[]>();
   private isConnecting = false;
   private shouldReconnect = true;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
+  private reconnectDelay = 1000; // Start with 1 second
+  private sessionData: { guestId?: string; roomId?: string } = {};
 
   constructor() {
     this.url = process.env.NEXT_PUBLIC_GATEWAY_WS_URL || "ws://localhost:3001";
+  }
+
+  // Store session data for reconnection
+  setSessionData(guestId: string, roomId: string) {
+    this.sessionData = { guestId, roomId };
+  }
+
+  clearSessionData() {
+    this.sessionData = {};
   }
 
   connect() {
@@ -15,13 +28,19 @@ class SocketManager {
     this.isConnecting = true;
     this.shouldReconnect = true;
     
-    // In production, we might want to attach roomId/guestId in URL query params if required
-    // But currently backend seems to expect connection first, then handles state.
     this.socket = new WebSocket(this.url);
 
     this.socket.onopen = () => {
       console.log("[WS] Connected");
       this.isConnecting = false;
+      this.reconnectAttempts = 0;
+      this.reconnectDelay = 1000;
+      
+      // If we have session data, attempt to reconnect to room
+      if (this.sessionData.guestId && this.sessionData.roomId) {
+        console.log("[WS] Attempting to reconnect to room:", this.sessionData);
+        this.emit('RECONNECT', this.sessionData);
+      }
     };
 
     this.socket.onmessage = (event) => {
@@ -40,8 +59,15 @@ class SocketManager {
       console.log("[WS] Disconnected");
       this.isConnecting = false;
       this.socket = null;
-      if (this.shouldReconnect) {
-        setTimeout(() => this.connect(), 3000);
+      
+      if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectAttempts++;
+        const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
+        console.log(`[WS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+        setTimeout(() => this.connect(), delay);
+      } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.error("[WS] Max reconnect attempts reached");
+        this.clearSessionData();
       }
     };
 
@@ -52,6 +78,7 @@ class SocketManager {
 
   disconnect() {
     this.shouldReconnect = false;
+    this.clearSessionData();
     if (this.socket) {
       this.socket.close();
       this.socket = null;

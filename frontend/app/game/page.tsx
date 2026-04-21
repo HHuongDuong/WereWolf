@@ -7,6 +7,12 @@ import { RoleReveal } from "@/components/ui/role-reveal";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
 import { PlayerCard } from "@/components/ui/player-card";
 import { Moon, Sun, Menu, MessageSquare } from "lucide-react";
+import { NightPanel } from "@/components/game/NightPanel";
+import { DayPanel } from "@/components/game/DayPanel";
+import { VotePanel } from "@/components/game/VotePanel";
+import { HunterModal } from "@/components/game/HunterModal";
+import { EndGameScreen } from "@/components/game/EndGameScreen";
+import { ChatBox } from "@/components/game/ChatBox";
 
 export default function GamePage() {
   const router = useRouter();
@@ -20,7 +26,8 @@ export default function GamePage() {
     round,
     deadlineTimestamp,
     deadPlayers,
-    hostId
+    hostId,
+    isHunterTriggered,
   } = useGameStore();
 
   // Route guarding
@@ -31,6 +38,11 @@ export default function GamePage() {
       router.replace("/lobby");
     }
   }, [roomStatus, roomId, router]);
+
+  // Show end screen when game is finished
+  if (roomStatus === "finished") {
+    return <EndGameScreen />;
+  }
 
   if (roomStatus !== "in_game") {
     return null; // Will redirect shortly
@@ -49,6 +61,9 @@ export default function GamePage() {
       
       {/* Role Reveal Overlay (Will only show once due to internal logic) */}
       <RoleReveal role={myRole} roomId={roomId} onDismiss={() => {}} />
+
+      {/* Hunter Modal – appears immediately when hunter is triggered */}
+      {isHunterTriggered && <HunterModal />}
 
       {/* Header */}
       <header className="relative z-10 w-full h-16 border-b border-bg-elevated/80 bg-bg-surface/80 backdrop-blur-md flex items-center justify-between px-6 shadow-md transition-colors duration-1000">
@@ -80,10 +95,12 @@ export default function GamePage() {
       </header>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 flex overflow-hidden">
+      <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
         
-        {/* Play Area (Left / Center) */}
-        <main className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative">
+        {/* Top Section: Play Area + Player List */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Play Area (Left / Center) */}
+          <main className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative">
           
           <div className="max-w-2xl w-full text-center space-y-6">
             <h2 className="font-display text-3xl font-bold text-white tracking-widest drop-shadow-md">
@@ -93,15 +110,21 @@ export default function GamePage() {
               Trò chơi đã bắt đầu. Hãy kiểm tra thẻ bài của bạn và chờ hệ thống phân bổ lượt đi. Đêm nay sẽ có người phải đổ máu.
             </p>
             
-            {/* Action Panel Placeholder */}
-            <div className="mt-10 p-8 rounded-sm border border-white/5 bg-black/40 backdrop-blur-sm shadow-2xl flex flex-col items-center justify-center min-h-[300px]">
-              <div className="w-16 h-16 rounded-full border-2 border-white/10 flex items-center justify-center mb-4 text-text-muted animate-pulse">
-                <MessageSquare className="w-8 h-8 opacity-50" />
+            {/* Action Panel */}
+            {phase === 'night' && <NightPanel />}
+            {phase === 'day' && <DayPanel />}
+            {phase === 'vote' && <VotePanel />}
+            
+            {!phase && (
+              <div className="mt-10 p-8 rounded-sm border border-white/5 bg-black/40 backdrop-blur-sm shadow-2xl flex flex-col items-center justify-center min-h-[300px]">
+                <div className="w-16 h-16 rounded-full border-2 border-white/10 flex items-center justify-center mb-4 text-text-muted animate-pulse">
+                  <MessageSquare className="w-8 h-8 opacity-50" />
+                </div>
+                <p className="text-sm uppercase tracking-widest text-text-muted font-bold">
+                  Đang khởi tạo phase...
+                </p>
               </div>
-              <p className="text-sm uppercase tracking-widest text-text-muted font-bold">
-                Đang chờ hệ thống...
-              </p>
-            </div>
+            )}
           </div>
           
         </main>
@@ -125,6 +148,7 @@ export default function GamePage() {
                     displayName={player.displayName}
                     isHost={player.guestId === hostId}
                     isDead={isDead}
+                    isDisconnected={player.isDisconnected}
                   />
                   {/* Highlight current user slightly */}
                   {isMe && !isDead && (
@@ -136,7 +160,17 @@ export default function GamePage() {
           </div>
         </aside>
         
+        </div>
+        {/* End of Top Section */}
+
+      {/* Bottom Section: Chat Box */}
+      <div className="relative z-10 h-64 border-t border-bg-elevated/80">
+        <ChatBox />
       </div>
+      
+      </div>
+      {/* End of Main Content Area */}
+      
     </div>
   );
 }

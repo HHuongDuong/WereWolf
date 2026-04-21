@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Crown, Skull } from "lucide-react";
+import { Crown, Skull, WifiOff } from "lucide-react";
 import Image from "next/image";
 
 export interface PlayerCardProps {
@@ -9,6 +9,7 @@ export interface PlayerCardProps {
   isHost?: boolean;
   isDead?: boolean;
   isEmpty?: boolean;
+  isDisconnected?: boolean;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function PlayerCard({
   isHost, 
   isDead, 
   isEmpty, 
+  isDisconnected,
   className 
 }: PlayerCardProps) {
   
@@ -40,6 +42,7 @@ export function PlayerCard({
       isDead 
         ? "border-bg-base bg-bg-base/80 opacity-50 grayscale" 
         : "border-bg-elevated hover:border-text-muted/50",
+      isDisconnected && !isDead ? "opacity-60 saturate-50 border-orange-500/50" : "",
       className
     )}>
       {isHost && !isDead && (
@@ -51,6 +54,12 @@ export function PlayerCard({
       {isDead && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
           <Skull className="h-10 w-10 text-danger-red drop-shadow-md opacity-80" />
+        </div>
+      )}
+
+      {isDisconnected && !isDead && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+          <WifiOff className="h-6 w-6 text-orange-400 drop-shadow-md opacity-90 animate-pulse" />
         </div>
       )}
 
