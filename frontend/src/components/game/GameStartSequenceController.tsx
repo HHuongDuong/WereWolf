@@ -2,11 +2,9 @@
 
 import { useEffect } from "react";
 import { useGameStore } from "@/entities/game/model/gameStore";
-import { RoleDistributionAnimation } from "./RoleDistributionAnimation";
-import { RoleRevealModal } from "./RoleRevealModal";
+import { useLobbyStore } from "@/entities/room/model/lobbyStore";
 import { CardDealTable } from "./CardDealTable";
 import { Role } from "@/shared/types/game";
-import { backCardImage } from "@/shared/lib/roleCardAssets";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface GameStartSequenceControllerProps {
@@ -18,6 +16,9 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
   const assignedRole = useGameStore((state) => state.assignedRole);
   const setSequenceStep = useGameStore((state) => state.setSequenceStep);
   const confirmReveal = useGameStore((state) => state.confirmReveal);
+  const currentRoomId = useLobbyStore((state) => state.currentRoomId);
+  const currentRoom = useLobbyStore((state) => state.rooms.find(r => r.id === currentRoomId));
+  const maxPlayers = currentRoom?.maxPlayers || 8;
 
   useEffect(() => {
     if (startSequenceStep !== "starting") return;
@@ -35,19 +36,11 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
     <>
       {startSequenceStep === "starting" && <LoadingScreen />}
       <CardDealTable
-        isVisible={startSequenceStep === "dealing"}
-        backCardSrc={backCardImage}
-      />
-      <RoleDistributionAnimation
-        isVisible={startSequenceStep === "roleReveal"}
-        playerRole={assignedRole}
-        playerName={playerName}
-      />
-      <RoleRevealModal
-        isOpen={startSequenceStep === "roleReveal"}
-        onClose={confirmReveal}
+        step={startSequenceStep}
         role={assignedRole}
         playerName={playerName}
+        onConfirm={confirmReveal}
+        seatCount={maxPlayers}
       />
     </>
   );
