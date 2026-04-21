@@ -1,56 +1,59 @@
 "use client";
 import { RoomCard } from "./RoomCard";
 import { Room } from "@/shared/types/lobby";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface RoomListProps {
   rooms: Room[];
   onJoinRoom: (roomId: string) => void;
 }
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15
-    }
-  }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
 export function RoomList({ rooms, onJoinRoom }: RoomListProps) {
+  // Sắp xếp các điểm neo theo giá trị top giảm dần (những điểm ở dưới cùng màn hình sẽ ở đầu mảng)
+  const sortedAnchors = [
+    { top: "82%", left: "25%" },
+    { top: "73%", left: "57%" },
+    { top: "70.5%", left: "15.5%" },
+    { top: "67%", left: "45%" },
+    { top: "65%", left: "31%" },
+  ].sort((a, b) => parseFloat(b.top) - parseFloat(a.top));
+
+  // Lấy 5 phòng và sắp xếp theo maxPlayers giảm dần, nếu bằng nhau thì ưu tiên currentPlayers lớn hơn
+  const visibleRooms = [...rooms]
+    .sort((a, b) => {
+      if (b.maxPlayers !== a.maxPlayers) {
+        return b.maxPlayers - a.maxPlayers;
+      }
+      return b.currentPlayers - a.currentPlayers;
+    })
+    .slice(0, 5);
+
   if (rooms.length === 0) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center py-20"
-      >
-        <div className="text-7xl mb-6 opacity-30">🌕</div>
-        <p className="text-brand-text-muted text-lg">No rooms available right now...</p>
-        <p className="text-sm text-brand-text-dark mt-2">Create a new one or try again later</p>
-      </motion.div>
-    );
+    return null;
   }
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
-    >
-      {rooms.map((room) => (
-        <motion.div key={room.id} variants={itemVariants}>
-          <RoomCard room={room} onJoin={onJoinRoom} />
-        </motion.div>
-      ))}
-    </motion.div>
+    <div className="w-full h-full relative">
+      {visibleRooms.map((room, index) => {
+        const pos = sortedAnchors[index];
+
+        return (
+          <motion.div
+            key={room.id}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.1, zIndex: 10 }}
+            transition={{ delay: index * 0.1, type: "spring" }}
+            className="absolute cursor-pointer -translate-x-1/2 -translate-y-1/2"
+            style={{
+              top: pos.top,
+              left: pos.left,
+            }}
+          >
+            <RoomCard room={room} onJoin={onJoinRoom} />
+          </motion.div>
+        );
+      })}
+    </div>
   );
 }

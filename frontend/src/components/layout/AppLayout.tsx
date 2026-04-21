@@ -1,91 +1,9 @@
-// src/features/lobby/LobbyView.tsx
-"use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { RoomList } from "@/components/lobby/RoomList";
-import { CreateRoomModal } from "@/components/lobby/CreateRoomModal";
-import { JoinRoomModal } from "@/components/lobby/JoinRoomModal";
+import { ReactNode } from "react";
 
-const mockRooms = [
-  {
-    id: "1",
-    name: "The Howling Table",
-    code: "WOLF-4831",
-    hostName: "Ánh Dương",
-    currentPlayers: 7,
-    maxPlayers: 12,
-  },
-  {
-    id: "2",
-    name: "Blood Moon Pack",
-    code: "WOLF-7294",
-    hostName: "Luna",
-    currentPlayers: 4,
-    maxPlayers: 12,
-  },
-];
-
-export default function LobbyView() {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showJoinModal, setShowJoinModal] = useState(false);
-
-  const handleCreateRoom = (name: string) => {
-    console.log("Creating room:", name);
-    // TODO: Call API later
-  };
-
-  const handleJoinRoom = (code: string) => {
-    console.log("Joining room with code:", code);
-    // TODO: Navigate to room
-  };
-
+export function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <h1 className="text-5xl lg:text-6xl font-black tracking-widest text-white">
-          Under the Full Moon
-        </h1>
-        <p className="mt-3 text-[#9CA3AF] text-lg">
-          The moon is watching. Choose your fate.
-        </p>
-        <p className="text-[#9CA3AF] mt-2">
-          Welcome to the Werewolf lobby. Create a room or join an existing table.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-4 mb-12">
-        <Button 
-          variant="primary" 
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          CREATE ROOM
-        </Button>
-        <Button 
-          variant="secondary" 
-          size="lg"
-          onClick={() => setShowJoinModal(true)}
-        >
-          JOIN ROOM
-        </Button>
-      </div>
-
-      <RoomList 
-        rooms={mockRooms} 
-        onJoinRoom={handleJoinRoom} 
-      />
-
-      <CreateRoomModal 
-        isOpen={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
-        onCreate={handleCreateRoom}
-      />
-
-      <JoinRoomModal 
-        isOpen={showJoinModal} 
-        onClose={() => setShowJoinModal(false)} 
-        onJoin={handleJoinRoom}
-      />
+    <div className="min-h-screen bg-brand-background text-brand-text-primary flex flex-col">
+      {children}
     </div>
   );
 }
