@@ -178,11 +178,6 @@ export default function LobbyView() {
     socket.send("START_GAME", {
       guestId: currentUserId,
     });
-    bootstrapGame(roomId);
-    if (useGameStore.getState().startSequenceStep === "idle") {
-      startSequence();
-    }
-    router.push("/game");
   };
 
   if (!playerName) {

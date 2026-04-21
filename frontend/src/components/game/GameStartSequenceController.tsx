@@ -6,6 +6,7 @@ import { useLobbyStore } from "@/entities/room/model/lobbyStore";
 import { CardDealTable } from "./CardDealTable";
 import { Role } from "@/shared/types/game";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { backCardImage, roleCardFrontImageByRole } from "@/shared/lib/roleCardAssets";
 
 interface GameStartSequenceControllerProps {
   playerName: string;
@@ -22,9 +23,36 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
 
   useEffect(() => {
     if (startSequenceStep !== "starting") return;
-    const timer = setTimeout(() => setSequenceStep("dealing"), 1800);
-    return () => clearTimeout(timer);
-  }, [setSequenceStep, startSequenceStep]);
+
+    let isMounted = true;
+    const imagesToPreload = [backCardImage];
+    if (assignedRole) {
+      imagesToPreload.push(roleCardFrontImageByRole[assignedRole]);
+    }
+
+    const preloadPromises = imagesToPreload.map((src) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = resolve;
+        img.onerror = resolve; // Continue even if one fails
+      });
+    });
+
+    // Ensure at least 1800ms loading screen for cinematic effect, but also wait for images
+    Promise.all([
+      ...preloadPromises,
+      new Promise((resolve) => setTimeout(resolve, 1800))
+    ]).then(() => {
+      if (isMounted) {
+        setSequenceStep("dealing");
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setSequenceStep, startSequenceStep, assignedRole]);
 
   useEffect(() => {
     if (startSequenceStep !== "dealing" || !assignedRole) return;

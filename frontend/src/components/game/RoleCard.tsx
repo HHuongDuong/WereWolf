@@ -70,6 +70,7 @@ export function RoleCard({ role, isRevealed = true, onClick }: RoleCardProps) {
           <img
             src={roleCardFrontImageByRole[role]}
             alt={`${role} card`}
+            decoding="sync"
             className="w-28 h-40 object-cover rounded-lg border border-white/20"
           />
         </div>

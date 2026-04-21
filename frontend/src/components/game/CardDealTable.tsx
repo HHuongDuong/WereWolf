@@ -123,7 +123,7 @@ export function CardDealTable({ step, role, playerName, onConfirm, seatCount = 8
                 className="absolute inset-0 rounded-lg shadow-[0_12px_30px_rgba(0,0,0,0.45)] overflow-hidden border border-white/10"
                 style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
               >
-                <img src={backCardImage} alt="Role card back" className="w-full h-full object-cover" />
+                <img src={backCardImage} alt="Role card back" decoding="sync" className="w-full h-full object-cover" />
               </div>
               
               {/* Front of the card */}
@@ -135,7 +135,7 @@ export function CardDealTable({ step, role, playerName, onConfirm, seatCount = 8
                   transform: "rotateY(180deg)",
                 }}
               >
-                <img src={frontCardSrc} alt="Role card front" className="w-full h-full object-cover" />
+                <img src={frontCardSrc} alt="Role card front" decoding="sync" className="w-full h-full object-cover" />
               </div>
             </motion.div>
           );

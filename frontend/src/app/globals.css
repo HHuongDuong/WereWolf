@@ -21,6 +21,11 @@ body {
   color: #E5E7EB;
 }
 
+img, canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: high-quality;
+}
+
 @keyframes flicker {
 
   0%,

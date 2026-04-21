@@ -30,23 +30,24 @@ export function PlayerAvatar({
     <div className="relative">
       <div
         className={`
-          ${sizeClasses[size]} flex items-center justify-center
-          rounded-2xl bg-[#1F2937] border-2 font-bold text-[#E5E7EB]
-          transition-all duration-300 overflow-hidden
-          ${!isAlive
-            ? "grayscale opacity-60 border-[#4B5563]"
-            : isActive
-              ? "border-[#7C3AED] shadow-[0_0_30px_-5px] shadow-[#7C3AED]"
-              : "border-[#7C3AED]/30 hover:border-[#A78BFA]"
-          }
-          ${isRevealed && role === Role.WEREWOLF ? "shadow-[0_0_25px_-5px] shadow-[#DC2626]" : ""}
+          ${sizeClasses[size]} relative flex items-center justify-center
+          transition-all duration-300
+          ${!isAlive ? "grayscale opacity-80" : ""}
+          ${isActive ? "ring-4 ring-[#7C3AED]/80 shadow-[0_0_30px_-5px] shadow-[#7C3AED] rounded-full" : ""}
+          ${isRevealed && role === Role.WEREWOLF ? "shadow-[0_0_25px_-5px] shadow-[#DC2626] rounded-full" : ""}
         `}
       >
-        <span>{initial}</span>
+        <img 
+          src={isAlive ? "/images/avatar/avatar_frame_alive.png" : "/images/avatar/avatar_frame_dead.png"} 
+          alt="Avatar Frame"
+          decoding="sync"
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+        <span className="relative z-10 font-bold text-[#E5E7EB] drop-shadow-[0_2px_8px_rgba(0,0,0,1)] text-shadow-sm">{initial}</span>
       </div>
 
       {isRevealed && role && (
-        <div className="absolute -bottom-2 -right-2 bg-[#111827] border border-[#374151] rounded-xl p-1.5 shadow-lg">
+        <div className="absolute -bottom-2 -right-2 bg-[#111827] border border-[#374151] rounded-xl p-1.5 shadow-lg z-20">
           <span className="text-2xl">
             {role === Role.WEREWOLF ? "🐺" :
               role === Role.SEER ? "🔮" :
@@ -54,12 +55,6 @@ export function PlayerAvatar({
               role === Role.GUARD ? "🛡️" :
               role === Role.HUNTER ? "🏹" : "👤"}
           </span>
-        </div>
-      )}
-
-      {!isAlive && (
-        <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
-          <span className="text-4xl">☠️</span>
         </div>
       )}
     </div>
