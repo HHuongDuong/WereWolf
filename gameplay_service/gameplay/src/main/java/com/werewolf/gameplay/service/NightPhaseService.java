@@ -32,6 +32,8 @@ public class NightPhaseService {
     private final RedisLockService lockService;
     private final GameEventProducer producer;
     private final EndGameService endGameService;
+    private final com.werewolf.gameplay.gateway.InternalWsClient internalWsClient;
+    private final HunterService hunterService;
     private static final List<String> NIGHT_ORDER = List.of("GUARD", "SEER", "WEREWOLF", "WITCH");
 
     public void handleNightAction(NightActionEvent event) {
@@ -90,6 +92,27 @@ public class NightPhaseService {
                     yield false;
                 }
                 actions.setSeerTarget(event.getTargetId());
+                
+                // Send seer_result to Seer
+                PlayerState target = state.getPlayers().get(event.getTargetId());
+                if (target != null) {
+                    String targetRole = target.getRole();
+                    boolean isWerewolf = "WEREWOLF".equalsIgnoreCase(normalizeRole(targetRole));
+                    
+                    internalWsClient.sendPrivate(
+                        event.getRoomId(),
+                        event.getPlayerId(),
+                        "seer_result",
+                        Map.of(
+                            "targetId", event.getTargetId(),
+                            "isWerewolf", isWerewolf
+                        )
+                    );
+                    
+                    log.info("Sent seer_result to seerId={}, targetId={}, isWerewolf={}", 
+                        event.getPlayerId(), event.getTargetId(), isWerewolf);
+                }
+                
                 yield true;
             }
             case "WEREWOLF" -> {
@@ -188,6 +211,9 @@ public class NightPhaseService {
             PlayerState player = state.getPlayers().get(deadPlayerId);
             if (player != null) {
                 player.setAlive(false);
+                
+                // Check if dead player is Hunter
+                hunterService.checkAndTriggerHunter(roomId, deadPlayerId);
             }
         }
 
@@ -333,6 +359,43 @@ public class NightPhaseService {
                 .roomId(roomId).channel("all").enabled(false)
                 .allowedGuestIds(List.of())
                 .round(state.getRound()).build());
+        
+        // Send witch_info when it's Witch's turn
+        if ("WITCH".equals(normalizeRole(state.getCurrentNightRole()))) {
+            sendWitchInfo(roomId, state);
+        }
+    }
+    
+    private void sendWitchInfo(String roomId, GameState state) {
+        // Find the Witch player
+        String witchId = state.getPlayers().entrySet().stream()
+                .filter(e -> e.getValue().isAlive() && "WITCH".equals(normalizeRole(e.getValue().getRole())))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+        
+        if (witchId == null) {
+            return;
+        }
+        
+        // Get werewolf's target
+        NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+        String wolfTarget = actions.getWolfTarget();
+        
+        // Send witch_info with werewolf's target (can be null if no target)
+        internalWsClient.sendPrivate(
+            roomId,
+            witchId,
+            "witch_info",
+            Map.of(
+                "werewolfKillTargetId", wolfTarget != null ? wolfTarget : "",
+                "hasSavePotion", state.getWitchPotions().isSavePotion(),
+                "hasKillPotion", state.getWitchPotions().isKillPotion()
+            )
+        );
+        
+        log.info("Sent witch_info to witchId={}, wolfTarget={}, savePotion={}, killPotion={}", 
+            witchId, wolfTarget, state.getWitchPotions().isSavePotion(), state.getWitchPotions().isKillPotion());
     }
 
     private String normalizeRole(String role) {

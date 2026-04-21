@@ -1,10 +1,12 @@
 package com.werewolf.gameplay.kafka;
 
+import com.werewolf.gameplay.model.events.HunterShootEvent;
 import com.werewolf.gameplay.model.events.NightActionEvent;
 import com.werewolf.gameplay.model.events.RoomStartedEvent;
 import com.werewolf.gameplay.model.events.VoteResultEvent;
 import com.werewolf.gameplay.service.DayPhaseService;
 import com.werewolf.gameplay.service.GameInitService;
+import com.werewolf.gameplay.service.HunterService;
 import com.werewolf.gameplay.service.NightPhaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class GameEventConsumer {
     private final GameInitService gameInitService;
     private final NightPhaseService nightPhaseService;
     private final DayPhaseService dayPhaseService;
+    private final HunterService hunterService;
 
     @KafkaListener(topics = "room.started", groupId = "gameplay-service")
     public void onRoomStarted(RoomStartedEvent event, Acknowledgment ack) {
@@ -51,6 +54,18 @@ public class GameEventConsumer {
             ack.acknowledge();
         } catch (Exception e) {
             log.error("Failed to handle vote.result for roomId={}", event.getRoomId(), e);
+        }
+    }
+
+    @KafkaListener(topics = "game.hunter.shoot", groupId = "gameplay-service")
+    public void onHunterShoot(HunterShootEvent event, Acknowledgment ack) {
+        try {
+            log.info("Received game.hunter.shoot for room: {}, hunter: {}, target: {}", 
+                event.getRoomId(), event.getHunterId(), event.getTargetId());
+            hunterService.handleHunterShoot(event.getRoomId(), event.getHunterId(), event.getTargetId());
+            ack.acknowledge();
+        } catch (Exception e) {
+            log.error("Failed to handle game.hunter.shoot for roomId={}", event.getRoomId(), e);
         }
     }
 }

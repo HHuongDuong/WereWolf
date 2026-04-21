@@ -27,6 +27,7 @@ public class DayPhaseService {
     private final EndGameService endGameService;
     private final RedisLockService lockService;
     private final NightPhaseService nightPhaseService;
+    private final HunterService hunterService;
 
     public void startVote(String roomId) {
         GameState state = repo.get(roomId);
@@ -87,6 +88,9 @@ public class DayPhaseService {
 
             if (event.getEliminatedId() != null && state.getPlayers().containsKey(event.getEliminatedId())) {
                 state.getPlayers().get(event.getEliminatedId()).setAlive(false);
+                
+                // Check if eliminated player is Hunter
+                hunterService.checkAndTriggerHunter(event.getRoomId(), event.getEliminatedId());
             }
             state.setRound(state.getRound() + 1);
             repo.save(event.getRoomId(), state);

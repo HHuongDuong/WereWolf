@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,11 +35,22 @@ public class EndGameService {
     }
 
     private void endGame(String roomId, String winner, GameState state) {
+        // Collect all player roles
+        Map<String, String> roles = state.getPlayers().entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        java.util.Map.Entry::getKey,
+                        e -> e.getValue().getRole()
+                ));
+        
         producer.publishGameEnded(GameEndedEvent.builder()
                 .roomId(roomId)
                 .winner(winner)
                 .round(state.getRound())
+                .roles(roles)
                 .build());
+        
+        log.info("Game ended in room {}: winner={}, round={}", roomId, winner, state.getRound());
+        
         repo.delete(roomId);
     }
 

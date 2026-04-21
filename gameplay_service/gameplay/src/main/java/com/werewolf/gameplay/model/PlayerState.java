@@ -11,4 +11,5 @@ public class PlayerState {
     @com.fasterxml.jackson.annotation.JsonProperty("isAlive")
     private boolean isAlive;
     private boolean protectedThisNight;
+    private boolean hunterUsed; // Track if Hunter has used their skill
 }

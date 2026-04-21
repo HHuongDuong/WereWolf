@@ -28,40 +28,60 @@ public class GameInitService {
     private final RedisLockService lockService;
 
     public void handleRoomStarted(RoomStartedEvent event) {
+        // k1. Kiểm tra tránh xử lý trùng
         String idempotencyKey = "room_started:" + event.getRoomId();
         if (repo.isProcessed(idempotencyKey)) {
             log.info("Event {} already processed", idempotencyKey);
             return;
         }
-
+        // mảng chứa id của các player
         List<String> playerIds = event.getPlayers().stream()
                 .map(RoomStartedEvent.PlayerInfo::getGuestId)
                 .toList();
+        // k2. Phân vai
+        // players:
+        // {
+        // "guest_id_abc": {
+        // "role": "WEREWOLF",
+        // "isAlive": true,
+        // "protectedThisNight": false
+        // },
+        // "guest_id_xyz": {
+        // "role": "SEER",
+        // "isAlive": true,
+        // "protectedThisNight": false
+        // }
+        // }
 
         Map<String, PlayerState> players = assignRoles(playerIds);
+        // 15s để hiển thị role cho player xem (trước khi bước vào đêm đầu tiên)
         long deadline = System.currentTimeMillis() + 15_000L;
-
+        // Init Game State trong Redis
         GameState state = GameState.builder()
-                .phase(GamePhase.ROLE_REVEAL)
-                .round(1)
-                .players(players)
-                .nightActions(new NightActions())
-                .witchPotions(WitchPotions.builder().build())
-                .config(event.getConfig())
-                .phaseDeadline(deadline)
+                .phase(GamePhase.ROLE_REVEAL) // phase đầu tiên
+                .round(1) // Vòng 1
+                .players(players) // Map<guestId,PlayerState>
+                .nightActions(new NightActions()) // Init rỗng
+                .witchPotions(WitchPotions.builder().build()) // Witch có 2 bình
+                .config(event.getConfig()) // Config từ room service gửi sang
+                .phaseDeadline(deadline) // 15s để xem role
                 .build();
-
+        // Lưu vào Redis: game:{roomId}
         repo.save(event.getRoomId(), state);
-        repo.saveRoomMembers(event.getRoomId(), playerIds);
+        repo.saveRoomMembers(event.getRoomId(), playerIds); // Lưu danh sách players
 
+        // Map kiểu {"guest_abc": "SEER", "guest_xyz": "WEREWOLF"}
         Map<String, String> assignedRoles = new HashMap<>();
         players.forEach((playerId, playerState) -> assignedRoles.put(playerId, playerState.getRole()));
 
+        // gọi internalWsClient.sendRoleAssigned() để gửi private event role_assigned cho từng player qua Gateway
+        // => chỉ player đó biết role của mình, ko broadcast
         producer.publishRolesAssigned(RolesAssignedEvent.builder()
                 .roomId(event.getRoomId())
-                .players(assignedRoles)
+                .players(assignedRoles) // Map<guestId, role>
                 .build());
-
+        // pub lên topic "game.phase.changed" -> Gateway nhận và broadcast cho tất cả player trong phòng
+        // => FE hiển thị "Xem vai trò" countdown 15s
         producer.publishPhaseChanged(PhaseChangedEvent.builder()
                 .roomId(event.getRoomId())
                 .phase(GamePhase.ROLE_REVEAL.toValue())
@@ -69,7 +89,7 @@ public class GameInitService {
                 .deadlineTimestamp(state.getPhaseDeadline())
                 .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
                 .build());
-
+        // mark là đã xử lý -> lưu vào Redis để tránh xử lý lại nếu Kafka retry
         repo.markProcessed(idempotencyKey);
     }
 

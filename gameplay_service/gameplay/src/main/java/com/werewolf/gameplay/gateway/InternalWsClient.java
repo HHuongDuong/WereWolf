@@ -26,13 +26,13 @@ public class InternalWsClient {
 
     public InternalWsClient(
             @Value("${gateway.internal.base-url:http://localhost:3001}") String baseUrl,
-            @Value("${gateway.internal.token:}") String internalToken
-    ) {
+            @Value("${gateway.internal.token:}") String internalToken) {
         this.restTemplate = new RestTemplate();
         this.baseUrl = baseUrl;
         this.internalToken = internalToken;
     }
 
+    // gửi event "role_assigned" và đóng gói dữ liệu "role" vào 1 Map
     public boolean sendRoleAssigned(String roomId, String guestId, String role) {
         return sendPrivate(roomId, guestId, "role_assigned", Map.of("role", role));
     }
@@ -52,6 +52,7 @@ public class InternalWsClient {
         return false;
     }
 
+    // k3. http request , payload là {roomId, guestId, event, data}
     private boolean trySend(String roomId, String guestId, String event, Map<String, Object> data) {
         String url = baseUrl + "/internal/ws/private";
         HttpHeaders headers = new HttpHeaders();
@@ -64,11 +65,12 @@ public class InternalWsClient {
                 "roomId", roomId,
                 "guestId", guestId,
                 "event", event,
-                "data", data
-        );
+                "data", data);
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
+            // Req xong, check xem GW trả về delivered: true hay không, nếu GW báo nhận
+            // thành công thì trả về true
             Object delivered = response.getBody() != null ? response.getBody().get("delivered") : null;
             if (delivered instanceof Boolean deliveredFlag) {
                 return deliveredFlag;
