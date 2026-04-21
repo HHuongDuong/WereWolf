@@ -97,7 +97,7 @@ export function RoomInfoPanel({
             <button
               onClick={() => setActiveTab("chat")}
               className={[
-                "text-xs font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
+                "text-xs font-serif font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
                 activeTab === "chat"
                   ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
                   : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
@@ -108,7 +108,7 @@ export function RoomInfoPanel({
             <button
               onClick={() => setActiveTab("config")}
               className={[
-                "text-xs font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
+                "text-xs font-serif font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
                 activeTab === "config"
                   ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
                   : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
@@ -145,7 +145,7 @@ export function RoomInfoPanel({
                     placeholder="Whisper into the dark..."
                     className="flex-1 bg-black/50 border border-white/10 rounded px-4 py-2 text-gray-300 placeholder-gray-600 text-sm italic focus:outline-none focus:border-brand-moonlight/50 focus:shadow-[0_0_10px_rgba(168,192,214,0.2)] transition-all"
                   />
-                  <button className="px-4 py-2 bg-brand-moonlight/10 hover:bg-brand-moonlight/20 text-brand-moonlight rounded text-xs font-bold tracking-[0.2em] transition-colors border border-brand-moonlight/30 shadow-[0_0_10px_rgba(168,192,214,0.1)] hover:shadow-[0_0_15px_rgba(168,192,214,0.3)]">
+                  <button className="px-4 py-2 bg-brand-moonlight/10 hover:bg-brand-moonlight/20 text-brand-moonlight rounded text-xs font-serif font-bold tracking-[0.2em] transition-colors border border-brand-moonlight/30 shadow-[0_0_10px_rgba(168,192,214,0.1)] hover:shadow-[0_0_15px_rgba(168,192,214,0.3)]">
                     SEND
                   </button>
                 </div>

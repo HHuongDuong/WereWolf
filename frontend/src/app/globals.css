@@ -5,6 +5,9 @@
   --color-brand-moonlight: #A8C0D6;
   --color-brand-blood: #9F1239;
   --color-brand-wood: #2A1F1A;
+  
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: var(--font-cinzel), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 :root {

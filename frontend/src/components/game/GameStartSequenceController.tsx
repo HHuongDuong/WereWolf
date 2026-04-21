@@ -40,13 +40,13 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
       />
       <RoleDistributionAnimation
         isVisible={startSequenceStep === "roleReveal"}
-        playerRole={assignedRole || Role.VILLAGER}
+        playerRole={assignedRole}
         playerName={playerName}
       />
       <RoleRevealModal
         isOpen={startSequenceStep === "roleReveal"}
         onClose={confirmReveal}
-        role={assignedRole || Role.VILLAGER}
+        role={assignedRole}
         playerName={playerName}
       />
     </>

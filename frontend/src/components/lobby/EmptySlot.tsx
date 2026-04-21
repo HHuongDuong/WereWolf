@@ -8,7 +8,7 @@ export function EmptySlot() {
         <span className="text-white/20 font-serif text-2xl">?</span>
       </div>
 
-      <p className="relative z-10 text-white/30 text-xs font-bold tracking-[0.3em] text-center px-4 leading-relaxed uppercase">
+      <p className="relative z-10 text-white/30 text-xs font-serif font-bold tracking-[0.3em] text-center px-4 leading-relaxed uppercase">
         Empty Slot
         <br />
         <span className="text-[10px] font-normal tracking-[0.2em] text-white/20 italic mt-1 block">Awaiting Soul...</span>
