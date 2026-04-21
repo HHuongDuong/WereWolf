@@ -28,6 +28,17 @@ export class InternalWsController {
     return this.roomGateway.sendPrivateToGuest(dto.roomId, dto.guestId, dto.event, dto.data);
   }
 
+  @Post('chat/broadcast')
+  @HttpCode(HttpStatus.OK)
+  broadcastChat(
+    @Headers('x-internal-token') token: string | undefined,
+    @Body() body: { roomId: string; channel: string; message: any },
+  ) {
+    this.assertInternalToken(token);
+    this.roomGateway.broadcastChatMessage(body.roomId, body.channel, body.message);
+    return { success: true };
+  }
+
   private assertInternalToken(token: string | undefined) {
     const expected = this.configService.get<string>('INTERNAL_API_TOKEN');
     if (!expected) return;

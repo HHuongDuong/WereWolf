@@ -16,6 +16,13 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { ConfigureRoomDto } from './dto/configure-room.dto';
 import { StartGameDto, CancelRoomDto, LeaveRoomDto } from './dto/room-action.dto';
+import { NightActionDto } from './dto/night-action.dto';
+import { VoteDto } from './dto/vote.dto';
+import { ChatMessageDto } from './dto/chat-message.dto';
+import { HunterShootDto } from './dto/hunter-shoot.dto';
+import { KafkaProducerService } from './kafka.producer';
+import { VoteServiceClient } from './vote.client';
+import { ChatServiceClient } from './chat.client';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -28,8 +35,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly socketIds = new Map<WebSocket, string>();
   private readonly roomMembers = new Map<string, Set<string>>();
   private readonly lastRoomState = new Map<string, unknown>();
+  private readonly disconnectTimers = new Map<string, NodeJS.Timeout>(); // Track disconnect timers
+  private readonly RECONNECT_GRACE_PERIOD = 60000; // 60 seconds
 
-  constructor(private readonly roomClient: RoomServiceClient) {}
+  constructor(
+    private readonly roomClient: RoomServiceClient,
+    private readonly kafkaProducer: KafkaProducerService,
+    private readonly voteClient: VoteServiceClient,
+    private readonly chatClient: ChatServiceClient,
+  ) {}
 
   handleConnection(socket: WebSocket) {
     const socketId = randomUUID();
@@ -39,23 +53,108 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`Client connected: ${socketId}`);
   }
 
+  @SubscribeMessage('RECONNECT')
+  async handleReconnect(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const socketId = this.getSocketId(socket);
+    if (!socketId) return;
+
+    // Validate payload has guestId and roomId
+    if (!payload || typeof payload !== 'object') {
+      return this.emitError(socket, 'VALIDATION_FAILED', 'Invalid reconnect payload');
+    }
+
+    const { guestId, roomId } = payload as { guestId?: string; roomId?: string };
+    
+    if (!guestId || !roomId) {
+      return this.emitError(socket, 'VALIDATION_FAILED', 'Missing guestId or roomId');
+    }
+
+    const disconnectKey = `${roomId}:${guestId}`;
+    const timer = this.disconnectTimers.get(disconnectKey);
+    
+    if (!timer) {
+      return this.emitError(socket, 'RECONNECT_FAILED', 'Reconnect window expired or session not found');
+    }
+
+    // Clear the disconnect timer
+    clearTimeout(timer);
+    this.disconnectTimers.delete(disconnectKey);
+    
+    // Restore session
+    this.trackSession(socketId, guestId, roomId);
+    this.addToRoom(socketId, roomId);
+    
+    // Notify room that player reconnected
+    this.broadcastToRoom(roomId, 'player_reconnected', {
+      guestId: guestId,
+    });
+    
+    this.logger.log(`Player ${guestId} reconnected to room ${roomId}`);
+    
+    // Send current room state to reconnected player
+    const roomState = this.lastRoomState.get(roomId);
+    if (roomState) {
+      this.sendMessage(socket, 'ROOM_UPDATED', roomState);
+    }
+  }
+
   async handleDisconnect(socket: WebSocket) {
     const socketId = this.socketIds.get(socket);
     if (!socketId) return;
 
     const session = this.sessions.get(socketId);
-    if (session?.roomId && session?.guestId) {
-      try {
-        await this.roomClient.leaveRoom(session.roomId, session.guestId);
-      } catch (err) {
-        this.logger.warn(`Failed to leave room on disconnect: ${err}`);
-      }
-    }
-
-    this.removeFromAllRooms(socketId);
-    this.sessions.delete(socketId);
+    
+    // Clean up socket references immediately
     this.sockets.delete(socketId);
     this.socketIds.delete(socket);
+    
+    if (session?.roomId && session?.guestId) {
+      const disconnectKey = `${session.roomId}:${session.guestId}`;
+      
+      // Clear any existing timer for this player
+      const existingTimer = this.disconnectTimers.get(disconnectKey);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      
+      // Notify room that player disconnected (but not removed yet)
+      this.broadcastToRoom(session.roomId, 'player_disconnected', {
+        guestId: session.guestId,
+      });
+      
+      this.logger.log(`Player ${session.guestId} disconnected from room ${session.roomId}, grace period: ${this.RECONNECT_GRACE_PERIOD}ms`);
+      
+      // Set timer to remove player after grace period
+      const timer = setTimeout(async () => {
+        this.logger.log(`Grace period expired for ${session.guestId} in room ${session.roomId}, removing from room`);
+        
+        try {
+          await this.roomClient.leaveRoom(session.roomId, session.guestId);
+        } catch (err: any) {
+          // 404 is expected if room was already deleted (game ended, etc.)
+          if (err?.response?.status === 404) {
+            this.logger.debug(`Room ${session.roomId} no longer exists (already deleted)`);
+          } else {
+            this.logger.warn(`Failed to leave room after grace period: ${err.message}`);
+          }
+        }
+        
+        // Clean up session and room membership
+        this.removeFromAllRooms(socketId);
+        this.sessions.delete(socketId);
+        this.disconnectTimers.delete(disconnectKey);
+      }, this.RECONNECT_GRACE_PERIOD);
+      
+      this.disconnectTimers.set(disconnectKey, timer);
+    } else {
+      // No session, clean up immediately
+      this.removeFromAllRooms(socketId);
+      this.sessions.delete(socketId);
+    }
+    
     this.logger.log(`Client disconnected: ${socketId}`);
   }
 
@@ -190,6 +289,154 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('night_action')
+  async handleNightAction(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, NightActionDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    
+    if (!session?.roomId || !session?.guestId) {
+      return this.emitError(socket, 'NO_SESSION', 'Bạn chưa ở trong phòng');
+    }
+
+    // Generate unique eventId for idempotency
+    const eventId = randomUUID();
+
+    // Publish to Kafka
+    const result = await this.kafkaProducer.publishNightAction({
+      eventId,
+      roomId: session.roomId,
+      playerId: session.guestId,
+      role: dto.role,
+      targetId: dto.targetId || null,
+    });
+
+    if (!result.success) {
+      return this.emitError(socket, 'KAFKA_ERROR', 'Không thể gửi hành động');
+    }
+
+    // Send acknowledgment to client
+    this.sendMessage(socket, 'night_action_ack', {
+      actionType: dto.role.toLowerCase(),
+      success: true,
+    });
+  }
+
+  @SubscribeMessage('vote')
+  async handleVote(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, VoteDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    
+    if (!session?.roomId || !session?.guestId) {
+      return this.emitError(socket, 'NO_SESSION', 'Bạn chưa ở trong phòng');
+    }
+
+    try {
+      const result = await this.voteClient.submitVote({
+        roomId: session.roomId,
+        round: dto.round,
+        voterId: session.guestId,
+        targetId: dto.targetId,
+      });
+
+      if (!result.success) {
+        return this.emitError(socket, result.code || 'VOTE_FAILED', result.message || 'Vote không hợp lệ');
+      }
+
+      // Send acknowledgment
+      this.sendMessage(socket, 'vote_ack', { success: true });
+    } catch (err) {
+      this.logger.error(`Vote failed: ${err.message}`);
+      this.emitError(socket, 'VOTE_SERVICE_ERROR', 'Không thể gửi vote');
+    }
+  }
+
+  @SubscribeMessage('chat_message')
+  async handleChatMessage(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, ChatMessageDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    
+    if (!session?.roomId || !session?.guestId) {
+      return this.emitError(socket, 'NO_SESSION', 'Bạn chưa ở trong phòng');
+    }
+
+    // Get player info from room state
+    const roomState = this.lastRoomState.get(session.roomId) as any;
+    const player = roomState?.players?.find((p: any) => p.guestId === session.guestId);
+    
+    if (!player) {
+      return this.emitError(socket, 'PLAYER_NOT_FOUND', 'Không tìm thấy thông tin người chơi');
+    }
+
+    try {
+      const result = await this.chatClient.sendMessage({
+        roomId: session.roomId,
+        channel: dto.channel,
+        senderId: session.guestId,
+        senderName: player.displayName,
+        content: dto.content,
+        round: 1, // TODO: Get from game state
+        phase: 'day', // TODO: Get from game state
+      });
+
+      if (!result.success) {
+        return this.emitError(socket, result.code || 'CHAT_FAILED', result.message || 'Không thể gửi tin nhắn');
+      }
+    } catch (err) {
+      this.logger.error(`Chat failed: ${err.message}`);
+      this.emitError(socket, 'CHAT_SERVICE_ERROR', 'Không thể gửi tin nhắn');
+    }
+  }
+
+  @SubscribeMessage('hunter_shoot')
+  async handleHunterShoot(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, HunterShootDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    
+    if (!session?.roomId || !session?.guestId) {
+      return this.emitError(socket, 'NO_SESSION', 'Bạn chưa ở trong phòng');
+    }
+
+    // Publish to Kafka
+    const result = await this.kafkaProducer.publishHunterShoot({
+      roomId: session.roomId,
+      hunterId: session.guestId,
+      targetId: dto.targetId,
+    });
+
+    if (!result.success) {
+      return this.emitError(socket, 'KAFKA_ERROR', 'Không thể gửi hành động');
+    }
+
+    // Send acknowledgment to client
+    this.sendMessage(socket, 'hunter_shoot_ack', {
+      success: true,
+    });
+  }
+
   private trackSession(socketId: string, guestId: string, roomId: string) {
     this.sessions.set(socketId, { guestId, roomId });
   }
@@ -230,6 +477,40 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public broadcastPhaseChanged(roomId: string, data: any) {
     this.logger.debug(`Broadcasting phase_changed to room ${roomId}: phase=${data.phase}, round=${data.round}`);
     this.broadcastToRoom(roomId, 'phase_changed', data);
+  }
+
+  public broadcastVoteStarted(roomId: string, data: any) {
+    this.logger.debug(`Broadcasting vote_started to room ${roomId}: round=${data.round}`);
+    this.broadcastToRoom(roomId, 'vote_started', {
+      round: data.round,
+      durationSec: data.durationSec,
+      candidates: data.alivePlayerIds,
+      deadlineTimestamp: Date.now() + (data.durationSec * 1000),
+    });
+  }
+
+  public broadcastVoteResult(roomId: string, data: any) {
+    this.logger.debug(`Broadcasting vote_result to room ${roomId}: eliminatedId=${data.eliminatedId}, tied=${data.tied}`);
+    this.broadcastToRoom(roomId, 'vote_result', {
+      eliminatedId: data.eliminatedId,
+      tied: data.tied,
+      counts: data.counts,
+    });
+  }
+
+  public broadcastGameEnded(roomId: string, data: any) {
+    this.logger.debug(`Broadcasting game_ended to room ${roomId}: winner=${data.winner}`);
+    this.broadcastToRoom(roomId, 'game_ended', {
+      winner: data.winner,
+      round: data.round,
+      roles: data.roles,
+    });
+  }
+
+  public broadcastChatMessage(roomId: string, channel: string, message: any) {
+    this.logger.log(`[BROADCAST] Broadcasting chat_message to room ${roomId}, channel ${channel}, message: ${JSON.stringify(message)}`);
+    this.broadcastToRoom(roomId, 'chat_message', message);
+    this.logger.log(`[BROADCAST] Finished broadcasting chat_message to room ${roomId}`);
   }
 
   private emitError(socket: WebSocket, code: string, message: string) {
@@ -287,12 +568,23 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private broadcastToRoom(roomId: string, event: string, data: unknown) {
     const members = this.roomMembers.get(roomId);
-    if (!members) return;
+    if (!members) {
+      this.logger.debug(`[broadcastToRoom] No members found for room ${roomId}`);
+      return;
+    }
 
+    this.logger.debug(`[broadcastToRoom] Broadcasting ${event} to ${members.size} members in room ${roomId}`);
+    
+    let sentCount = 0;
     for (const socketId of members) {
       const socket = this.sockets.get(socketId);
-      if (socket) this.sendMessage(socket, event, data);
+      if (socket) {
+        this.sendMessage(socket, event, data);
+        sentCount++;
+      }
     }
+    
+    this.logger.debug(`[broadcastToRoom] Sent ${event} to ${sentCount}/${members.size} sockets in room ${roomId}`);
   }
 
   private sendMessage(socket: WebSocket, event: string, data: unknown) {

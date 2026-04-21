@@ -26,6 +26,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     await this.consumer.subscribe({ topic: 'room.updated', fromBeginning: false });
     await this.consumer.subscribe({ topic: 'room.deleted', fromBeginning: false });
     await this.consumer.subscribe({ topic: 'game.phase.changed', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'game.vote.start', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'vote.result', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'game.ended', fromBeginning: false });
     
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {
@@ -41,6 +44,15 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         } else if (topic === 'game.phase.changed') {
             this.logger.debug(`[Kafka] Received game.phase.changed for roomId=${payload.roomId}, phase=${payload.phase}`);
             this.roomGateway.broadcastPhaseChanged(payload.roomId, payload);
+        } else if (topic === 'game.vote.start') {
+            this.logger.debug(`[Kafka] Received game.vote.start for roomId=${payload.roomId}, round=${payload.round}`);
+            this.roomGateway.broadcastVoteStarted(payload.roomId, payload);
+        } else if (topic === 'vote.result') {
+            this.logger.debug(`[Kafka] Received vote.result for roomId=${payload.roomId}, eliminatedId=${payload.eliminatedId}`);
+            this.roomGateway.broadcastVoteResult(payload.roomId, payload);
+        } else if (topic === 'game.ended') {
+            this.logger.debug(`[Kafka] Received game.ended for roomId=${payload.roomId}, winner=${payload.winner}`);
+            this.roomGateway.broadcastGameEnded(payload.roomId, payload);
         }
       },
     });
