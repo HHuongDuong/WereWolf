@@ -224,6 +224,7 @@ CREATE INDEX idx_messages_room_channel
 | `room.updated` | room-service | gateway-service | `{ roomId, roomCode, hostId, status, maxPlayers, config, players: [{ guestId, displayName }] }` |
 | `room.deleted` | room-service | gateway-service | `{ roomId }` |
 | `game.phase.changed` | gameplay-service | gateway-service | `{ roomId, phase, round, deadlineTimestamp, metadata: { deadIds?: [], eliminatedId?: string } }` |
+| `game.night.action` | gateway-service | gameplay-service | `{ eventId, roomId, playerId, role, targetId }`. Role: GUARD \| SEER \| WEREWOLF \| WITCH |
 | `game.chat.channel.updated` | gameplay-service | chat-service | `{ roomId, channel, enabled, allowedGuestIds: [] }` |
 | `game.vote.start` | gameplay-service | vote-service | `{ roomId, round, alivePlayerIds: [], durationSec }` |
 | `vote.result` | vote-service | gameplay-service | `{ roomId, round, counts: { [guestId]: number }, eliminatedId: string \| null, tied: bool }` |
@@ -248,8 +249,8 @@ CREATE INDEX idx_messages_room_channel
 | `LEAVE_ROOM` | `{ roomId, guestId }` | guestId: `guest_` + 10 ký tự alphanumeric | |
 | `START_GAME` | `{ guestId }` | Chỉ host, đủ người. guestId: `guest_` + 10 ký tự alphanumeric | roomId lấy từ session |
 | `CANCEL_ROOM` | `{ guestId }` | Chỉ host, chỉ khi status = waiting. guestId: `guest_` + 10 ký tự alphanumeric | roomId lấy từ session |
+| `night_action` | `{ role, targetId }` | role: GUARD\|SEER\|WEREWOLF\|WITCH. Gateway forward sang Kafka topic `game.night.action` | ✅ roomId lấy từ session, playerId lấy từ session |
 # các phần dưới đây là dự kiến , BE chưa hề implement nên CHƯA CHỐT
-| `night_action` | `{ roomId, actionType, targetId }` | actionType: guard\|seer\|werewolf_kill\|witch | Chưa implement |
 | `chat_message` | `{ roomId, channel, content }` | content max 200 ký tự | Chưa implement |
 | `vote` | `{ roomId, round, targetId }` | | Chưa implement |
 | `reconnect` | `{ guestId, roomId }` | | Chưa implement |

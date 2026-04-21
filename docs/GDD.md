@@ -102,7 +102,8 @@ room.started
     └─→ gameplay: chia bài, gửi role cho từng player
             └─→ game.phase.changed { phase: "night", round: 1 }
                     └─→ game.chat.channel.updated { channel: "wolves", enabled: true }
-                    └─→ [Night actions timeout]
+                    └─→ [Players send night_action via WS → gateway → game.night.action Kafka]
+                    └─→ [Night actions timeout or all completed]
                     └─→ game.phase.changed { phase: "day" }
                             └─→ game.chat.channel.updated { channel: "all", enabled: true }
                             └─→ game.vote.start
