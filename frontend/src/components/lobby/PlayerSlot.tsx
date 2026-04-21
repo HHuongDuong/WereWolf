@@ -23,31 +23,31 @@ export function PlayerSlot({
     <div
       className={[
         "group relative flex flex-col items-center justify-between",
-        "w-full h-48 sm:h-52 rounded-xl border p-3 sm:p-4 transition-all duration-200",
-        "bg-gradient-to-b from-[#14202D]/78 via-[#101924]/84 to-[#0A0F17]/90 border-[#4A5D73]/35 shadow-[0_8px_20px_rgba(0,0,0,0.35)]",
-        "hover:border-[#A8C0D6]/50 hover:shadow-[0_0_22px_rgba(168,192,214,0.14)]",
-        isCurrentUser ? "ring-1 ring-[#A8C0D6]/35" : "",
+        "w-full h-48 sm:h-52 rounded-xl border border-white/10 p-3 sm:p-4 transition-all duration-300",
+        "bg-gradient-to-b from-black/60 to-black/80 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.5)]",
+        "hover:border-brand-moonlight/40 hover:shadow-[0_0_30px_rgba(168,192,214,0.15)] hover:-translate-y-1",
+        isCurrentUser ? "ring-1 ring-brand-moonlight/50 border-brand-moonlight/50 shadow-[inset_0_0_20px_rgba(168,192,214,0.1)]" : "",
         className || "",
       ].join(" ")}
     >
-      <div className="absolute inset-0 rounded-xl pointer-events-none opacity-35 bg-[radial-gradient(circle_at_top,rgba(168,192,214,0.2),transparent_52%)]" />
-      <div className="absolute inset-0 rounded-xl pointer-events-none opacity-25" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/black-linen.png')" }} />
+      <div className="absolute inset-0 rounded-xl pointer-events-none opacity-50 bg-[radial-gradient(ellipse_at_top,rgba(168,192,214,0.15),transparent_70%)]" />
+      <div className="absolute inset-0 rounded-xl pointer-events-none opacity-[0.03]" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/stardust.png')" }} />
 
       {/* Top: Avatar */}
-      <div className="relative mt-1 z-10">
+      <div className="relative mt-2 z-10">
         <Avatar name={player.name} isDead={false} />
         {isHost && (
-          <div className="absolute -top-2 -right-2 bg-gradient-to-b from-[#D5A03B] to-[#8A5A1F] rounded-full p-1 shadow-[0_0_12px_rgba(213,160,59,0.45)] border border-[#F3D38A]/45">
-            <Crown className="w-3 h-3 text-[#FFF5DC]" />
+          <div className="absolute -top-3 -right-3 bg-gradient-to-b from-yellow-500 to-yellow-700 rounded-full p-1.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-300/50">
+            <Crown className="w-3.5 h-3.5 text-white" />
           </div>
         )}
       </div>
 
       {/* Middle: Name */}
-      <div className="relative z-10 flex flex-col items-center text-center w-full">
+      <div className="relative z-10 flex flex-col items-center text-center w-full mt-2">
         <p
-          className={`font-serif font-bold text-sm truncate w-full ${
-            isCurrentUser ? "text-[#D7E6F7]" : "text-[#E5E1D7]"
+          className={`font-serif font-bold text-base truncate w-full tracking-wide ${
+            isCurrentUser ? "text-brand-moonlight drop-shadow-[0_0_8px_rgba(168,192,214,0.6)]" : "text-gray-200"
           }`}
         >
           {player.name}
@@ -55,8 +55,8 @@ export function PlayerSlot({
       </div>
 
       {/* Bottom: Role Teaser / Footer */}
-      <div className="relative z-10 w-full text-center border-t border-white/10 pt-2 mt-2">
-        <p className="text-[10px] text-[#8E99A6] uppercase tracking-[0.18em]">
+      <div className="relative z-10 w-full text-center border-t border-white/10 pt-3 mt-1">
+        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-[0.25em]">
           {isHost ? "Village Elder" : "Villager"}
         </p>
       </div>
@@ -65,9 +65,9 @@ export function PlayerSlot({
       {canKick && onKick && (
         <button
           onClick={() => onKick(player.id)}
-          className="absolute top-2 left-2 p-1.5 bg-[#32100F]/90 border border-[#8E3832]/45 text-[#E8AFA8] rounded opacity-0 group-hover:opacity-100 hover:text-[#FFD0CA] hover:border-[#C44C45]/70 transition-all z-20"
+          className="absolute top-2 left-2 p-1.5 bg-brand-blood/20 border border-brand-blood/40 text-red-300 rounded opacity-0 group-hover:opacity-100 hover:bg-brand-blood/40 hover:text-white hover:border-brand-blood hover:shadow-[0_0_15px_rgba(159,18,57,0.5)] transition-all z-20 backdrop-blur-sm"
         >
-          <X className="w-3 h-3" />
+          <X className="w-3.5 h-3.5" />
         </button>
       )}
     </div>

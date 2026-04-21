@@ -90,15 +90,17 @@ export function RoomInfoPanel({
         </div>
 
         {/* RIGHT: Tabs + Actions */}
-        <div className="bg-[#1A1612] border-2 border-[#3A2A1A] rounded-lg shadow-inner overflow-hidden flex flex-col min-h-[520px]">
-          <div className="px-4 pt-4 pb-3 border-b border-[#3A2A1A] flex items-center gap-3">
+        <div className="bg-black/40 border border-white/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden flex flex-col min-h-[520px] relative">
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/stardust.png')" }} />
+          
+          <div className="px-4 pt-4 pb-3 border-b border-white/10 flex items-center gap-3 relative z-10">
             <button
               onClick={() => setActiveTab("chat")}
               className={[
                 "text-xs font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
                 activeTab === "chat"
-                  ? "border-[#A8C0D6]/50 text-[#D7E6F7] bg-[#A8C0D6]/10 shadow-[0_0_18px_rgba(168,192,214,0.12)]"
-                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20",
+                  ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
+                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
               ].join(" ")}
             >
               💬 CHAT
@@ -108,8 +110,8 @@ export function RoomInfoPanel({
               className={[
                 "text-xs font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
                 activeTab === "config"
-                  ? "border-[#A8C0D6]/50 text-[#D7E6F7] bg-[#A8C0D6]/10 shadow-[0_0_18px_rgba(168,192,214,0.12)]"
-                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20",
+                  ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
+                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
               ].join(" ")}
             >
               ⚙ CONFIG
@@ -120,7 +122,7 @@ export function RoomInfoPanel({
             )}
           </div>
 
-          <div className="flex-1 min-h-0 p-4">
+          <div className="flex-1 min-h-0 p-4 relative z-10">
             {activeTab === "chat" ? (
               <div className="h-full flex flex-col">
                 <div
@@ -137,13 +139,13 @@ export function RoomInfoPanel({
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#3A2A1A] flex gap-3">
+                <div className="mt-4 pt-3 border-t border-white/10 flex gap-3 relative z-10">
                   <input
                     type="text"
                     placeholder="Whisper into the dark..."
-                    className="flex-1 bg-[#0A0806] border border-[#2A1A1A] rounded px-4 py-2 text-gray-300 placeholder-gray-600 text-sm italic focus:outline-none focus:border-[#FF4500]/50 transition-colors"
+                    className="flex-1 bg-black/50 border border-white/10 rounded px-4 py-2 text-gray-300 placeholder-gray-600 text-sm italic focus:outline-none focus:border-brand-moonlight/50 focus:shadow-[0_0_10px_rgba(168,192,214,0.2)] transition-all"
                   />
-                  <button className="px-4 py-2 bg-[#2A1A1A] hover:bg-[#3A2A1A] text-gray-400 rounded text-xs font-bold tracking-widest transition-colors border border-[#3A2A1A]">
+                  <button className="px-4 py-2 bg-brand-moonlight/10 hover:bg-brand-moonlight/20 text-brand-moonlight rounded text-xs font-bold tracking-[0.2em] transition-colors border border-brand-moonlight/30 shadow-[0_0_10px_rgba(168,192,214,0.1)] hover:shadow-[0_0_15px_rgba(168,192,214,0.3)]">
                     SEND
                   </button>
                 </div>
@@ -158,7 +160,7 @@ export function RoomInfoPanel({
             )}
           </div>
 
-          <div className="p-4 border-t border-[#3A2A1A]">
+          <div className="p-4 border-t border-white/10 relative z-10">
             <LobbyActionPanel onLeaveRoom={onLeaveRoom} />
           </div>
         </div>
