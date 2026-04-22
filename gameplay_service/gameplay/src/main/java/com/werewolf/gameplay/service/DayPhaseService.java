@@ -97,6 +97,7 @@ public class DayPhaseService {
                     .phase("day")
                     .round(state.getRound())
                     .deadlineTimestamp(System.currentTimeMillis())
+                    .currentNightRole(null)
                     .metadata(new PhaseChangedEvent.Metadata(List.of(), event.getEliminatedId()))
                     .build());
 

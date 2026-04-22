@@ -6,3 +6,12 @@ bun.lock
 **/.env
 **/temp.txt
 **/target/
+
+# Frontend (Next.js)
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+frontend/.swc/
+frontend/.cache/
+frontend/.eslintcache
+frontend/coverage/

@@ -12,6 +12,9 @@ public class PhaseChangedEvent {
     private String phase; // "night" | "day"
     private Integer round;
     private Long deadlineTimestamp;
+    // When phase = "night": indicates which role window is currently open (GUARD/SEER/WEREWOLF/WITCH)
+    // When phase = "day": null
+    private String currentNightRole;
     private Metadata metadata;
 
     @Data

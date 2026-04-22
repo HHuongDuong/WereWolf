@@ -1,0 +1,105 @@
+import { create } from "zustand";
+import { GamePhase, GameStartSequenceStep, Role } from "@/shared/types/game";
+
+export type WitchPotionsState = {
+  healUsed: boolean;
+  poisonUsed: boolean;
+};
+
+interface GameState {
+  roomId: string | null;
+  currentPlayerRole: Role | null;
+  assignedRole: Role | null;
+  phase: GamePhase;
+  round: number;
+  deadlineTimestamp: number | null;
+  isAlive: boolean;
+  hasActed: boolean;
+  witchPotions: WitchPotionsState;
+  hunterTriggered: boolean;
+  lastNightActionKey: string | null;
+  currentNightRole: Role | null;
+  startSequenceStep: GameStartSequenceStep;
+  revealConfirmed: boolean;
+  shouldShowPhaseTransition: boolean;
+  previousPhase: GamePhase | null;
+  bootstrapGame: (roomId: string) => void;
+  startSequence: () => void;
+  setSequenceStep: (step: GameStartSequenceStep) => void;
+  setAssignedRole: (role: Role) => void;
+  confirmReveal: () => void;
+  setPhase: (phase: GamePhase) => void;
+  setIsAlive: (value: boolean) => void;
+  setHasActed: (value: boolean) => void;
+  setWitchPotions: (patch: Partial<WitchPotionsState>) => void;
+  setHunterTriggered: (value: boolean) => void;
+  setLastNightActionKey: (value: string | null) => void;
+  setCurrentNightRole: (value: Role | null) => void;
+  applyPhaseChanged: (payload: {
+    roomId: string;
+    phase: GamePhase;
+    round: number;
+    deadlineTimestamp: number;
+    currentNightRole?: Role | null;
+  }) => void;
+  completePhaseTransition: () => void;
+  resetGame: () => void;
+}
+
+const initialState = {
+  roomId: null,
+  currentPlayerRole: null,
+  assignedRole: null,
+  phase: GamePhase.NIGHT,
+  round: 1,
+  deadlineTimestamp: null,
+  isAlive: true,
+  hasActed: false,
+  witchPotions: { healUsed: false, poisonUsed: false } as WitchPotionsState,
+  hunterTriggered: false,
+  lastNightActionKey: null as string | null,
+  currentNightRole: null as Role | null,
+  startSequenceStep: "idle" as GameStartSequenceStep,
+  revealConfirmed: false,
+  shouldShowPhaseTransition: false,
+  previousPhase: null as GamePhase | null,
+};
+
+export const useGameStore = create<GameState>((set) => ({
+  ...initialState,
+  bootstrapGame: (roomId) => set((state) => ({ ...state, roomId })),
+  startSequence: () => set({ startSequenceStep: "starting" }),
+  setSequenceStep: (step) => set({ startSequenceStep: step }),
+  setAssignedRole: (role) =>
+    set({
+      assignedRole: role,
+      currentPlayerRole: role,
+      isAlive: true,
+      hasActed: false,
+      hunterTriggered: false,
+      lastNightActionKey: null,
+      witchPotions: role === Role.WITCH ? { healUsed: false, poisonUsed: false } : { healUsed: false, poisonUsed: false },
+    }),
+  confirmReveal: () => set({ revealConfirmed: true, startSequenceStep: "readyForPhase" }),
+  setPhase: (phase) => set({ phase }),
+  setIsAlive: (value) => set({ isAlive: value }),
+  setHasActed: (value) => set({ hasActed: value }),
+  setWitchPotions: (patch) => set((state) => ({ witchPotions: { ...state.witchPotions, ...patch } })),
+  setHunterTriggered: (value) => set({ hunterTriggered: value }),
+  setLastNightActionKey: (value) => set({ lastNightActionKey: value }),
+  setCurrentNightRole: (value) => set({ currentNightRole: value }),
+  applyPhaseChanged: (payload) =>
+    set((state) => ({
+      roomId: payload.roomId,
+      previousPhase: state.phase,
+      phase: payload.phase,
+      round: payload.round,
+      deadlineTimestamp: payload.deadlineTimestamp,
+      hasActed: false,
+      lastNightActionKey: null,
+      currentNightRole: payload.currentNightRole ?? null,
+      shouldShowPhaseTransition: state.startSequenceStep === "readyForPhase" && state.phase !== payload.phase,
+    })),
+  completePhaseTransition: () => set({ shouldShowPhaseTransition: false }),
+  resetGame: () => set(initialState),
+}));

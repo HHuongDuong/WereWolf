@@ -215,6 +215,7 @@ public class NightPhaseService {
                 .phase("day")
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
+                .currentNightRole(null)
                 .metadata(new PhaseChangedEvent.Metadata(newlyDeadPlayers, null))
                 .build());
 
@@ -314,6 +315,7 @@ public class NightPhaseService {
                 .phase("night")
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
+                .currentNightRole(normalizeRole(state.getCurrentNightRole()))
                 .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
                 .build());
 
