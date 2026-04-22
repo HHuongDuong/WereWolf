@@ -12,7 +12,7 @@ spring:
       port: ${REDIS_PORT:6379}
 
   kafka:
-    bootstrap-servers: ${KAFKA_BROKER:localhost:29094}
+    bootstrap-servers: ${KAFKA_BROKER:localhost:9094}
     consumer:
       group-id: vote-service
       auto-offset-reset: earliest

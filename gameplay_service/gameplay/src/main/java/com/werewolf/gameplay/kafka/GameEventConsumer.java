@@ -25,7 +25,10 @@ public class GameEventConsumer {
     private final NightPhaseService nightPhaseService;
     private final DayPhaseService dayPhaseService;
 
-    @KafkaListener(topics = "room.started", groupId = "gameplay-service")
+    @KafkaListener(
+            topics = "room.started",
+            groupId = "gameplay-service",
+            properties = "spring.json.value.default.type=com.werewolf.gameplay.model.events.RoomStartedEvent")
     public void onRoomStarted(RoomStartedEvent event, Acknowledgment ack) {
         try {
             log.info("Received room.started for room: {}", event.getRoomId());
@@ -36,7 +39,10 @@ public class GameEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "game.night.action", groupId = "gameplay-service")
+    @KafkaListener(
+            topics = "game.night.action",
+            groupId = "gameplay-service",
+            properties = "spring.json.value.default.type=com.werewolf.gameplay.model.events.NightActionEvent")
     public void onNightAction(NightActionEvent event, Acknowledgment ack) {
         try {
             log.info("Received game.night.action for room: {}", event.getRoomId());
@@ -47,9 +53,17 @@ public class GameEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "vote.result", groupId = "gameplay-service")
+    @KafkaListener(
+            topics = "vote.result",
+            groupId = "gameplay-service",
+            properties = "spring.json.value.default.type=com.werewolf.gameplay.model.events.VoteResultEvent")
     public void onVoteResult(VoteResultEvent event, Acknowledgment ack) {
         try {
+            if (event == null || event.getRoomId() == null || event.getRound() == null) {
+                log.warn("Ignoring malformed vote.result payload: {}", event);
+                ack.acknowledge();
+                return;
+            }
             log.info("Received vote.result for room: {}", event.getRoomId());
             GameState state = repo.get(event.getRoomId());
             if (state == null) {
