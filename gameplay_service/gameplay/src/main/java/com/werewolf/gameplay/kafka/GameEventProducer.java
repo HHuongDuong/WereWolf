@@ -22,7 +22,9 @@ public class GameEventProducer {
     private final InternalWsClient internalWsClient;
 
     public void publishPhaseChanged(PhaseChangedEvent event) {
-        log.info("Publishing game.phase.changed for room {}: {}", event.getRoomId(), event.getPhase());
+        log.info("Publishing game.phase.changed for room {}: phase={}, currentNightRole={}", 
+            event.getRoomId(), event.getPhase(), 
+            event.getMetadata() != null ? event.getMetadata().getCurrentNightRole() : "null");
         kafkaTemplate.send("game.phase.changed", event);
     }
 

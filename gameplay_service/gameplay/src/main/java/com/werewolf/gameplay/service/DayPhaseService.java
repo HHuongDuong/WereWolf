@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -71,6 +72,9 @@ public class DayPhaseService {
                 .roomId(roomId).channel("wolves").enabled(false)
                 .allowedGuestIds(List.of())
                 .round(state.getRound()).build());
+        
+        // Start the first night role
+        nightPhaseService.advanceNightPhase(roomId);
     }
 
     public void handleVoteResult(VoteResultEvent event) {
@@ -92,16 +96,27 @@ public class DayPhaseService {
                 // Check if eliminated player is Hunter
                 hunterService.checkAndTriggerHunter(event.getRoomId(), event.getEliminatedId());
             }
+            
+            // Prepare deadIds list for phase_changed event
+            List<String> deadIds = new ArrayList<>();
+            if (event.getEliminatedId() != null) {
+                deadIds.add(event.getEliminatedId());
+            }
+            
             state.setRound(state.getRound() + 1);
             repo.save(event.getRoomId(), state);
             repo.markProcessed(idempotencyKey);
 
             producer.publishPhaseChanged(PhaseChangedEvent.builder()
                     .roomId(event.getRoomId())
-                    .phase("day")
+                    .phase("night")  // Fixed: should be "night" not "day"
                     .round(state.getRound())
                     .deadlineTimestamp(System.currentTimeMillis())
-                    .metadata(new PhaseChangedEvent.Metadata(List.of(), event.getEliminatedId()))
+                    .metadata(PhaseChangedEvent.Metadata.builder()
+                            .deadIds(deadIds)
+                            .eliminatedId(event.getEliminatedId())
+                            .currentNightRole(null)
+                            .build())
                     .build());
 
             boolean ended = endGameService.checkEndGame(event.getRoomId(), state);

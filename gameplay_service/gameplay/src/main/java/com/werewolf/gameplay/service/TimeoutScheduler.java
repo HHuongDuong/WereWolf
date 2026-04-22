@@ -31,7 +31,7 @@ public class TimeoutScheduler {
             switch (state.getPhase()) {
                 case ROLE_REVEAL -> {
                     dayPhaseService.startNight(roomId);
-                    nightPhaseService.advanceNightPhase(roomId);
+                    // advanceNightPhase is now called inside startNight()
                 }
                 case NIGHT -> nightPhaseService.advanceNightPhase(roomId);
                 case DISCUSS -> dayPhaseService.startVote(roomId);

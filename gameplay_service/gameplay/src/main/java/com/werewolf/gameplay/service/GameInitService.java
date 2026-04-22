@@ -55,7 +55,7 @@ public class GameInitService {
 
         Map<String, PlayerState> players = assignRoles(playerIds);
         // 15s để hiển thị role cho player xem (trước khi bước vào đêm đầu tiên)
-        long deadline = System.currentTimeMillis() + 15_000L;
+        long deadline = System.currentTimeMillis() + 25_000L;
         // Init Game State trong Redis
         GameState state = GameState.builder()
                 .phase(GamePhase.ROLE_REVEAL) // phase đầu tiên
@@ -87,7 +87,11 @@ public class GameInitService {
                 .phase(GamePhase.ROLE_REVEAL.toValue())
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
-                .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
+                .metadata(PhaseChangedEvent.Metadata.builder()
+                        .deadIds(List.of())
+                        .eliminatedId(null)
+                        .currentNightRole(null)
+                        .build())
                 .build());
         // mark là đã xử lý -> lưu vào Redis để tránh xử lý lại nếu Kafka retry
         repo.markProcessed(idempotencyKey);

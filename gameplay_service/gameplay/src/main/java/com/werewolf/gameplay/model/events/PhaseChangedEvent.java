@@ -21,5 +21,6 @@ public class PhaseChangedEvent {
     public static class Metadata {
         private List<String> deadIds;
         private String eliminatedId;
+        private String currentNightRole; // Active role during night phase (GUARD, SEER, WEREWOLF, WITCH)
     }
 }

@@ -241,7 +241,11 @@ public class NightPhaseService {
                 .phase("day")
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
-                .metadata(new PhaseChangedEvent.Metadata(newlyDeadPlayers, null))
+                .metadata(PhaseChangedEvent.Metadata.builder()
+                        .deadIds(newlyDeadPlayers)
+                        .eliminatedId(null)
+                        .currentNightRole(null)
+                        .build())
                 .build());
 
         producer.publishChatChannelUpdated(ChatChannelEvent.builder()
@@ -335,12 +339,19 @@ public class NightPhaseService {
     }
 
     private void publishNightWindow(String roomId, GameState state) {
+        String currentRole = state.getCurrentNightRole();
+        log.info("Publishing night window for room {}, currentNightRole={}", roomId, currentRole);
+        
         producer.publishPhaseChanged(PhaseChangedEvent.builder()
                 .roomId(roomId)
                 .phase("night")
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
-                .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
+                .metadata(PhaseChangedEvent.Metadata.builder()
+                        .deadIds(List.of())
+                        .eliminatedId(null)
+                        .currentNightRole(currentRole)
+                        .build())
                 .build());
 
         boolean wolvesEnabled = "WEREWOLF".equals(normalizeRole(state.getCurrentNightRole()));
