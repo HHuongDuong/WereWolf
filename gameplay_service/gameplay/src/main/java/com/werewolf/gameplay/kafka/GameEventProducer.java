@@ -36,6 +36,11 @@ public class GameEventProducer {
         kafkaTemplate.send("game.vote.start", event);
     }
 
+    public void publishWerewolfVoteStart(VoteStartEvent event) {
+        log.info("Publishing werewolf vote start for room {}, round {}", event.getRoomId(), event.getRound());
+        kafkaTemplate.send("game.vote.start", event);
+    }
+
     public void publishGameEnded(GameEndedEvent event) {
         log.info("Publishing game.ended for room {}, winner {}", event.getRoomId(), event.getWinner());
         kafkaTemplate.send("game.ended", event);

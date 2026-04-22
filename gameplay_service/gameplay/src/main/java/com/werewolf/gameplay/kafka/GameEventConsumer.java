@@ -1,8 +1,11 @@
 package com.werewolf.gameplay.kafka;
 
+import com.werewolf.gameplay.model.GamePhase;
+import com.werewolf.gameplay.model.GameState;
 import com.werewolf.gameplay.model.events.NightActionEvent;
 import com.werewolf.gameplay.model.events.RoomStartedEvent;
 import com.werewolf.gameplay.model.events.VoteResultEvent;
+import com.werewolf.gameplay.redis.GameStateRepository;
 import com.werewolf.gameplay.service.DayPhaseService;
 import com.werewolf.gameplay.service.GameInitService;
 import com.werewolf.gameplay.service.NightPhaseService;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GameEventConsumer {
 
+    private final GameStateRepository repo;
     private final GameInitService gameInitService;
     private final NightPhaseService nightPhaseService;
     private final DayPhaseService dayPhaseService;
@@ -47,7 +51,21 @@ public class GameEventConsumer {
     public void onVoteResult(VoteResultEvent event, Acknowledgment ack) {
         try {
             log.info("Received vote.result for room: {}", event.getRoomId());
-            dayPhaseService.handleVoteResult(event);
+            GameState state = repo.get(event.getRoomId());
+            if (state == null) {
+                log.warn("Ignoring vote.result because room state was not found: {}", event.getRoomId());
+                ack.acknowledge();
+                return;
+            }
+
+            if (state.getPhase() == GamePhase.NIGHT
+                    && "WEREWOLF".equalsIgnoreCase(state.getCurrentNightRole())) {
+                nightPhaseService.handleWolfVoteResult(event);
+            } else if (state.getPhase() == GamePhase.DAY) {
+                dayPhaseService.handleVoteResult(event);
+            } else {
+                log.warn("Ignoring vote.result for room {} in phase {}", event.getRoomId(), state.getPhase());
+            }
             ack.acknowledge();
         } catch (Exception e) {
             log.error("Failed to handle vote.result for roomId={}", event.getRoomId(), e);
