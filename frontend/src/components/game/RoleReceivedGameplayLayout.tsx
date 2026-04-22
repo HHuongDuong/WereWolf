@@ -7,6 +7,9 @@ import { GamePhase, Player, Role } from "@/shared/types/game";
 import { Message } from "@/components/game/chat/types";
 import { roleCardFrontImageByRole } from "@/shared/lib/roleCardAssets";
 import { ActionResultToast } from "@/components/game/actions/ActionResultToast";
+import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
+import { useGameStore, WitchPotionsState } from "@/entities/game/model/gameStore";
+import { RoomConfig } from "@/shared/types/lobby";
 
 interface RoleReceivedGameplayLayoutProps {
   players: Player[];
@@ -16,6 +19,11 @@ interface RoleReceivedGameplayLayoutProps {
   day: number;
   deadlineTimestamp: number | null;
   hasActed: boolean;
+  roomId: string | null;
+  witchPotions: WitchPotionsState;
+  hunterTriggered: boolean;
+  currentNightRole: Role | null;
+  roomConfig?: RoomConfig;
 }
 
 const TOP_SLOT_COUNT = 6;
@@ -42,8 +50,7 @@ function isRoleTurn(role: Role, phase: GamePhase): boolean {
       role === Role.WEREWOLF ||
       role === Role.SEER ||
       role === Role.WITCH ||
-      role === Role.GUARD ||
-      role === Role.HUNTER
+      role === Role.GUARD
     );
   }
   if (phase === GamePhase.VOTING) {
@@ -94,24 +101,25 @@ function Seat({
       onClick={() => onSelect(player.id)}
       disabled={!isEnabled}
       className={[
-        "group relative mx-auto aspect-square w-full max-w-[92px] rounded-lg border backdrop-blur-[2px] p-2 text-left transition",
+        "group relative mx-auto aspect-square w-full max-w-[136px] rounded-lg border backdrop-blur-sm p-2 text-left transition-all duration-300",
         isSelected
-          ? "border-[#C4B5FD]/70 shadow-[0_0_0_1px_rgba(196,181,253,0.4),0_0_24px_rgba(124,58,237,0.25)]"
-          : "border-white/12",
-        isEnabled ? "hover:border-[#7C3AED]/55" : "cursor-not-allowed opacity-55",
+          ? "border-red-900 shadow-[0_0_15px_rgba(153,27,27,0.6),inset_0_0_20px_rgba(153,27,27,0.2)] bg-black/60"
+          : "border-slate-800 bg-black/40",
+        isEnabled ? "hover:border-red-800/80 hover:shadow-[0_0_10px_rgba(153,27,27,0.4)] hover:bg-black/50" : "cursor-not-allowed opacity-40 grayscale",
       ].join(" ")}
     >
-      <p className="text-[10px] uppercase tracking-[0.16em] text-[#9CA3AF]">{label}</p>
       <div className="mt-2 flex h-[calc(100%-1rem)] flex-col items-center justify-center gap-1.5 text-center">
-        <Avatar name={player.name} isDead={!player.isAlive} size="sm" shape="circle" />
-        <p className="line-clamp-2 text-xs font-medium text-[#E5E7EB]">{player.name}</p>
+        <div className={isSelected ? "drop-shadow-[0_0_8px_rgba(153,27,27,0.8)] transition-all" : "transition-all group-hover:drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]"}>
+          <Avatar name={player.name} isDead={!player.isAlive} size="sm" shape="circle" />
+        </div>
+        <p className="line-clamp-2 text-xs font-serif font-medium text-slate-300 group-hover:text-white transition-colors">{player.name}</p>
       </div>
 
       {isSelected && (
-        <div className="pointer-events-none absolute inset-0 rounded-lg bg-[radial-gradient(circle_at_center,rgba(196,181,253,0.22),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-lg bg-[radial-gradient(circle_at_center,rgba(153,27,27,0.25),transparent_70%)]" />
       )}
       {isEnabled && !isSelected && (
-        <div className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.16),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_center,rgba(153,27,27,0.15),transparent_70%)]" />
       )}
     </button>
   );
@@ -125,6 +133,11 @@ export function RoleReceivedGameplayLayout({
   day,
   deadlineTimestamp,
   hasActed,
+  roomId,
+  witchPotions,
+  hunterTriggered,
+  currentNightRole,
+  roomConfig,
 }: RoleReceivedGameplayLayoutProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -141,11 +154,19 @@ export function RoleReceivedGameplayLayout({
   const topPlayers = outerRingPlayers.slice(0, TOP_SLOT_COUNT);
   const bottomPlayers = outerRingPlayers.slice(TOP_SLOT_COUNT, OUTER_RING_MAX);
   const actionLabel = getActionLabel(phase, currentRole);
-  const myTurn = isRoleTurn(currentRole, phase);
-  const canAct = myTurn && !hasActed;
+  const myTurn =
+    phase === GamePhase.NIGHT
+      ? currentNightRole === currentRole
+      : isRoleTurn(currentRole, phase);
+  const canAct =
+    currentRole === Role.HUNTER ? hunterTriggered && !hasActed : myTurn && !hasActed;
   const roleActions = getRoleActions(currentRole);
   const isAbilityRole = roleHasAbility(currentRole);
-  const canSelectTarget = canAct && isAbilityRole;
+  const canSelectTarget =
+    canAct &&
+    isAbilityRole &&
+    roleActions.some((a) => a.requiresTarget) &&
+    !(currentRole === Role.WITCH && witchPotions.poisonUsed);
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     isVisible: boolean;
@@ -160,7 +181,21 @@ export function RoleReceivedGameplayLayout({
 
   useEffect(() => {
     if (!deadlineTimestamp) {
-      setSecondsLeft(null);
+      if (phase === GamePhase.NIGHT && currentNightRole && roomConfig) {
+        const durationSec =
+          currentNightRole === Role.GUARD
+            ? roomConfig.guardDuration ?? 30
+            : currentNightRole === Role.SEER
+              ? roomConfig.seerDuration ?? 30
+              : currentNightRole === Role.WEREWOLF
+                ? roomConfig.werewolfDuration ?? 45
+                : currentNightRole === Role.WITCH
+                  ? roomConfig.witchDuration ?? 30
+                  : 30;
+        setSecondsLeft(durationSec);
+      } else {
+        setSecondsLeft(null);
+      }
       return;
     }
     const tick = () => {
@@ -171,6 +206,15 @@ export function RoleReceivedGameplayLayout({
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [deadlineTimestamp]);
+
+  useEffect(() => {
+    if (secondsLeft !== 0) return;
+    if (!canAct) return;
+    // Skip action locally when timer hits 0 (server will advance by its own timeout).
+    useGameStore.getState().setHasActed(true);
+    setSelectedTargetId(null);
+    setToast({ isVisible: true, type: "info", message: "Time's up — skipped." });
+  }, [canAct, secondsLeft]);
 
   useEffect(() => {
     if (!toast.isVisible) return;
@@ -192,14 +236,48 @@ export function RoleReceivedGameplayLayout({
       setToast({ isVisible: true, type: "info", message: "Villager has no active ability (placeholder)." });
       return;
     }
+
+    if (currentRole === Role.WITCH) {
+      if (action.key === "heal" && witchPotions.healUsed) {
+        setToast({ isVisible: true, type: "info", message: "Heal potion already used." });
+        return;
+      }
+      if (action.key === "poison" && witchPotions.poisonUsed) {
+        setToast({ isVisible: true, type: "info", message: "Poison potion already used." });
+        return;
+      }
+    }
+    if (currentRole === Role.HUNTER && !hunterTriggered) {
+      setToast({ isVisible: true, type: "info", message: "Hunter can shoot only when triggered by death." });
+      return;
+    }
     if (action.requiresTarget && !selectedTargetId) {
       setToast({ isVisible: true, type: "error", message: "Select a target first." });
       return;
     }
 
+    if (!roomId) {
+      setToast({ isVisible: true, type: "error", message: "Missing roomId." });
+      return;
+    }
+
+    const socket = getRoomGatewaySocket();
+    const { actionType, targetId } = mapUiActionToNightAction(currentRole, action.key, selectedTargetId);
+    if (!actionType) {
+      setToast({ isVisible: true, type: "info", message: "Action not supported by gateway yet." });
+      return;
+    }
+
+    useGameStore.getState().setLastNightActionKey(action.key);
+    socket.send("night_action", {
+      roomId,
+      actionType,
+      ...(targetId === undefined ? {} : { targetId }),
+    });
+
     const targetName = selectedTarget?.name;
     const suffix = action.requiresTarget && targetName ? ` → ${targetName}` : "";
-    setToast({ isVisible: true, type: "success", message: `${action.label}${suffix}` });
+    setToast({ isVisible: true, type: "success", message: `Sent: ${action.label}${suffix}` });
   };
 
   const handleSendMessage = (content: string, channel: "global" | "werewolf" = "global") => {
@@ -218,35 +296,36 @@ export function RoleReceivedGameplayLayout({
   };
 
   return (
-    <div className="-mt-8 space-y-4">
+    <div className="-mt-8 space-y-6">
       <ActionResultToast
         isVisible={toast.isVisible}
         type={toast.type}
         message={toast.message}
         onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
       />
-      <section className="rounded-2xl border border-white/12 px-5 py-4 text-center backdrop-blur-[2px]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-black/50 px-5 py-4 text-center shadow-[0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-md">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(153,27,27,0.05),transparent)]" />
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="text-left">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF]">Day {day}</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Day {day}</p>
           </div>
           <div className="text-center">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF]">Phase State</p>
-            <p className="mt-1 text-lg font-semibold text-[#E5E7EB]">{phase}</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Phase State</p>
+            <p className="mt-1 text-xl font-serif font-semibold tracking-wide text-red-50 drop-shadow-[0_0_8px_rgba(153,27,27,0.8)]">{phase}</p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF]">Timer</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-[#C4B5FD]">
+            <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Time Remaining</p>
+            <p className="mt-1 font-mono text-2xl font-bold text-red-400 drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]">
               {secondsLeft === null ? "--:--" : `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")}`}
             </p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_450px]">
-        <div className="rounded-2xl border border-white/12 p-4 backdrop-blur-[2px]">
-          <div className="grid gap-4 lg:grid-cols-[0.72fr_1.56fr_0.72fr]">
-            <div className="grid grid-cols-1 gap-3">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_450px]">
+        <div className="rounded-2xl border border-slate-800 bg-black/40 p-5 shadow-[0_0_30px_rgba(0,0,0,0.9)] backdrop-blur-sm">
+          <div className="grid gap-5 lg:grid-cols-[0.72fr_1.56fr_0.72fr]">
+            <div className="grid grid-cols-1 gap-4">
               {topPlayers[0] && (
                 <Seat
                   label="P1"
@@ -276,57 +355,66 @@ export function RoleReceivedGameplayLayout({
               )}
             </div>
 
-            <div className="space-y-3">
-              <div className="rounded-xl border border-[#7C3AED]/40 p-4 text-center backdrop-blur-[2px]">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#C4B5FD]">Center</p>
-                <div className="mt-3 flex items-center justify-center">
-                  <div className="relative w-52 overflow-visible rounded-lg border border-white/20 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+            <div className="space-y-5">
+              <div className="relative rounded-xl border border-slate-800 bg-black/60 p-5 text-center shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+                <div className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(153,27,27,0.05),transparent_70%)]" />
+                <p className="relative text-[11px] uppercase tracking-[0.2em] font-serif text-red-400/80">Identity</p>
+                <div className="relative mt-4 flex items-center justify-center">
+                  <div className="relative w-52 overflow-visible rounded-lg border-2 border-slate-700/50 shadow-[0_15px_35px_rgba(0,0,0,0.7),0_0_20px_rgba(153,27,27,0.2)] transition-transform hover:scale-105 duration-500">
                     <img
                       src={roleCardFrontImageByRole[currentRole]}
                       alt={`${currentRole} role card`}
                       decoding="sync"
-                      className="h-auto w-full object-cover"
+                      className="h-auto w-full object-cover rounded-md"
                     />
-                    <div className="absolute -bottom-4 -right-4 rounded-2xl border border-white/20 bg-[#0F172A] p-1.5 shadow-[0_10px_25px_rgba(0,0,0,0.45)]">
+                    <div className="absolute -bottom-4 -right-4 rounded-full border border-slate-700 bg-black p-1 shadow-[0_0_15px_rgba(153,27,27,0.5)]">
                       <Avatar name={playerName} size="sm" shape="circle" />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#7C3AED]/35 p-4 backdrop-blur-[2px]">
+              <div className="relative rounded-xl border border-slate-800 bg-black/60 p-5 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#C4B5FD]">Action Panel</p>
-                  <span className={`text-xs font-semibold ${canAct ? "text-[#4ADE80]" : "text-[#F59E0B]"}`}>
-                    {canAct ? "Your turn" : hasActed ? "Already acted" : "Wait turn"}
+                  <p className="text-[11px] uppercase tracking-[0.2em] font-serif text-red-400/80">Grimoire</p>
+                  <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded border ${canAct ? "border-green-900/50 text-green-400 bg-green-950/30" : hasActed ? "border-slate-700 text-slate-400 bg-slate-900/50" : "border-amber-900/50 text-amber-500 bg-amber-950/30"}`}>
+                    {canAct ? "Your turn" : hasActed ? "Acted" : "Wait turn"}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-[#E5E7EB]">{actionLabel}</p>
+                <p className="mt-3 font-serif text-lg text-slate-200">{actionLabel}</p>
                 {canSelectTarget && (
-                  <p className="mt-1 text-xs text-[#9CA3AF]">
-                    Target:{" "}
-                    <span className="font-semibold text-[#E5E7EB]">
-                      {selectedTarget ? selectedTarget.name : "—"}
+                  <p className="mt-1 text-xs font-serif text-slate-400">
+                    Targeting:{" "}
+                    <span className="font-semibold text-red-400 drop-shadow-[0_0_5px_rgba(153,27,27,0.3)]">
+                      {selectedTarget ? selectedTarget.name : "None"}
                     </span>
                   </p>
                 )}
-                <div className="mt-3 space-y-2">
+                <div className="mt-4 space-y-2.5">
                   {roleActions.map((action) => (
                     <button
                       key={action.key}
                       type="button"
                       onClick={() => performAction(action)}
-                      disabled={!canAct || (action.requiresTarget && !selectedTargetId) || !isAbilityRole}
-                      className="w-full rounded-lg border border-white/15 px-3 py-2 text-left text-sm text-[#E5E7EB] transition enabled:hover:border-[#7C3AED]/60 enabled:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-45"
+                      disabled={
+                        !canAct ||
+                        !isAbilityRole ||
+                        (action.requiresTarget && !selectedTargetId) ||
+                        (currentRole === Role.WITCH && action.key === "heal" && witchPotions.healUsed) ||
+                        (currentRole === Role.WITCH && action.key === "poison" && witchPotions.poisonUsed) ||
+                        (currentRole === Role.HUNTER && !hunterTriggered)
+                      }
+                      className="group relative w-full overflow-hidden rounded-lg border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-900 px-4 py-3 text-left font-serif text-sm text-slate-300 transition-all duration-300 enabled:hover:border-red-800 enabled:hover:text-red-100 enabled:hover:shadow-[0_0_15px_rgba(153,27,27,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {action.label}
+                      <span className="relative z-10 uppercase tracking-widest">{action.label}</span>
+                      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,transparent,rgba(153,27,27,0.1),transparent)] translate-x-[-100%] transition-transform duration-500 group-hover:translate-x-[100%]" />
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {topPlayers[3] && (
                 <Seat
                   label="P4"
@@ -358,7 +446,7 @@ export function RoleReceivedGameplayLayout({
           </div>
 
           {bottomPlayers.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
               {bottomPlayers[0] && (
                 <Seat
                   label="P7"
@@ -408,17 +496,49 @@ export function RoleReceivedGameplayLayout({
           )}
         </div>
 
-        <div className="rounded-2xl border border-white/12 p-3 backdrop-blur-[2px]">
-          <p className="mb-2 px-2 text-[11px] uppercase tracking-[0.25em] text-[#9CA3AF]">Chat Panel</p>
-          <ChatBox
-            messages={messages}
-            werewolfMessages={[]}
-            onSendMessage={handleSendMessage}
-            currentRole={currentRole}
-          />
+        <div className="rounded-2xl border border-slate-800 bg-black/40 p-4 shadow-[0_0_30px_rgba(0,0,0,0.9)] backdrop-blur-sm flex flex-col">
+          <div className="mb-4 flex items-center gap-3 px-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+            <p className="text-[11px] uppercase tracking-[0.25em] font-serif text-slate-400">Whispers</p>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+          </div>
+          <div className="flex-1 min-h-[300px]">
+            <ChatBox
+              messages={messages}
+              werewolfMessages={[]}
+              onSendMessage={handleSendMessage}
+              currentRole={currentRole}
+            />
+          </div>
         </div>
       </section>
 
     </div>
   );
+}
+
+function mapUiActionToNightAction(
+  role: Role,
+  actionKey: string,
+  selectedTargetId: string | null,
+): { actionType: string | null; targetId?: string } {
+  if (role === Role.WEREWOLF && actionKey === "devour") {
+    return { actionType: "werewolf_kill", targetId: selectedTargetId ?? undefined };
+  }
+  if (role === Role.SEER && actionKey === "prophesy") {
+    return { actionType: "seer", targetId: selectedTargetId ?? undefined };
+  }
+  if (role === Role.GUARD && actionKey === "protect") {
+    return { actionType: "guard", targetId: selectedTargetId ?? undefined };
+  }
+  if (role === Role.WITCH && actionKey === "poison") {
+    return { actionType: "witch", targetId: selectedTargetId ?? undefined };
+  }
+  if (role === Role.WITCH && actionKey === "heal") {
+    return { actionType: "witch" };
+  }
+  if (role === Role.HUNTER && actionKey === "shoot") {
+    return { actionType: "hunter", targetId: selectedTargetId ?? undefined };
+  }
+  return { actionType: null };
 }

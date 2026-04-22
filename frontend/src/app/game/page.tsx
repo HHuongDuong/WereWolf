@@ -18,6 +18,9 @@ export default function GamePage() {
   const currentPlayerRole = useGameStore((state) => state.currentPlayerRole);
   const deadlineTimestamp = useGameStore((state) => state.deadlineTimestamp);
   const hasActed = useGameStore((state) => state.hasActed);
+  const witchPotions = useGameStore((state) => state.witchPotions);
+  const hunterTriggered = useGameStore((state) => state.hunterTriggered);
+  const currentNightRole = useGameStore((state) => state.currentNightRole);
   const previousPhase = useGameStore((state) => state.previousPhase);
   const shouldShowPhaseTransition = useGameStore((state) => state.shouldShowPhaseTransition);
   const completePhaseTransition = useGameStore((state) => state.completePhaseTransition);
@@ -61,6 +64,11 @@ export default function GamePage() {
         day={round || 1}
         deadlineTimestamp={deadlineTimestamp}
         hasActed={hasActed}
+        roomId={currentRoomId}
+        witchPotions={witchPotions}
+        hunterTriggered={hunterTriggered}
+        currentNightRole={currentNightRole}
+        roomConfig={rooms.find((r) => r.id === currentRoomId)?.config}
       />
     </GameLayout>
   );

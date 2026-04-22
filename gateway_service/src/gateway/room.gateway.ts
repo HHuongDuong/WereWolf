@@ -16,6 +16,8 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { ConfigureRoomDto } from './dto/configure-room.dto';
 import { StartGameDto, CancelRoomDto, LeaveRoomDto } from './dto/room-action.dto';
+import { NightActionDto } from './dto/night-action.dto';
+import { KafkaProducerService } from './kafka.producer';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -29,7 +31,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly roomMembers = new Map<string, Set<string>>();
   private readonly lastRoomState = new Map<string, unknown>();
 
-  constructor(private readonly roomClient: RoomServiceClient) {}
+  constructor(
+    private readonly roomClient: RoomServiceClient,
+    private readonly kafkaProducer: KafkaProducerService,
+  ) {}
 
   handleConnection(socket: WebSocket) {
     const socketId = randomUUID();
@@ -190,6 +195,43 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('night_action')
+  async handleNightAction(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, NightActionDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    if (!session?.roomId || !session?.guestId) return this.emitError(socket, 'NO_ROOM', 'Bạn chưa ở trong phòng');
+    if (dto.roomId !== session.roomId) return this.emitError(socket, 'ROOM_MISMATCH', 'RoomId không khớp session');
+
+    const role = this.mapActionTypeToRole(dto.actionType);
+    if (!role) return this.emitError(socket, 'INVALID_ACTION', 'ActionType không hợp lệ');
+
+    const event = {
+      eventId: randomUUID(),
+      roomId: session.roomId,
+      playerId: session.guestId,
+      role,
+      targetId: dto.targetId,
+    };
+
+    try {
+      await this.kafkaProducer.publish('game.night.action', event);
+      this.sendMessage(socket, 'night_action_ack', { actionType: dto.actionType, success: true });
+    } catch (err) {
+      this.logger.warn(`Failed to publish game.night.action: ${err}`);
+      this.sendMessage(socket, 'night_action_ack', {
+        actionType: dto.actionType,
+        success: false,
+        reason: 'KAFKA_PUBLISH_FAILED',
+      });
+    }
+  }
+
   private trackSession(socketId: string, guestId: string, roomId: string) {
     this.sessions.set(socketId, { guestId, roomId });
   }
@@ -225,6 +267,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.broadcastToRoom(roomId, 'ROOM_CANCELLED', { roomId });
     this.roomMembers.delete(roomId);
     this.lastRoomState.delete(roomId);
+  }
+
+  public broadcastEvent(roomId: string, event: string, data: unknown) {
+    this.broadcastToRoom(roomId, event, data);
   }
 
   private emitError(socket: WebSocket, code: string, message: string) {
@@ -288,6 +334,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const socket = this.sockets.get(socketId);
       if (socket) this.sendMessage(socket, event, data);
     }
+  }
+
+  private mapActionTypeToRole(actionType: string) {
+    if (actionType === 'guard') return 'GUARD';
+    if (actionType === 'seer') return 'SEER';
+    if (actionType === 'werewolf_kill') return 'WEREWOLF';
+    if (actionType === 'witch') return 'WITCH';
+    if (actionType === 'hunter') return 'HUNTER';
+    return null;
   }
 
   private sendMessage(socket: WebSocket, event: string, data: unknown) {

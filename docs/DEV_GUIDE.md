@@ -191,6 +191,50 @@ npm run dev   # http://localhost:3000
 
 ---
 
+#### `game.night.action`
+- **Producer:** gateway-service  
+- **Consumer:** gameplay-service
+  - Tương ứng từng role theo thứ tự: GRUARD → SEER → WEREWOLF → WITCH
+```json
+{
+  "eventId": "123e4567-e89b-12d3-a456-426614174001",
+  "roomId": "room1",
+  "playerId": "<actual-werewolf-player-id>",
+  "role": "WEREWOLF",
+  "targetId": "<alive-non-werewolf-player-id>"
+}
+```
+
+```json
+{
+  "eventId": "123e4567-e89b-12d3-a456-426614174002",
+  "roomId": "room1",
+  "playerId": "<actual-seer-player-id>",
+  "role": "SEER",
+  "targetId": "<alive-target-player-id>"
+}
+```
+```json
+
+{
+  "eventId": "123e4567-e89b-12d3-a456-426614174003",
+  "roomId": "room1",
+  "playerId": "<actual-guard-player-id>",
+  "role": "GUARD",
+  "targetId": "<alive-target-player-id>"
+
+}
+```
+```json
+{
+  "eventId": "123e4567-e89b-12d3-a456-426614174006",
+  "roomId": "room1",
+  "playerId": "<actual-witch-player-id>",
+  "role": "WITCH",
+  "targetId": "<alive-target-player-id>"
+}
+```
+---
 #### `game.chat.channel.updated`
 - **Producer:** gameplay-service  
 - **Consumer:** chat-service  

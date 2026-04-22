@@ -67,6 +67,7 @@ public class GameInitService {
                 .phase(GamePhase.ROLE_REVEAL.toValue())
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
+                .currentNightRole(null)
                 .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
                 .build());
 

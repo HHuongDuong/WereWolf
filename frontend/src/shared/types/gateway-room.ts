@@ -25,9 +25,16 @@ export interface GatewayRoleAssignedPayload {
   role: Role;
 }
 
+export interface GatewayNightActionAckPayload {
+  actionType: string;
+  success: boolean;
+  reason?: string;
+}
+
 export type GatewayIncomingEvent =
   | { event: "ROOM_UPDATED"; data: GatewayRoomUpdatedPayload }
   | { event: "ROOM_CANCELLED"; data: { roomId: string } }
   | { event: "ERROR"; data: GatewayErrorPayload }
   | { event: "role_assigned"; data: GatewayRoleAssignedPayload }
-  | { event: "phase_changed"; data: PhaseChangedPayload };
+  | { event: "phase_changed"; data: any }
+  | { event: "night_action_ack"; data: GatewayNightActionAckPayload };
