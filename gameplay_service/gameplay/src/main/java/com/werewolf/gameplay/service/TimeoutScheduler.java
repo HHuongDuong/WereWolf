@@ -31,11 +31,10 @@ public class TimeoutScheduler {
             switch (state.getPhase()) {
                 case ROLE_REVEAL -> {
                     dayPhaseService.startNight(roomId);
-                    nightPhaseService.advanceNightPhase(roomId);
                 }
                 case NIGHT -> nightPhaseService.advanceNightPhase(roomId);
                 case DISCUSS -> dayPhaseService.startVote(roomId);
-                case VOTE -> {
+                case DAY -> {
                     log.warn("Vote timeout for roomId={}, triggering force resolve", roomId);
                     dayPhaseService.forceResolveVote(roomId);
                 }
