@@ -1,5 +1,6 @@
 package com.werewolf.gameplay.kafka;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.werewolf.gameplay.model.events.HunterShootEvent;
 import com.werewolf.gameplay.model.events.NightActionEvent;
 import com.werewolf.gameplay.model.events.RoomStartedEvent;
@@ -23,49 +24,58 @@ public class GameEventConsumer {
     private final NightPhaseService nightPhaseService;
     private final DayPhaseService dayPhaseService;
     private final HunterService hunterService;
+    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "room.started", groupId = "gameplay-service")
-    public void onRoomStarted(RoomStartedEvent event, Acknowledgment ack) {
+    public void onRoomStarted(String payload, Acknowledgment ack) {
         try {
+            RoomStartedEvent event = objectMapper.readValue(payload, RoomStartedEvent.class);
             log.info("Received room.started for room: {}", event.getRoomId());
             gameInitService.handleRoomStarted(event);
             ack.acknowledge();
         } catch (Exception e) {
-            log.error("Failed to handle room.started for roomId={}", event.getRoomId(), e);
+            log.error("Failed to handle room.started. payload={}", payload, e);
+            ack.acknowledge(); // ack để tránh bị loop retry vô tận
         }
     }
 
     @KafkaListener(topics = "game.night.action", groupId = "gameplay-service")
-    public void onNightAction(NightActionEvent event, Acknowledgment ack) {
+    public void onNightAction(String payload, Acknowledgment ack) {
         try {
+            NightActionEvent event = objectMapper.readValue(payload, NightActionEvent.class);
             log.info("Received game.night.action for room: {}", event.getRoomId());
             nightPhaseService.handleNightAction(event);
             ack.acknowledge();
         } catch (Exception e) {
-            log.error("Failed to handle game.night.action for roomId={}", event.getRoomId(), e);
+            log.error("Failed to handle game.night.action. payload={}", payload, e);
+            ack.acknowledge();
         }
     }
 
     @KafkaListener(topics = "vote.result", groupId = "gameplay-service")
-    public void onVoteResult(VoteResultEvent event, Acknowledgment ack) {
+    public void onVoteResult(String payload, Acknowledgment ack) {
         try {
+            VoteResultEvent event = objectMapper.readValue(payload, VoteResultEvent.class);
             log.info("Received vote.result for room: {}", event.getRoomId());
             dayPhaseService.handleVoteResult(event);
             ack.acknowledge();
         } catch (Exception e) {
-            log.error("Failed to handle vote.result for roomId={}", event.getRoomId(), e);
+            log.error("Failed to handle vote.result. payload={}", payload, e);
+            ack.acknowledge();
         }
     }
 
     @KafkaListener(topics = "game.hunter.shoot", groupId = "gameplay-service")
-    public void onHunterShoot(HunterShootEvent event, Acknowledgment ack) {
+    public void onHunterShoot(String payload, Acknowledgment ack) {
         try {
-            log.info("Received game.hunter.shoot for room: {}, hunter: {}, target: {}", 
+            HunterShootEvent event = objectMapper.readValue(payload, HunterShootEvent.class);
+            log.info("Received game.hunter.shoot for room: {}, hunter: {}, target: {}",
                 event.getRoomId(), event.getHunterId(), event.getTargetId());
             hunterService.handleHunterShoot(event.getRoomId(), event.getHunterId(), event.getTargetId());
             ack.acknowledge();
         } catch (Exception e) {
-            log.error("Failed to handle game.hunter.shoot for roomId={}", event.getRoomId(), e);
+            log.error("Failed to handle game.hunter.shoot. payload={}", payload, e);
+            ack.acknowledge();
         }
     }
 }

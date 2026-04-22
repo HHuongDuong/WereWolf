@@ -199,12 +199,20 @@ public class NightPhaseService {
         String witchSaved = actions.getWitchSaved();
         String witchPoisoned = actions.getWitchPoisoned();
 
+        log.info("Resolving night for room {}: wolfTarget={}, guardTarget={}, witchSaved={}, witchPoisoned={}", 
+            roomId, wolfTarget, guardTarget, witchSaved, witchPoisoned);
+
         List<String> newlyDeadPlayers = new ArrayList<>();
         if (wolfTarget != null && !wolfTarget.equals(guardTarget) && !wolfTarget.equals(witchSaved)) {
             newlyDeadPlayers.add(wolfTarget);
+            log.info("Player {} will die from werewolf attack", wolfTarget);
+        } else if (wolfTarget != null) {
+            log.info("Player {} was saved (guardTarget={}, witchSaved={})", wolfTarget, guardTarget, witchSaved);
         }
+        
         if (witchPoisoned != null && !newlyDeadPlayers.contains(witchPoisoned)) {
             newlyDeadPlayers.add(witchPoisoned);
+            log.info("Player {} will die from witch poison", witchPoisoned);
         }
 
         for (String deadPlayerId : newlyDeadPlayers) {
@@ -309,6 +317,8 @@ public class NightPhaseService {
         state.setNightActions(actions);
         Map<String, String> wolfVotes = Optional.ofNullable(actions.getWolfVotes()).orElseGet(Map::of);
 
+        log.info("Finalizing wolf target: wolfVotes={}", wolfVotes);
+
         String resolvedTarget = wolfVotes.values().stream()
                 .collect(Collectors.groupingBy(target -> target, Collectors.counting()))
                 .entrySet().stream()
@@ -317,6 +327,7 @@ public class NightPhaseService {
                 .map(Map.Entry::getKey)
                 .orElse(null);
 
+        log.info("Resolved wolf target: {}", resolvedTarget);
         actions.setWolfTarget(resolvedTarget);
     }
 
