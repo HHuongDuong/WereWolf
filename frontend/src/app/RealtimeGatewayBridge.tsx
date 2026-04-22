@@ -19,6 +19,7 @@ export function RealtimeGatewayBridge() {
   const setHasActed = useGameStore((state) => state.setHasActed);
   const setWitchPotions = useGameStore((state) => state.setWitchPotions);
   const setHunterTriggered = useGameStore((state) => state.setHunterTriggered);
+  const setSeerReveal = useGameStore((state) => state.setSeerReveal);
   const markPlayersDead = useLobbyStore((state) => state.markPlayersDead);
 
   useEffect(() => {
@@ -105,6 +106,14 @@ export function RealtimeGatewayBridge() {
         }
       }
 
+      if (message.event === "seer_result") {
+        const revealedRole = message.data.revealedRole === "WEREWOLF" ? Role.WEREWOLF : Role.VILLAGER;
+        setSeerReveal({
+          targetId: message.data.targetId,
+          revealedRole,
+        });
+      }
+
       if (message.event === "vote_ack" && message.data?.success) {
         setHasActed(true);
       }
@@ -136,6 +145,7 @@ export function RealtimeGatewayBridge() {
     setIsAlive,
     setHasActed,
     setHunterTriggered,
+    setSeerReveal,
     setWitchPotions,
     markPlayersDead,
     socket,

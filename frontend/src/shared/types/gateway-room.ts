@@ -45,10 +45,23 @@ export interface GatewayVoteAckPayload {
   reason?: string;
 }
 
+export interface GatewayJoinRoomAckPayload {
+  roomId: string;
+  roomCode: string;
+  success: boolean;
+}
+
+export interface GatewaySeerResultPayload {
+  targetId: string;
+  revealedRole: "VILLAGER" | "WEREWOLF";
+}
+
 export type GatewayIncomingEvent =
   | { event: "ROOM_UPDATED"; data: GatewayRoomUpdatedPayload }
   | { event: "ROOM_CANCELLED"; data: { roomId: string } }
   | { event: "ERROR"; data: GatewayErrorPayload }
+  | { event: "join_room_ack"; data: GatewayJoinRoomAckPayload }
+  | { event: "seer_result"; data: GatewaySeerResultPayload }
   | { event: "role_assigned"; data: GatewayRoleAssignedPayload }
   | { event: "phase_changed"; data: any }
   | { event: "night_action_ack"; data: GatewayNightActionAckPayload }

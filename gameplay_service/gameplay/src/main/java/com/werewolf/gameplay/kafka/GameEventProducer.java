@@ -1,5 +1,7 @@
 package com.werewolf.gameplay.kafka;
 
+import java.util.Map;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -60,5 +62,11 @@ public class GameEventProducer {
                 log.warn("role_assigned not delivered: roomId={}, guestId={}", event.getRoomId(), guestId);
             }
         });
+    }
+
+    public void publishSeerResult(String roomId, String seerGuestId, String targetId, String revealedRole) {
+        log.info("Sending seer_result to {} in room {} for target {}", seerGuestId, roomId, targetId);
+        internalWsClient.sendPrivate(roomId, seerGuestId, "seer_result",
+                Map.of("targetId", targetId, "revealedRole", revealedRole));
     }
 }

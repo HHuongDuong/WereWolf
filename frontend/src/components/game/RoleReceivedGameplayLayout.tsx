@@ -5,7 +5,7 @@ import { ChatBox } from "@/components/game/chat/ChatBox";
 import { Avatar } from "@/components/ui/Avatar";
 import { GamePhase, Player, Role } from "@/shared/types/game";
 import { Message } from "@/components/game/chat/types";
-import { roleCardFrontImageByRole } from "@/shared/lib/roleCardAssets";
+import { backCardImage, roleCardFrontImageByRole } from "@/shared/lib/roleCardAssets";
 import { ActionResultToast } from "@/components/game/actions/ActionResultToast";
 import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
 import { useGameStore, WitchPotionsState } from "@/entities/game/model/gameStore";
@@ -96,13 +96,17 @@ function Seat({
   isSelected,
   isEnabled,
   onSelect,
+  revealedRole,
 }: {
   label: string;
   player: Player;
   isSelected: boolean;
   isEnabled: boolean;
   onSelect: (playerId: string) => void;
+  revealedRole?: Role | null;
 }) {
+  const cardImage = revealedRole ? roleCardFrontImageByRole[revealedRole] : backCardImage;
+
   return (
     <button
       type="button"
@@ -117,6 +121,13 @@ function Seat({
       ].join(" ")}
     >
       <div className="mt-2 flex h-[calc(100%-1rem)] flex-col items-center justify-center gap-1.5 text-center">
+        <div className="relative w-16">
+          <img
+            src={cardImage}
+            alt={revealedRole ? `${revealedRole} card` : "Hidden role card"}
+            className="w-full rounded-md border border-slate-700"
+          />
+        </div>
         <div className={isSelected ? "drop-shadow-[0_0_8px_rgba(153,27,27,0.8)] transition-all" : "transition-all group-hover:drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]"}>
           <Avatar name={player.name} isDead={!player.isAlive} size="sm" shape="circle" />
         </div>
@@ -148,6 +159,7 @@ export function RoleReceivedGameplayLayout({
   currentNightRole,
   roomConfig,
 }: RoleReceivedGameplayLayoutProps) {
+  const seerReveal = useGameStore((state) => state.seerReveal);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "sys-1",
@@ -367,6 +379,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[0].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[0].id ? seerReveal.revealedRole : null}
                 />
               )}
               {topPlayers[1] && (
@@ -376,6 +389,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[1].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[1].id ? seerReveal.revealedRole : null}
                 />
               )}
               {topPlayers[2] && (
@@ -385,6 +399,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[2].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[2].id ? seerReveal.revealedRole : null}
                 />
               )}
             </div>
@@ -456,6 +471,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[3].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[3].id ? seerReveal.revealedRole : null}
                 />
               )}
               {topPlayers[4] && (
@@ -465,6 +481,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[4].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[4].id ? seerReveal.revealedRole : null}
                 />
               )}
               {topPlayers[5] && (
@@ -474,6 +491,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === topPlayers[5].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === topPlayers[5].id ? seerReveal.revealedRole : null}
                 />
               )}
             </div>
@@ -488,6 +506,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === bottomPlayers[0].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === bottomPlayers[0].id ? seerReveal.revealedRole : null}
                 />
               )}
               {bottomPlayers[1] && (
@@ -497,6 +516,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === bottomPlayers[1].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === bottomPlayers[1].id ? seerReveal.revealedRole : null}
                 />
               )}
               {bottomPlayers[2] && (
@@ -506,6 +526,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === bottomPlayers[2].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === bottomPlayers[2].id ? seerReveal.revealedRole : null}
                 />
               )}
               {bottomPlayers[3] && (
@@ -515,6 +536,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === bottomPlayers[3].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === bottomPlayers[3].id ? seerReveal.revealedRole : null}
                 />
               )}
               {bottomPlayers[4] && (
@@ -524,6 +546,7 @@ export function RoleReceivedGameplayLayout({
                   isSelected={selectedTargetId === bottomPlayers[4].id}
                   isEnabled={canSelectTarget}
                   onSelect={setSelectedTargetId}
+                  revealedRole={seerReveal?.targetId === bottomPlayers[4].id ? seerReveal.revealedRole : null}
                 />
               )}
             </div>

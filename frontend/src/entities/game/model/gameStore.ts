@@ -23,6 +23,7 @@ interface GameState {
   revealConfirmed: boolean;
   shouldShowPhaseTransition: boolean;
   previousPhase: GamePhase | null;
+  seerReveal: { targetId: string; revealedRole: Role.VILLAGER | Role.WEREWOLF } | null;
   bootstrapGame: (roomId: string) => void;
   startSequence: () => void;
   setSequenceStep: (step: GameStartSequenceStep) => void;
@@ -35,6 +36,7 @@ interface GameState {
   setHunterTriggered: (value: boolean) => void;
   setLastNightActionKey: (value: string | null) => void;
   setCurrentNightRole: (value: Role | null) => void;
+  setSeerReveal: (value: { targetId: string; revealedRole: Role.VILLAGER | Role.WEREWOLF } | null) => void;
   applyPhaseChanged: (payload: {
     roomId: string;
     phase: GamePhase;
@@ -63,6 +65,7 @@ const initialState = {
   revealConfirmed: false,
   shouldShowPhaseTransition: false,
   previousPhase: null as GamePhase | null,
+  seerReveal: null as { targetId: string; revealedRole: Role.VILLAGER | Role.WEREWOLF } | null,
 };
 
 export const useGameStore = create<GameState>((set) => ({
@@ -88,6 +91,7 @@ export const useGameStore = create<GameState>((set) => ({
   setHunterTriggered: (value) => set({ hunterTriggered: value }),
   setLastNightActionKey: (value) => set({ lastNightActionKey: value }),
   setCurrentNightRole: (value) => set({ currentNightRole: value }),
+  setSeerReveal: (value) => set({ seerReveal: value }),
   applyPhaseChanged: (payload) =>
     set((state) => ({
       roomId: payload.roomId,
@@ -98,6 +102,7 @@ export const useGameStore = create<GameState>((set) => ({
       hasActed: false,
       lastNightActionKey: null,
       currentNightRole: payload.currentNightRole ?? null,
+      seerReveal: null,
       shouldShowPhaseTransition: state.startSequenceStep === "readyForPhase" && state.phase !== payload.phase,
     })),
   completePhaseTransition: () => set({ shouldShowPhaseTransition: false }),
