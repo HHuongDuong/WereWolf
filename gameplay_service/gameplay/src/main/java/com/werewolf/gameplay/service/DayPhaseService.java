@@ -35,7 +35,7 @@ public class DayPhaseService {
 
         long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("voteDuration", 30) : 30;
         long deadline = System.currentTimeMillis() + (durationSec * 1000L);
-        state.setPhase(GamePhase.VOTE);
+        state.setPhase(GamePhase.DAY);
         state.setPhaseDeadline(deadline);
         repo.save(roomId, state);
 
@@ -82,7 +82,7 @@ public class DayPhaseService {
             return;
         try {
             GameState state = repo.get(event.getRoomId());
-            if (state == null || state.getPhase() != GamePhase.VOTE)
+            if (state == null || state.getPhase() != GamePhase.DAY)
                 return;
 
             if (event.getEliminatedId() != null && state.getPlayers().containsKey(event.getEliminatedId())) {
@@ -119,7 +119,7 @@ public class DayPhaseService {
             return;
         try {
             GameState state = repo.get(roomId);
-            if (state == null || state.getPhase() != GamePhase.VOTE)
+            if (state == null || state.getPhase() != GamePhase.DAY)
                 return;
             // No eliminate fallback:
             state.setRound(state.getRound() + 1);

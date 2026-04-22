@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ public class NightPhaseService {
 
         String actorRole = normalizeRole(event.getRole());
         boolean shouldAdvanceAfterAction = false;
+        boolean shouldRequestWerewolfVote = false;
         if (!lockService.tryLock(event.getRoomId())) return;
         try {
             GameState state = repo.get(event.getRoomId());
@@ -63,11 +63,19 @@ public class NightPhaseService {
 
             repo.save(event.getRoomId(), state);
             repo.markProcessed(event.getEventId());
-            shouldAdvanceAfterAction = !"WEREWOLF".equals(actorRole) || allAliveWolvesVoted(state);
+            if ("WEREWOLF".equals(actorRole)) {
+                shouldRequestWerewolfVote = allAliveWolvesVoted(state)
+                        && shouldTriggerWerewolfVote(event.getRoomId(), state);
+            } else {
+                shouldAdvanceAfterAction = true;
+            }
         } finally {
             lockService.releaseLock(event.getRoomId());
         }
 
+        if (shouldRequestWerewolfVote) {
+            publishWerewolfVoteRequest(event.getRoomId());
+        }
         if (shouldAdvanceAfterAction) {
             advanceNightPhase(event.getRoomId());
         }
@@ -137,7 +145,8 @@ public class NightPhaseService {
             GameState state = repo.get(roomId);
             if (state == null || state.getPhase() != GamePhase.NIGHT) return;
 
-            if ("WEREWOLF".equals(normalizeRole(state.getCurrentNightRole()))) {
+            if ("WEREWOLF".equals(normalizeRole(state.getCurrentNightRole())) && state.getNightActions() != null
+                    && state.getNightActions().getWolfTarget() == null) {
                 finalizeWolfTarget(state);
             }
 
@@ -274,16 +283,95 @@ public class NightPhaseService {
                 .collect(Collectors.toSet());
     }
 
+    public void handleWolfVoteResult(com.werewolf.gameplay.model.events.VoteResultEvent event) {
+        String idempotencyKey = "wolf_vote_result:" + event.getRoomId() + ":" + event.getRound();
+        if (repo.isProcessed(idempotencyKey)) {
+            return;
+        }
+
+        boolean shouldAdvance = false;
+        if (!lockService.tryLock(event.getRoomId())) {
+            return;
+        }
+        try {
+            GameState state = repo.get(event.getRoomId());
+            if (state == null || state.getPhase() != GamePhase.NIGHT) {
+                return;
+            }
+            if (!"WEREWOLF".equals(normalizeRole(state.getCurrentNightRole()))) {
+                return;
+            }
+            if (state.getRound() != event.getRound()) {
+                return;
+            }
+
+            NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+            state.setNightActions(actions);
+            actions.setWolfTarget(event.getEliminatedId());
+            repo.save(event.getRoomId(), state);
+            repo.markProcessed(idempotencyKey);
+            shouldAdvance = true;
+        } finally {
+            lockService.releaseLock(event.getRoomId());
+        }
+
+        if (shouldAdvance) {
+            advanceNightPhase(event.getRoomId());
+        }
+    }
+
+    private boolean shouldTriggerWerewolfVote(String roomId, GameState state) {
+        NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+        return actions.getWolfTarget() == null
+                && !repo.isProcessed(werewolfVoteRequestKey(roomId, state.getRound()));
+    }
+
+    private void publishWerewolfVoteRequest(String roomId) {
+        GameState state = repo.get(roomId);
+        if (state == null || state.getPhase() != GamePhase.NIGHT) {
+            return;
+        }
+        if (!"WEREWOLF".equals(normalizeRole(state.getCurrentNightRole()))) {
+            return;
+        }
+        String requestKey = werewolfVoteRequestKey(roomId, state.getRound());
+        if (repo.isProcessed(requestKey)) {
+            return;
+        }
+
+        List<String> aliveWolfIds = state.getPlayers().entrySet().stream()
+                .filter(entry -> entry.getValue().isAlive()
+                        && "WEREWOLF".equals(normalizeRole(entry.getValue().getRole())))
+                .map(Map.Entry::getKey)
+                .toList();
+        int durationSec = (int) getNightDuration(state, "WEREWOLF");
+
+        producer.publishWerewolfVoteStart(com.werewolf.gameplay.model.events.VoteStartEvent.builder()
+                .roomId(roomId)
+                .round(state.getRound())
+                .alivePlayerIds(aliveWolfIds)
+                .durationSec(durationSec)
+                .build());
+        repo.markProcessed(requestKey);
+    }
+
+    private String werewolfVoteRequestKey(String roomId, int round) {
+        return "wolf_vote_request:" + roomId + ":" + round;
+    }
+
     private void finalizeWolfTarget(GameState state) {
         NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
         state.setNightActions(actions);
+        if (actions.getWolfTarget() != null) {
+            return;
+        }
         Map<String, String> wolfVotes = Optional.ofNullable(actions.getWolfVotes()).orElseGet(Map::of);
 
         String resolvedTarget = wolfVotes.values().stream()
                 .collect(Collectors.groupingBy(target -> target, Collectors.counting()))
                 .entrySet().stream()
-                .max(Comparator.<Map.Entry<String, Long>>comparingLong(Map.Entry::getValue)
-                        .thenComparing(Map.Entry::getKey))
+                .max(Map.Entry.<String, Long>comparingByValue()
+                        .thenComparing(Map.Entry.comparingByKey()))
                 .map(Map.Entry::getKey)
                 .orElse(null);
 
