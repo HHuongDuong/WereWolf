@@ -20,6 +20,7 @@ interface RoleReceivedGameplayLayoutProps {
   deadlineTimestamp: number | null;
   hasActed: boolean;
   roomId: string | null;
+  isAlive: boolean;
   witchPotions: WitchPotionsState;
   hunterTriggered: boolean;
   currentNightRole: Role | null;
@@ -82,6 +83,13 @@ function getRoleActions(role: Role): RoleAction[] {
   return [{ key: "none", label: "No ability (placeholder)" }];
 }
 
+function getPanelActions(role: Role, phase: GamePhase): RoleAction[] {
+  if (phase === GamePhase.VOTING) {
+    return [{ key: "vote", label: "Vote", requiresTarget: true }];
+  }
+  return getRoleActions(role);
+}
+
 function Seat({
   label,
   player,
@@ -134,6 +142,7 @@ export function RoleReceivedGameplayLayout({
   deadlineTimestamp,
   hasActed,
   roomId,
+  isAlive,
   witchPotions,
   hunterTriggered,
   currentNightRole,
@@ -159,12 +168,16 @@ export function RoleReceivedGameplayLayout({
       ? currentNightRole === currentRole
       : isRoleTurn(currentRole, phase);
   const canAct =
-    currentRole === Role.HUNTER ? hunterTriggered && !hasActed : myTurn && !hasActed;
-  const roleActions = getRoleActions(currentRole);
+    phase === GamePhase.VOTING
+      ? isAlive && !hasActed
+      : currentRole === Role.HUNTER
+        ? hunterTriggered && !hasActed
+        : isAlive && myTurn && !hasActed;
+  const roleActions = getPanelActions(currentRole, phase);
   const isAbilityRole = roleHasAbility(currentRole);
   const canSelectTarget =
     canAct &&
-    isAbilityRole &&
+    (phase === GamePhase.VOTING || isAbilityRole) &&
     roleActions.some((a) => a.requiresTarget) &&
     !(currentRole === Role.WITCH && witchPotions.poisonUsed);
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
@@ -208,15 +221,6 @@ export function RoleReceivedGameplayLayout({
   }, [deadlineTimestamp]);
 
   useEffect(() => {
-    if (secondsLeft !== 0) return;
-    if (!canAct) return;
-    // Skip action locally when timer hits 0 (server will advance by its own timeout).
-    useGameStore.getState().setHasActed(true);
-    setSelectedTargetId(null);
-    setToast({ isVisible: true, type: "info", message: "Time's up — skipped." });
-  }, [canAct, secondsLeft]);
-
-  useEffect(() => {
     if (!toast.isVisible) return;
     const timer = setTimeout(() => setToast((prev) => ({ ...prev, isVisible: false })), 2200);
     return () => clearTimeout(timer);
@@ -232,7 +236,7 @@ export function RoleReceivedGameplayLayout({
       setToast({ isVisible: true, type: "info", message: "Not your turn yet." });
       return;
     }
-    if (!isAbilityRole) {
+    if (phase !== GamePhase.VOTING && !isAbilityRole) {
       setToast({ isVisible: true, type: "info", message: "Villager has no active ability (placeholder)." });
       return;
     }
@@ -262,6 +266,23 @@ export function RoleReceivedGameplayLayout({
     }
 
     const socket = getRoomGatewaySocket();
+    if (phase === GamePhase.VOTING) {
+      if (!selectedTargetId) {
+        setToast({ isVisible: true, type: "error", message: "Select a target to vote." });
+        return;
+      }
+      socket.send("vote", {
+        roomId,
+        round: day,
+        targetId: selectedTargetId,
+      });
+      useGameStore.getState().setHasActed(true);
+      useGameStore.getState().setLastNightActionKey("vote");
+      const targetName = selectedTarget?.name;
+      setToast({ isVisible: true, type: "success", message: `Sent: Vote${targetName ? ` -> ${targetName}` : ""}` });
+      return;
+    }
+
     const { actionType, targetId } = mapUiActionToNightAction(currentRole, action.key, selectedTargetId);
     if (!actionType) {
       setToast({ isVisible: true, type: "info", message: "Action not supported by gateway yet." });
@@ -312,6 +333,16 @@ export function RoleReceivedGameplayLayout({
           <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Phase State</p>
             <p className="mt-1 text-xl font-serif font-semibold tracking-wide text-red-50 drop-shadow-[0_0_8px_rgba(153,27,27,0.8)]">{phase}</p>
+            <p className="mt-1 text-xs font-serif text-slate-400">
+              Current turn:{" "}
+              <span className="font-semibold text-red-300">
+                {phase === GamePhase.NIGHT
+                  ? currentNightRole ?? "RESOLVING"
+                  : phase === GamePhase.VOTING
+                    ? "ALL (VOTE)"
+                    : "DISCUSS"}
+              </span>
+            </p>
           </div>
           <div className="text-right">
             <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Time Remaining</p>

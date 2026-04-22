@@ -29,6 +29,7 @@ interface GameState {
   setAssignedRole: (role: Role) => void;
   confirmReveal: () => void;
   setPhase: (phase: GamePhase) => void;
+  setIsAlive: (value: boolean) => void;
   setHasActed: (value: boolean) => void;
   setWitchPotions: (patch: Partial<WitchPotionsState>) => void;
   setHunterTriggered: (value: boolean) => void;
@@ -73,6 +74,7 @@ export const useGameStore = create<GameState>((set) => ({
     set({
       assignedRole: role,
       currentPlayerRole: role,
+      isAlive: true,
       hasActed: false,
       hunterTriggered: false,
       lastNightActionKey: null,
@@ -80,6 +82,7 @@ export const useGameStore = create<GameState>((set) => ({
     }),
   confirmReveal: () => set({ revealConfirmed: true, startSequenceStep: "readyForPhase" }),
   setPhase: (phase) => set({ phase }),
+  setIsAlive: (value) => set({ isAlive: value }),
   setHasActed: (value) => set({ hasActed: value }),
   setWitchPotions: (patch) => set((state) => ({ witchPotions: { ...state.witchPotions, ...patch } })),
   setHunterTriggered: (value) => set({ hunterTriggered: value }),

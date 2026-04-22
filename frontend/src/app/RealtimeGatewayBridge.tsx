@@ -15,6 +15,7 @@ export function RealtimeGatewayBridge() {
   const startSequence = useGameStore((state) => state.startSequence);
   const setAssignedRole = useGameStore((state) => state.setAssignedRole);
   const applyPhaseChanged = useGameStore((state) => state.applyPhaseChanged);
+  const setIsAlive = useGameStore((state) => state.setIsAlive);
   const setHasActed = useGameStore((state) => state.setHasActed);
   const setWitchPotions = useGameStore((state) => state.setWitchPotions);
   const setHunterTriggered = useGameStore((state) => state.setHunterTriggered);
@@ -28,6 +29,7 @@ export function RealtimeGatewayBridge() {
           bootstrapGame(activeRoomId);
         }
         setAssignedRole(message.data.role);
+        setIsAlive(true);
         if (useGameStore.getState().startSequenceStep === "idle") {
           startSequence();
         }
@@ -71,6 +73,9 @@ export function RealtimeGatewayBridge() {
         const deadIds = (message.data?.metadata?.deadIds ?? []) as string[];
         const eliminatedId = (message.data?.metadata?.eliminatedId ?? null) as string | null;
         const wasKilled = deadIds.includes(guestId) || eliminatedId === guestId;
+        if (wasKilled) {
+          setIsAlive(false);
+        }
         if (currentRole === Role.HUNTER && wasKilled) {
           setHunterTriggered(true);
           setHasActed(false);
@@ -94,6 +99,18 @@ export function RealtimeGatewayBridge() {
           }
         }
       }
+
+      if (message.event === "vote_started") {
+        const roomId = useGameStore.getState().roomId ?? useLobbyStore.getState().currentRoomId;
+        applyPhaseChanged({
+          roomId: roomId || "",
+          phase: GamePhase.VOTING,
+          round: Number(message.data.round || useGameStore.getState().round || 1),
+          deadlineTimestamp: Date.now() + Number(message.data.durationSec || 30) * 1000,
+          currentNightRole: null,
+        });
+        setHasActed(false);
+      }
     });
 
     return () => {
@@ -104,6 +121,7 @@ export function RealtimeGatewayBridge() {
     bootstrapGame,
     router,
     setAssignedRole,
+    setIsAlive,
     setHasActed,
     setHunterTriggered,
     setWitchPotions,

@@ -18,6 +18,7 @@ export default function GamePage() {
   const currentPlayerRole = useGameStore((state) => state.currentPlayerRole);
   const deadlineTimestamp = useGameStore((state) => state.deadlineTimestamp);
   const hasActed = useGameStore((state) => state.hasActed);
+  const isAlive = useGameStore((state) => state.isAlive);
   const witchPotions = useGameStore((state) => state.witchPotions);
   const hunterTriggered = useGameStore((state) => state.hunterTriggered);
   const currentNightRole = useGameStore((state) => state.currentNightRole);
@@ -65,6 +66,7 @@ export default function GamePage() {
         deadlineTimestamp={deadlineTimestamp}
         hasActed={hasActed}
         roomId={currentRoomId}
+        isAlive={isAlive}
         witchPotions={witchPotions}
         hunterTriggered={hunterTriggered}
         currentNightRole={currentNightRole}
