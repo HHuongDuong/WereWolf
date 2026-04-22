@@ -70,6 +70,7 @@ public class DayPhaseService {
                 .roomId(roomId).channel("wolves").enabled(false)
                 .allowedGuestIds(List.of())
                 .round(state.getRound()).build());
+        nightPhaseService.advanceNightPhase(roomId);
     }
 
     public void handleVoteResult(VoteResultEvent event) {
@@ -107,10 +108,6 @@ public class DayPhaseService {
         } finally {
             lockService.releaseLock(event.getRoomId());
         }
-        GameState latestState = repo.get(event.getRoomId());
-        if (latestState != null && latestState.getPhase() == GamePhase.NIGHT) {
-            nightPhaseService.advanceNightPhase(event.getRoomId());
-        }
     }
 
     public void forceResolveVote(String roomId) {
@@ -130,10 +127,6 @@ public class DayPhaseService {
             }
         } finally {
             lockService.releaseLock(roomId);
-        }
-        GameState latestState = repo.get(roomId);
-        if (latestState != null && latestState.getPhase() == GamePhase.NIGHT) {
-            nightPhaseService.advanceNightPhase(roomId);
         }
     }
 }
