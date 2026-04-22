@@ -8,9 +8,10 @@ import { Message } from "./types";
 interface PrivateMessagePanelProps {
   messages: Message[];
   onSend: (message: string) => void;
+  inputDisabled?: boolean;
 }
 
-export function PrivateMessagePanel({ messages, onSend }: PrivateMessagePanelProps) {
+export function PrivateMessagePanel({ messages, onSend, inputDisabled = false }: PrivateMessagePanelProps) {
   return (
     <Card className="h-[520px] flex flex-col border-[#DC2626]/30">
       <div className="px-6 py-4 border-b border-[#DC2626]/30 flex items-center gap-3 bg-[#991B1B]/10">
@@ -27,6 +28,7 @@ export function PrivateMessagePanel({ messages, onSend }: PrivateMessagePanelPro
         onSend={onSend}
         placeholder="Speak to your pack..."
         isWerewolfChat={true}
+        disabled={inputDisabled}
       />
     </Card>
   );

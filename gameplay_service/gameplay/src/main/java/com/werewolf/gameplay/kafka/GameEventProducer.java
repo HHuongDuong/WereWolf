@@ -32,12 +32,14 @@ public class GameEventProducer {
     }
 
     public void publishVoteStart(VoteStartEvent event) {
-        log.info("Publishing game.vote.start for room {}, round {}", event.getRoomId(), event.getRound());
+        log.info("Publishing game.vote.start for room {}, round {}, type {}",
+                event.getRoomId(), event.getRound(), event.getVoteType());
         kafkaTemplate.send("game.vote.start", event);
     }
 
     public void publishWerewolfVoteStart(VoteStartEvent event) {
-        log.info("Publishing werewolf vote start for room {}, round {}", event.getRoomId(), event.getRound());
+        log.info("Publishing werewolf vote start for room {}, round {}, type {}",
+                event.getRoomId(), event.getRound(), event.getVoteType());
         kafkaTemplate.send("game.vote.start", event);
     }
 

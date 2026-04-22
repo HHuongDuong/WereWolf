@@ -13,6 +13,7 @@ interface ChatBoxProps {
   werewolfMessages?: Message[];
   onSendMessage: (message: string, channel?: "global" | "werewolf") => void;
   currentRole?: Role | string;
+  inputDisabled?: boolean;
 }
 
 export function ChatBox({
@@ -20,6 +21,7 @@ export function ChatBox({
   werewolfMessages = [],
   onSendMessage,
   currentRole,
+  inputDisabled = false,
 }: ChatBoxProps) {
   const [activeTab, setActiveTab] = useState<"global" | "werewolf">("global");
   const isWerewolf = currentRole === "WEREWOLF";
@@ -55,12 +57,13 @@ export function ChatBox({
       {activeTab === "global" ? (
         <>
           <MessageList messages={messages} />
-          <ChatInput onSend={(msg) => onSendMessage(msg, "global")} />
+          <ChatInput onSend={(msg) => onSendMessage(msg, "global")} disabled={inputDisabled} />
         </>
       ) : (
         <PrivateMessagePanel
           messages={werewolfMessages}
           onSend={(msg) => onSendMessage(msg, "werewolf")}
+          inputDisabled={inputDisabled}
         />
       )}
     </Card>

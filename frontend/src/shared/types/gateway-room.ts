@@ -35,6 +35,14 @@ export interface GatewayVoteStartedPayload {
   round: number;
   durationSec: number;
   candidates: string[];
+  voteType: "DAY" | "WOLF";
+}
+
+export interface GatewayVoteAckPayload {
+  success: boolean;
+  round: number;
+  targetId: string;
+  reason?: string;
 }
 
 export type GatewayIncomingEvent =
@@ -44,4 +52,5 @@ export type GatewayIncomingEvent =
   | { event: "role_assigned"; data: GatewayRoleAssignedPayload }
   | { event: "phase_changed"; data: any }
   | { event: "night_action_ack"; data: GatewayNightActionAckPayload }
-  | { event: "vote_started"; data: GatewayVoteStartedPayload };
+  | { event: "vote_started"; data: GatewayVoteStartedPayload }
+  | { event: "vote_ack"; data: GatewayVoteAckPayload };

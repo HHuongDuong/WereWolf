@@ -17,7 +17,9 @@ import { JoinRoomDto } from './dto/join-room.dto';
 import { ConfigureRoomDto } from './dto/configure-room.dto';
 import { StartGameDto, CancelRoomDto, LeaveRoomDto } from './dto/room-action.dto';
 import { NightActionDto } from './dto/night-action.dto';
+import { VoteActionDto } from './dto/vote-action.dto';
 import { KafkaProducerService } from './kafka.producer';
+import { VoteServiceClient } from './vote.client';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -34,6 +36,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly roomClient: RoomServiceClient,
     private readonly kafkaProducer: KafkaProducerService,
+    private readonly voteClient: VoteServiceClient,
   ) {}
 
   handleConnection(socket: WebSocket) {
@@ -228,6 +231,38 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         actionType: dto.actionType,
         success: false,
         reason: 'KAFKA_PUBLISH_FAILED',
+      });
+    }
+  }
+
+  @SubscribeMessage('vote')
+  async handleVote(
+    @ConnectedSocket() socket: WebSocket,
+    @MessageBody() payload: unknown,
+  ) {
+    const { dto, errors } = validatePayload(payload, VoteActionDto);
+    if (errors) return this.emitError(socket, 'VALIDATION_FAILED', errors[0]);
+
+    const socketId = this.getSocketId(socket);
+    const session = socketId ? this.sessions.get(socketId) : undefined;
+    if (!session?.roomId || !session?.guestId) return this.emitError(socket, 'NO_ROOM', 'Bạn chưa ở trong phòng');
+    if (dto.roomId !== session.roomId) return this.emitError(socket, 'ROOM_MISMATCH', 'RoomId không khớp session');
+
+    try {
+      await this.voteClient.castVote({
+        roomId: session.roomId,
+        round: dto.round,
+        voterId: session.guestId,
+        targetId: dto.targetId,
+      });
+      this.sendMessage(socket, 'vote_ack', { success: true, round: dto.round, targetId: dto.targetId });
+    } catch (err) {
+      this.logger.warn(`Failed to cast vote via vote-service: ${err}`);
+      this.sendMessage(socket, 'vote_ack', {
+        success: false,
+        round: dto.round,
+        targetId: dto.targetId,
+        reason: 'VOTE_SUBMIT_FAILED',
       });
     }
   }

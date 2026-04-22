@@ -19,6 +19,7 @@ export function RealtimeGatewayBridge() {
   const setHasActed = useGameStore((state) => state.setHasActed);
   const setWitchPotions = useGameStore((state) => state.setWitchPotions);
   const setHunterTriggered = useGameStore((state) => state.setHunterTriggered);
+  const markPlayersDead = useLobbyStore((state) => state.markPlayersDead);
 
   useEffect(() => {
     socket.connect();
@@ -72,6 +73,10 @@ export function RealtimeGatewayBridge() {
 
         const deadIds = (message.data?.metadata?.deadIds ?? []) as string[];
         const eliminatedId = (message.data?.metadata?.eliminatedId ?? null) as string | null;
+        const newlyDead = Array.from(new Set([...(deadIds ?? []), ...(eliminatedId ? [eliminatedId] : [])]));
+        if (newlyDead.length > 0 && message.data.roomId) {
+          markPlayersDead(message.data.roomId, newlyDead);
+        }
         const wasKilled = deadIds.includes(guestId) || eliminatedId === guestId;
         if (wasKilled) {
           setIsAlive(false);
@@ -100,7 +105,14 @@ export function RealtimeGatewayBridge() {
         }
       }
 
+      if (message.event === "vote_ack" && message.data?.success) {
+        setHasActed(true);
+      }
+
       if (message.event === "vote_started") {
+        if (message.data.voteType !== "DAY") {
+          return;
+        }
         const roomId = useGameStore.getState().roomId ?? useLobbyStore.getState().currentRoomId;
         applyPhaseChanged({
           roomId: roomId || "",
@@ -125,6 +137,7 @@ export function RealtimeGatewayBridge() {
     setHasActed,
     setHunterTriggered,
     setWitchPotions,
+    markPlayersDead,
     socket,
     startSequence,
   ]);

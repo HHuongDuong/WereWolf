@@ -6,5 +6,6 @@ public record GameVoteStartEvent(
     String roomId,
     int round,
     List<String> alivePlayerIds,
-    int durationSec
+    int durationSec,
+    String voteType
 ) {}

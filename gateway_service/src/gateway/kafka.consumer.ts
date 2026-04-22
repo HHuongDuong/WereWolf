@@ -48,6 +48,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
               round: payload.round,
               durationSec: payload.durationSec,
               candidates: payload.alivePlayerIds ?? [],
+              voteType: payload.voteType ?? 'DAY',
             });
         }
       },

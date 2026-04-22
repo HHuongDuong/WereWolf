@@ -17,6 +17,7 @@ interface LobbyState {
   setLastError: (message: string | null) => void;
   setRoomName: (roomId: string, name: string) => void;
   upsertRoomFromGateway: (payload: GatewayRoomUpdatedPayload) => void;
+  markPlayersDead: (roomId: string, playerIds: string[]) => void;
 }
 
 function createMockPlayers(count: number, prefix: string): Player[] {
@@ -121,6 +122,25 @@ export const useLobbyStore = create<LobbyState>((set) => ({
 
       return {
         rooms: state.rooms.map((room) => (room.id === payload.roomId ? mappedRoom : room)),
+      };
+    }),
+  markPlayersDead: (roomId, playerIds) =>
+    set((state) => {
+      if (playerIds.length === 0) {
+        return state;
+      }
+      const deadSet = new Set(playerIds);
+      return {
+        rooms: state.rooms.map((room) =>
+          room.id !== roomId
+            ? room
+            : {
+                ...room,
+                players: room.players.map((player) =>
+                  deadSet.has(player.id) ? { ...player, isAlive: false } : player,
+                ),
+              },
+        ),
       };
     }),
 }));

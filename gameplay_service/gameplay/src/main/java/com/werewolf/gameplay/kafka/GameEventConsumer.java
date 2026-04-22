@@ -75,7 +75,7 @@ public class GameEventConsumer {
             if (state.getPhase() == GamePhase.NIGHT
                     && "WEREWOLF".equalsIgnoreCase(state.getCurrentNightRole())) {
                 nightPhaseService.handleWolfVoteResult(event);
-            } else if (state.getPhase() == GamePhase.DAY) {
+            } else if (state.getPhase() == GamePhase.DAY || state.getPhase() == GamePhase.VOTE) {
                 dayPhaseService.handleVoteResult(event);
             } else {
                 log.warn("Ignoring vote.result for room {} in phase {}", event.getRoomId(), state.getPhase());

@@ -21,6 +21,7 @@ export function ChatInput({
   const [showEmoji, setShowEmoji] = useState(false);
 
   const handleSend = () => {
+    if (disabled) return;
     if (message.trim()) {
       onSend(message.trim());
       setMessage("");
@@ -28,6 +29,7 @@ export function ChatInput({
   };
 
   const handleEmojiSelect = (emoji: string) => {
+    if (disabled) return;
     setMessage((prev) => prev + emoji);
     setShowEmoji(false);
   };
@@ -40,6 +42,7 @@ export function ChatInput({
             variant="ghost"
             size="sm"
             onClick={() => setShowEmoji(!showEmoji)}
+            disabled={disabled}
             className="text-2xl"
           >
             🙂

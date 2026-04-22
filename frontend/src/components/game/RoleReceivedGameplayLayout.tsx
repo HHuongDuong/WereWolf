@@ -276,10 +276,9 @@ export function RoleReceivedGameplayLayout({
         round: day,
         targetId: selectedTargetId,
       });
-      useGameStore.getState().setHasActed(true);
       useGameStore.getState().setLastNightActionKey("vote");
       const targetName = selectedTarget?.name;
-      setToast({ isVisible: true, type: "success", message: `Sent: Vote${targetName ? ` -> ${targetName}` : ""}` });
+      setToast({ isVisible: true, type: "info", message: `Submitting vote${targetName ? ` -> ${targetName}` : ""}...` });
       return;
     }
 
@@ -302,6 +301,10 @@ export function RoleReceivedGameplayLayout({
   };
 
   const handleSendMessage = (content: string, channel: "global" | "werewolf" = "global") => {
+    if (!isAlive) {
+      setToast({ isVisible: true, type: "info", message: "You are dead and cannot chat." });
+      return;
+    }
     setMessages((prev) => [
       ...prev,
       {
@@ -399,7 +402,7 @@ export function RoleReceivedGameplayLayout({
                       className="h-auto w-full object-cover rounded-md"
                     />
                     <div className="absolute -bottom-4 -right-4 rounded-full border border-slate-700 bg-black p-1 shadow-[0_0_15px_rgba(153,27,27,0.5)]">
-                      <Avatar name={playerName} size="sm" shape="circle" />
+                      <Avatar name={playerName} isDead={!isAlive} size="sm" shape="circle" />
                     </div>
                   </div>
                 </div>
@@ -429,7 +432,7 @@ export function RoleReceivedGameplayLayout({
                       onClick={() => performAction(action)}
                       disabled={
                         !canAct ||
-                        !isAbilityRole ||
+                        (phase !== GamePhase.VOTING && !isAbilityRole) ||
                         (action.requiresTarget && !selectedTargetId) ||
                         (currentRole === Role.WITCH && action.key === "heal" && witchPotions.healUsed) ||
                         (currentRole === Role.WITCH && action.key === "poison" && witchPotions.poisonUsed) ||
@@ -539,6 +542,7 @@ export function RoleReceivedGameplayLayout({
               werewolfMessages={[]}
               onSendMessage={handleSendMessage}
               currentRole={currentRole}
+              inputDisabled={!isAlive}
             />
           </div>
         </div>

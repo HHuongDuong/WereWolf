@@ -12,4 +12,5 @@ public class VoteStartEvent {
     private Integer round;
     private List<String> alivePlayerIds;
     private Integer durationSec;
+    private String voteType; // "DAY" | "WOLF"
 }
