@@ -43,9 +43,6 @@ export function NightPanel() {
   const [actionSent, setActionSent] = useState(false);
   const [witchAction, setWitchAction] = useState<'save' | 'poison' | 'skip' | null>(null);
 
-  // Debug log
-  console.log('[NightPanel] myRole:', myRole, 'currentNightRole:', currentNightRole, 'isMyTurn:', currentNightRole && myRole && currentNightRole.toUpperCase() === myRole.toUpperCase());
-
   // Reset actionSent when currentNightRole changes (new role's turn)
   useEffect(() => {
     setActionSent(false);
@@ -110,17 +107,15 @@ export function NightPanel() {
   if (!isMyTurn) {
     return (
       <div className="mt-10 p-8 rounded-sm border border-white/5 bg-black/40 backdrop-blur-sm shadow-2xl flex flex-col items-center justify-center min-h-[300px]">
-        <div className="w-16 h-16 rounded-full border-2 border-white/10 flex items-center justify-center mb-4 text-text-muted opacity-50">
-          {getRoleIcon(myRole)}
+        <div className="w-16 h-16 rounded-full border-2 border-white/10 flex items-center justify-center mb-4 text-text-muted opacity-30 animate-pulse">
+          <span className="text-4xl">🌙</span>
         </div>
         <p className="text-sm uppercase tracking-widest text-text-muted font-bold mb-2">
-          Chờ lượt của bạn...
+          Đêm đang diễn ra...
         </p>
-        {currentNightRole && (
-          <p className="text-xs text-text-muted">
-            Hiện tại: <span className="text-village-gold">{getRoleName(currentNightRole)}</span>
-          </p>
-        )}
+        <p className="text-xs text-text-muted">
+          Hãy kiên nhẫn chờ đợi lượt của bạn
+        </p>
       </div>
     );
   }
@@ -178,14 +173,15 @@ export function NightPanel() {
         </div>
 
         <h3 className="text-xl font-display font-bold text-center mb-2 text-white">
-          Lượt của Phù Thủy
+          Lựa chọn của Phù Thủy
         </h3>
         
         {/* Show werewolf victim */}
         {wolfVictim && (
           <div className="mb-4 p-3 rounded-sm bg-danger-red/10 border border-danger-red/30">
-            <p className="text-xs text-text-muted text-center mb-1">Ma Sói đã chọn:</p>
+            <p className="text-xs text-text-muted text-center mb-1">Nạn nhân của Ma Sói:</p>
             <p className="text-sm font-bold text-danger-red text-center">{wolfVictim.displayName}</p>
+            <p className="text-[10px] text-text-muted text-center mt-1 italic">đang đứng trước ranh giới sinh tử</p>
           </div>
         )}
         
@@ -290,7 +286,9 @@ export function NightPanel() {
       </div>
 
       <h3 className="text-xl font-display font-bold text-center mb-2 text-white">
-        {getRoleAction(myRole)}
+        {myRole.toUpperCase() === 'GUARD' && 'Chọn người để bảo vệ'}
+        {myRole.toUpperCase() === 'SEER' && 'Chọn người để xem vai trò'}
+        {myRole.toUpperCase() === 'WEREWOLF' && 'Chọn mục tiêu'}
       </h3>
       <p className="text-xs text-text-muted text-center mb-6">
         Chọn một người từ danh sách bên dưới

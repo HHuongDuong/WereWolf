@@ -63,9 +63,6 @@ export function useGameSocket() {
     }, [setRole]);
 
     const onPhaseChanged = useCallback((data: any) => {
-      console.log('[useGameSocket] phase_changed received:', data);
-      console.log('[useGameSocket] currentNightRole from metadata:', data.metadata?.currentNightRole);
-      
       const newDeadPlayers = [...useGameStore.getState().deadPlayers];
       
       // Add players who died during night (werewolf/witch kills)

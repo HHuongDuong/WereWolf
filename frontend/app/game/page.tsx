@@ -71,13 +71,24 @@ export default function GamePage() {
       return 'Đêm đã xuống. Các vai trò đặc biệt hãy thực hiện hành động của mình.';
     }
     
-    const roleName = getRoleNameVi(currentNightRole);
     const isMyTurn = myRole && currentNightRole.toUpperCase() === myRole.toUpperCase();
     
     if (isMyTurn) {
-      return `Đây là lượt của bạn. Hãy thực hiện hành động của ${roleName}.`;
+      // Return role-specific atmospheric description
+      switch (currentNightRole.toUpperCase()) {
+        case 'GUARD':
+          return 'Hãy chọn một người để bảo vệ trong đêm nay. Một quyết định đúng có thể thay đổi cục diện của trò chơi.';
+        case 'SEER':
+          return 'Hãy chọn một người để nhìn thấu bản chất thật. Sự thật có thể thay đổi tất cả.';
+        case 'WEREWOLF':
+          return 'Đêm nay, bạn sẽ săn ai? Hãy chọn con mồi của mình.';
+        case 'WITCH':
+          return 'Một người đang đứng trước ranh giới sinh tử. Bạn có thể cứu họ hoặc sử dụng độc dược để kết liễu một người khác.';
+        default:
+          return 'Đây là lượt của bạn. Hãy thực hiện hành động.';
+      }
     } else {
-      return `Đang chờ ${roleName} thực hiện hành động...`;
+      return 'Đêm đang diễn ra... Hãy kiên nhẫn chờ đợi.';
     }
   };
 
@@ -342,8 +353,15 @@ export default function GamePage() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
           <div className="max-w-2xl w-full text-center space-y-6">
             <h2 className="font-display text-3xl font-bold text-white tracking-widest drop-shadow-md">
-              {phase === 'night' && currentNightRole && `LƯỢT ${getRoleNameVi(currentNightRole).toUpperCase()}`}
-              {phase === 'night' && !currentNightRole && 'HÃY NHẮM MẮT LẠI...'}
+              {phase === 'night' && currentNightRole && myRole && currentNightRole.toUpperCase() === myRole.toUpperCase() && (
+                <>
+                  {currentNightRole.toUpperCase() === 'GUARD' && '🛡️ NGƯỜI BẢO VỆ ĐÃ TỈNH GIẤC'}
+                  {currentNightRole.toUpperCase() === 'SEER' && '🔮 TIÊN TRI ĐÃ THỨC GIẤC'}
+                  {currentNightRole.toUpperCase() === 'WEREWOLF' && '🐺 MA SÓI ĐÃ THỨC TỈNH'}
+                  {currentNightRole.toUpperCase() === 'WITCH' && '🧪 PHÙ THỦY ĐÃ THỨC GIẤC'}
+                </>
+              )}
+              {phase === 'night' && (!currentNightRole || !myRole || currentNightRole.toUpperCase() !== myRole.toUpperCase()) && '🌙 ĐÊM ĐANG DIỄN RA...'}
               {phase === 'day' && 'BAN NGÀY - THẢO LUẬN'}
               {phase === 'vote' && 'BÌNH CHỌN TREO CỔ'}
               {!phase && 'ĐANG CHUẨN BỊ...'}
