@@ -73,7 +73,7 @@ export function RoomInfoPanel({
           />
 
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 place-items-stretch">
-            {room.players.map((player) => (
+            {room.players.map((player, index) => (
               <PlayerSlot
                 key={player.id}
                 player={player}
@@ -81,6 +81,7 @@ export function RoomInfoPanel({
                 isCurrentUser={player.id === currentUserId}
                 canKick={isHost && player.id !== currentUserId}
                 onKick={onKickPlayer}
+                seatIndex={index + 1}
               />
             ))}
             {Array.from({ length: Math.max(0, room.maxPlayers - room.players.length) }).map((_, i) => (

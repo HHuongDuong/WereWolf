@@ -5,6 +5,7 @@ interface AvatarProps {
   isActive?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
   showRoleIcon?: boolean;
+  shape?: "circle" | "square";
 }
 
 const sizeMap = {
@@ -21,8 +22,8 @@ export function Avatar({
   isActive = false,
   size = "md",
   showRoleIcon = false,
+  shape = "square",
 }: AvatarProps) {
-  const initial = name.charAt(0).toUpperCase();
 
   return (
     <div className="relative inline-block">
@@ -30,17 +31,17 @@ export function Avatar({
         className={`
           ${sizeMap[size]} relative flex items-center justify-center
           transition-all duration-200
+          ${shape === 'circle' ? 'rounded-full overflow-hidden' : ''}
           ${isDead ? "grayscale opacity-80" : ""}
           ${isActive ? "ring-4 ring-[#7C3AED]/60 shadow-[0_0_25px_-5px] shadow-[#7C3AED] rounded-full" : ""}
         `}
       >
         <img 
           src={isDead ? "/images/avatar/avatar_frame_dead.png" : "/images/avatar/avatar_frame_alive.png"} 
-          alt="Avatar Frame"
+          alt="Avatar"
           decoding="sync"
-          className="absolute inset-0 w-full h-full object-contain"
+          className={`absolute inset-0 w-full h-full ${shape === 'circle' ? 'object-cover scale-110' : 'object-contain'}`}
         />
-        <span className="relative z-10 font-bold text-[#E5E7EB] drop-shadow-[0_2px_8px_rgba(0,0,0,1)] text-shadow-sm">{initial}</span>
       </div>
 
       {showRoleIcon && role && (

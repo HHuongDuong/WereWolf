@@ -20,10 +20,6 @@ export default function LobbyView() {
   const removeRoom = useLobbyStore((state) => state.removeRoom);
   const lastError = useLobbyStore((state) => state.lastError);
   const setLastError = useLobbyStore((state) => state.setLastError);
-  const bootstrapGame = useGameStore((state) => state.bootstrapGame);
-  const startSequence = useGameStore((state) => state.startSequence);
-  const setAssignedRole = useGameStore((state) => state.setAssignedRole);
-  const applyPhaseChanged = useGameStore((state) => state.applyPhaseChanged);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -49,11 +45,6 @@ export default function LobbyView() {
         }
         const activeRoomId = useLobbyStore.getState().currentRoomId;
         if (message.data.status === "in_game" && activeRoomId === message.data.roomId) {
-          const gameState = useGameStore.getState();
-          gameState.bootstrapGame(message.data.roomId);
-          if (gameState.startSequenceStep === "idle") {
-            gameState.startSequence();
-          }
           router.push("/game");
         }
         return;
@@ -72,23 +63,6 @@ export default function LobbyView() {
         return;
       }
 
-      if (message.event === "role_assigned") {
-        const currentActiveRoomId = useLobbyStore.getState().currentRoomId;
-        if (currentActiveRoomId) {
-          bootstrapGame(currentActiveRoomId);
-        }
-        if (useGameStore.getState().startSequenceStep === "idle") {
-          startSequence();
-        }
-        setAssignedRole(message.data.role);
-        router.push("/game");
-        return;
-      }
-
-      if (message.event === "phase_changed") {
-        applyPhaseChanged(message.data);
-        router.push("/game");
-      }
     });
 
     return () => {
@@ -103,10 +77,6 @@ export default function LobbyView() {
     setRoomName,
     socket,
     router,
-    applyPhaseChanged,
-    bootstrapGame,
-    setAssignedRole,
-    startSequence,
     upsertRoomFromGateway,
   ]);
 

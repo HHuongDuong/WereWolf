@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import Image from "next/image";
 import { Moon, Bell, Settings } from "lucide-react";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface LobbyLayoutProps {
   children: ReactNode;
@@ -59,8 +60,8 @@ export function LobbyLayout({ children, playerName, title }: LobbyLayoutProps) {
               <div className="text-xs text-brand-moonlight">Villager</div>
             </div>
             <div className="relative cursor-pointer group">
-              <div className="w-12 h-12 bg-gray-800 rounded-full border border-brand-moonlight/40 overflow-hidden shadow-[0_0_15px_rgba(168,192,214,0.3)] group-hover:shadow-[0_0_20px_rgba(168,192,214,0.6)] transition-all">
-                <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
+              <div className="rounded-full border border-brand-moonlight/40 shadow-[0_0_15px_rgba(168,192,214,0.3)] group-hover:shadow-[0_0_20px_rgba(168,192,214,0.6)] transition-all">
+                <Avatar name={playerName || "Wanderer"} size="sm" shape="circle" />
               </div>
             </div>
           </div>

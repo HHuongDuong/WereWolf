@@ -9,6 +9,7 @@ interface PlayerSlotProps {
   canKick?: boolean;
   onKick?: (playerId: string) => void;
   className?: string;
+  seatIndex?: number;
 }
 
 export function PlayerSlot({
@@ -18,6 +19,7 @@ export function PlayerSlot({
   canKick = false,
   onKick,
   className,
+  seatIndex,
 }: PlayerSlotProps) {
   return (
     <div
@@ -46,11 +48,10 @@ export function PlayerSlot({
       {/* Middle: Name */}
       <div className="relative z-10 flex flex-col items-center text-center w-full mt-2">
         <p
-          className={`font-serif font-bold text-base truncate w-full tracking-wide ${
-            isCurrentUser ? "text-brand-moonlight drop-shadow-[0_0_8px_rgba(168,192,214,0.6)]" : "text-gray-200"
-          }`}
+          className={`font-serif font-bold text-base truncate w-full tracking-wide ${isCurrentUser ? "text-brand-moonlight drop-shadow-[0_0_8px_rgba(168,192,214,0.6)]" : "text-gray-200"
+            }`}
         >
-          {player.name}
+          {(seatIndex ?? "")}. {player.name}
         </p>
       </div>
 

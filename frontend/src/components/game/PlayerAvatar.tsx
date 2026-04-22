@@ -24,7 +24,6 @@ export function PlayerAvatar({
   isRevealed = false,
   size = "md",
 }: PlayerAvatarProps) {
-  const initial = name[0].toUpperCase();
 
   return (
     <div className="relative">
@@ -39,11 +38,10 @@ export function PlayerAvatar({
       >
         <img 
           src={isAlive ? "/images/avatar/avatar_frame_alive.png" : "/images/avatar/avatar_frame_dead.png"} 
-          alt="Avatar Frame"
+          alt="Avatar"
           decoding="sync"
           className="absolute inset-0 w-full h-full object-contain"
         />
-        <span className="relative z-10 font-bold text-[#E5E7EB] drop-shadow-[0_2px_8px_rgba(0,0,0,1)] text-shadow-sm">{initial}</span>
       </div>
 
       {isRevealed && role && (

@@ -23,12 +23,11 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
 
   useEffect(() => {
     if (startSequenceStep !== "starting") return;
+    if (!assignedRole) return;
 
     let isMounted = true;
     const imagesToPreload = [backCardImage];
-    if (assignedRole) {
-      imagesToPreload.push(roleCardFrontImageByRole[assignedRole]);
-    }
+    imagesToPreload.push(roleCardFrontImageByRole[assignedRole]);
 
     const preloadPromises = imagesToPreload.map((src) => {
       return new Promise((resolve) => {
@@ -52,7 +51,7 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
     return () => {
       isMounted = false;
     };
-  }, [setSequenceStep, startSequenceStep, assignedRole]);
+  }, [assignedRole, setSequenceStep, startSequenceStep]);
 
   useEffect(() => {
     if (startSequenceStep !== "dealing" || !assignedRole) return;
