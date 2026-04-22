@@ -42,7 +42,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
             this.logger.debug(`[Kafka] Received room.deleted for roomId=${payload.roomId}`);
             this.roomGateway.broadcastRoomDeleted(payload.roomId);
         } else if (topic === 'game.phase.changed') {
-            this.logger.debug(`[Kafka] Received game.phase.changed for roomId=${payload.roomId}, phase=${payload.phase}`);
+            this.logger.debug(`[Kafka] Received game.phase.changed for roomId=${payload.roomId}, phase=${payload.phase}, currentNightRole=${payload.metadata?.currentNightRole}`);
             this.roomGateway.broadcastPhaseChanged(payload.roomId, payload);
         } else if (topic === 'game.vote.start') {
             this.logger.debug(`[Kafka] Received game.vote.start for roomId=${payload.roomId}, round=${payload.round}`);

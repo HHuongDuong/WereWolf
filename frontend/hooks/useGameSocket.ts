@@ -63,6 +63,9 @@ export function useGameSocket() {
     }, [setRole]);
 
     const onPhaseChanged = useCallback((data: any) => {
+      console.log('[useGameSocket] phase_changed received:', data);
+      console.log('[useGameSocket] currentNightRole from metadata:', data.metadata?.currentNightRole);
+      
       const newDeadPlayers = [...useGameStore.getState().deadPlayers];
       
       // Add players who died during night (werewolf/witch kills)
@@ -81,6 +84,7 @@ export function useGameSocket() {
         deadlineTimestamp: data.deadlineTimestamp,
         deadPlayers: newDeadPlayers,
         eliminatedId: data.metadata?.eliminatedId || null,
+        currentNightRole: data.metadata?.currentNightRole || null, // Active role during night
         // Clear night action results when phase changes
         seerResult: null,
         werewolfKillTargetId: null,

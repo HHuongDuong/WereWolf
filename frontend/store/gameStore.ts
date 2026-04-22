@@ -33,6 +33,7 @@ export interface GameState {
   deadlineTimestamp: number | null;
   deadPlayers: string[];
   eliminatedId: string | null;
+  currentNightRole: string | null; // Active role during night (GUARD, SEER, WEREWOLF, WITCH)
   
   // Extra (For Night Actions / Special Events)
   werewolfKillTargetId: string | null; // For Witch info
@@ -69,6 +70,7 @@ const initialState: GameState = {
   deadlineTimestamp: null,
   deadPlayers: [],
   eliminatedId: null,
+  currentNightRole: null,
   werewolfKillTargetId: null,
   isHunterTriggered: false,
   seerResult: null,

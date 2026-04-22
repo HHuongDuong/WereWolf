@@ -5,21 +5,58 @@ import { useGameStore } from "@/store/gameStore";
 import { useGameSocketEmit } from "@/hooks/useGameSocket";
 import { Shield, Eye, Skull, Droplet, CheckCircle, XCircle } from "lucide-react";
 
+// Helper functions
+const getRoleIcon = (role: string) => {
+  switch (role.toUpperCase()) {
+    case 'GUARD': return <Shield className="w-8 h-8" />;
+    case 'SEER': return <Eye className="w-8 h-8" />;
+    case 'WEREWOLF': return <Skull className="w-8 h-8" />;
+    case 'WITCH': return <Droplet className="w-8 h-8" />;
+    default: return null;
+  }
+};
+
+const getRoleName = (role: string) => {
+  switch (role.toUpperCase()) {
+    case 'GUARD': return 'Bảo Vệ';
+    case 'SEER': return 'Tiên Tri';
+    case 'WEREWOLF': return 'Ma Sói';
+    case 'WITCH': return 'Phù Thủy';
+    default: return role;
+  }
+};
+
+const getRoleAction = (role: string) => {
+  switch (role.toUpperCase()) {
+    case 'GUARD': return 'Chọn người để bảo vệ';
+    case 'SEER': return 'Chọn người để xem vai trò';
+    case 'WEREWOLF': return 'Chọn mục tiêu để giết';
+    case 'WITCH': return 'Chọn người để cứu/độc';
+    default: return 'Chọn mục tiêu';
+  }
+};
+
 export function NightPanel() {
-  const { myRole, players, deadPlayers, myGuestId, seerResult, werewolfKillTargetId, witchPotions } = useGameStore();
+  const { myRole, players, deadPlayers, myGuestId, seerResult, werewolfKillTargetId, witchPotions, currentNightRole } = useGameStore();
   const { emit } = useGameSocketEmit();
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [actionSent, setActionSent] = useState(false);
   const [witchAction, setWitchAction] = useState<'save' | 'poison' | 'skip' | null>(null);
 
-  // Reset actionSent when phase changes (new night)
+  // Debug log
+  console.log('[NightPanel] myRole:', myRole, 'currentNightRole:', currentNightRole, 'isMyTurn:', currentNightRole && myRole && currentNightRole.toUpperCase() === myRole.toUpperCase());
+
+  // Reset actionSent when currentNightRole changes (new role's turn)
   useEffect(() => {
     setActionSent(false);
     setSelectedTarget(null);
     setWitchAction(null);
-  }, [myRole]); // Reset when role changes or new night starts
+  }, [currentNightRole]);
 
   const alivePlayers = players.filter(p => !deadPlayers.includes(p.guestId) && p.guestId !== myGuestId);
+  
+  // Check if it's my turn
+  const isMyTurn = currentNightRole && myRole && currentNightRole.toUpperCase() === myRole.toUpperCase();
 
   const handleSubmit = () => {
     if (!selectedTarget || actionSent) return;
@@ -68,26 +105,25 @@ export function NightPanel() {
       </div>
     );
   }
-
-  const getRoleIcon = () => {
-    switch (myRole.toUpperCase()) {
-      case 'GUARD': return <Shield className="w-8 h-8" />;
-      case 'SEER': return <Eye className="w-8 h-8" />;
-      case 'WEREWOLF': return <Skull className="w-8 h-8" />;
-      case 'WITCH': return <Droplet className="w-8 h-8" />;
-      default: return null;
-    }
-  };
-
-  const getRoleAction = () => {
-    switch (myRole.toUpperCase()) {
-      case 'GUARD': return 'Chọn người để bảo vệ';
-      case 'SEER': return 'Chọn người để xem vai trò';
-      case 'WEREWOLF': return 'Chọn mục tiêu để giết';
-      case 'WITCH': return 'Chọn người để cứu/độc';
-      default: return 'Chọn mục tiêu';
-    }
-  };
+  
+  // Show waiting message if it's not my turn
+  if (!isMyTurn) {
+    return (
+      <div className="mt-10 p-8 rounded-sm border border-white/5 bg-black/40 backdrop-blur-sm shadow-2xl flex flex-col items-center justify-center min-h-[300px]">
+        <div className="w-16 h-16 rounded-full border-2 border-white/10 flex items-center justify-center mb-4 text-text-muted opacity-50">
+          {getRoleIcon(myRole)}
+        </div>
+        <p className="text-sm uppercase tracking-widest text-text-muted font-bold mb-2">
+          Chờ lượt của bạn...
+        </p>
+        {currentNightRole && (
+          <p className="text-xs text-text-muted">
+            Hiện tại: <span className="text-village-gold">{getRoleName(currentNightRole)}</span>
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (actionSent) {
     // Special display for Seer showing the result
@@ -115,7 +151,7 @@ export function NightPanel() {
     return (
       <div className="mt-10 p-8 rounded-sm border border-green-500/30 bg-black/40 backdrop-blur-sm shadow-2xl flex flex-col items-center justify-center min-h-[300px]">
         <div className="w-16 h-16 rounded-full border-2 border-green-500/50 flex items-center justify-center mb-4 text-green-400">
-          {getRoleIcon()}
+          {getRoleIcon(myRole)}
         </div>
         <p className="text-sm uppercase tracking-widest text-green-400 font-bold">
           Hành động đã được ghi nhận
@@ -244,16 +280,17 @@ export function NightPanel() {
     );
   }
 
+  // Default UI for Guard, Seer, Werewolf
   return (
     <div className="mt-10 p-8 rounded-sm border border-white/10 bg-black/40 backdrop-blur-sm shadow-2xl min-h-[300px]">
       <div className="flex items-center justify-center mb-6">
         <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center text-white">
-          {getRoleIcon()}
+          {getRoleIcon(myRole)}
         </div>
       </div>
 
       <h3 className="text-xl font-display font-bold text-center mb-2 text-white">
-        {getRoleAction()}
+        {getRoleAction(myRole)}
       </h3>
       <p className="text-xs text-text-muted text-center mb-6">
         Chọn một người từ danh sách bên dưới
