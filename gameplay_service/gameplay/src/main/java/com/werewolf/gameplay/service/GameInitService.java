@@ -39,7 +39,7 @@ public class GameInitService {
                 .toList();
 
         Map<String, PlayerState> players = assignRoles(playerIds);
-        long deadline = System.currentTimeMillis() + 15_000L;
+        long deadline = System.currentTimeMillis() + 50_000L;
 
         GameState state = GameState.builder()
                 .phase(GamePhase.ROLE_REVEAL)
