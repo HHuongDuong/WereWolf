@@ -1,4 +1,6 @@
+
 "use client";
+import { useState } from "react";
 
 interface RoomHeaderProps {
   name: string;
@@ -19,6 +21,17 @@ export function RoomHeader({
 }: RoomHeaderProps) {
   const shortCode = code.split("-")[1] || code;
   const labelStatus = (status || "waiting").replaceAll("_", " ");
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+      try {
+        await navigator.clipboard.writeText(shortCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } catch (e) {
+        setCopied(false);
+      }
+    };
 
   return (
     <div className="relative border border-white/10 bg-black/50 backdrop-blur-md px-6 py-4 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden">
@@ -34,6 +47,17 @@ export function RoomHeader({
 
           <div className="text-sm font-bold text-gray-300 whitespace-nowrap tracking-wider">
             ROOM <span className="text-brand-moonlight drop-shadow-[0_0_5px_rgba(168,192,214,0.5)]">#{shortCode}</span>
+              <button
+                onClick={handleCopy}
+                className="ml-1 px-2 py-0.5 rounded bg-brand-moonlight/10 border border-brand-moonlight/40 text-brand-moonlight text-xs hover:bg-brand-moonlight/20 transition focus:outline-none relative"
+                title="Copy room code"
+                type="button"
+              >
+                {copied ? "✓" : "Copy"}
+                {copied && (
+                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded shadow z-10 whitespace-nowrap">Đã copy!</span>
+                )}
+              </button>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400 truncate tracking-wide border-l border-white/10 pl-4 ml-2">
