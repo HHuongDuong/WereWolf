@@ -9,29 +9,29 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const isWerewolfChat = message.channel === "werewolf";
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} group`}>
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} group mb-1`}>
       <div
         className={`
-          max-w-[75%] px-5 py-3.5 rounded-3xl text-[15px] leading-relaxed
+          max-w-[75%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed relative
           ${isOwn
-            ? "bg-[#7C3AED] text-white rounded-br-none"
+            ? "bg-gradient-to-br from-slate-800 to-slate-900 text-slate-200 border border-slate-700 rounded-tr-sm shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
             : isWerewolfChat
-              ? "bg-[#991B1B]/90 text-[#FEE2E2] border border-[#EF4444]/30 rounded-bl-none"
-              : "bg-[#1F2937] text-[#E5E7EB] border border-white/10 rounded-bl-none"
+              ? "bg-gradient-to-br from-red-950 to-black text-red-100 border border-red-900/50 rounded-tl-sm shadow-[0_4px_10px_rgba(153,27,27,0.2)]"
+              : "bg-gradient-to-br from-black/80 to-slate-900/80 text-slate-300 border border-slate-800 rounded-tl-sm shadow-[0_4px_10px_rgba(0,0,0,0.4)]"
           }
         `}
       >
         {!isOwn && message.sender && (
-          <p className="text-xs opacity-70 mb-1 font-medium tracking-wide">
+          <p className="text-[13px] opacity-80 mb-1 font-accent italic tracking-wide text-amber-500/80">
             {message.sender}
-            {isWerewolfChat && <span className="ml-2 text-[#FCA5A5]">🐺</span>}
+            {isWerewolfChat && <span className="ml-2 text-red-500/70 not-italic text-xs">🐺</span>}
           </p>
         )}
 
-        <p>{message.content}</p>
+        <p className="font-sans whitespace-pre-wrap">{message.content}</p>
 
-        <p className="text-[10px] opacity-60 mt-2 text-right">
-          {message.timestamp}
+        <p className="text-[9px] opacity-40 mt-1.5 text-right font-serif tracking-widest uppercase">
+          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </p>
       </div>
     </div>

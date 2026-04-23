@@ -30,7 +30,8 @@ export function RealtimeGatewayBridge() {
         if (activeRoomId) {
           bootstrapGame(activeRoomId);
         }
-        setAssignedRole(message.data.role);
+        const fellowWolves = message.data.fellowWolves || message.data.metadata?.fellowWolves;
+        setAssignedRole(message.data.role, fellowWolves);
         setIsAlive(true);
         if (useGameStore.getState().startSequenceStep === "idle") {
           startSequence();
@@ -70,7 +71,14 @@ export function RealtimeGatewayBridge() {
           round: Number(message.data.round || 1),
           deadlineTimestamp: Number(message.data.deadlineTimestamp || Date.now()),
           currentNightRole: mappedPhase === GamePhase.NIGHT ? mappedNightRole : null,
+          deadIds: message.data?.metadata?.deadIds ?? [],
+          eliminatedId: message.data?.metadata?.eliminatedId ?? null,
         });
+
+        const incomingFellowWolves = message.data.fellowWolves || message.data.metadata?.fellowWolves;
+        if (incomingFellowWolves && Array.isArray(incomingFellowWolves)) {
+          useGameStore.getState().setFellowWolves(incomingFellowWolves);
+        }
 
         const deadIds = (message.data?.metadata?.deadIds ?? []) as string[];
         const eliminatedId = (message.data?.metadata?.eliminatedId ?? null) as string | null;

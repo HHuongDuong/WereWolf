@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { EmojiPicker } from "./EmojiPicker";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -18,7 +17,6 @@ export function ChatInput({
   isWerewolfChat = false,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [showEmoji, setShowEmoji] = useState(false);
 
   const handleSend = () => {
     if (disabled) return;
@@ -28,32 +26,9 @@ export function ChatInput({
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    if (disabled) return;
-    setMessage((prev) => prev + emoji);
-    setShowEmoji(false);
-  };
-
   return (
-    <div className="border-t border-white/10 bg-[#111827] p-4">
-      <div className="flex gap-3">
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowEmoji(!showEmoji)}
-            disabled={disabled}
-            className="text-2xl"
-          >
-            🙂
-          </Button>
-          <EmojiPicker
-            isOpen={showEmoji}
-            onSelect={handleEmojiSelect}
-            onClose={() => setShowEmoji(false)}
-          />
-        </div>
-
+    <div className="border-t border-slate-800 bg-black/60 p-4 backdrop-blur-md relative z-10">
+      <div className="flex gap-3 relative">
         <input
           type="text"
           value={message}
@@ -62,9 +37,10 @@ export function ChatInput({
           placeholder={placeholder}
           disabled={disabled}
           className={`
-            flex-1 bg-[#1F2937] border border-white/10 rounded-2xl px-6 py-3.5
-            text-[#E5E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-[#7C3AED]
-            ${isWerewolfChat ? "focus:border-[#DC2626]" : ""}
+            flex-1 bg-black/40 border border-slate-700/50 rounded-xl px-5 py-3
+            text-slate-200 placeholder:text-slate-500 placeholder:font-accent placeholder:italic focus:outline-none focus:border-red-900/80 focus:shadow-[0_0_15px_rgba(153,27,27,0.3)]
+            transition-all font-sans
+            ${isWerewolfChat ? "focus:border-red-800 focus:shadow-[0_0_15px_rgba(153,27,27,0.4)]" : ""}
           `}
         />
 
@@ -72,6 +48,7 @@ export function ChatInput({
           onClick={handleSend}
           disabled={!message.trim() || disabled}
           variant={isWerewolfChat ? "danger" : "primary"}
+          className="font-serif tracking-widest shadow-[0_0_10px_rgba(0,0,0,0.5)]"
         >
           Send
         </Button>

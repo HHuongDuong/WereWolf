@@ -5,6 +5,6 @@ export interface Message {
   timestamp: string;
   isOwn?: boolean;
   type?: "message" | "system";
-  subtype?: "normal" | "death" | "vote";
+  subtype?: "normal" | "death" | "vote" | "important";
   channel?: "global" | "werewolf";
 }

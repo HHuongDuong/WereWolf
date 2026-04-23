@@ -43,7 +43,7 @@ export function PhaseTransitionOverlay({
                 transition: { duration: 0.6 },
               }}
               onAnimationComplete={() => {
-                if (onComplete) setTimeout(onComplete, 800);
+                if (onComplete) setTimeout(onComplete, 1200);
               }}
               className="text-center"
             >

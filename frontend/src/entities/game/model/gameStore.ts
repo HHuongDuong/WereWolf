@@ -24,10 +24,14 @@ interface GameState {
   shouldShowPhaseTransition: boolean;
   previousPhase: GamePhase | null;
   seerReveal: { targetId: string; revealedRole: Role.VILLAGER | Role.WEREWOLF } | null;
+  fellowWolves: string[];
+  lastPhaseDeadIds: string[];
+  lastPhaseEliminatedId: string | null;
+  setFellowWolves: (fellowWolves: string[]) => void;
   bootstrapGame: (roomId: string) => void;
   startSequence: () => void;
   setSequenceStep: (step: GameStartSequenceStep) => void;
-  setAssignedRole: (role: Role) => void;
+  setAssignedRole: (role: Role, fellowWolves?: string[]) => void;
   confirmReveal: () => void;
   setPhase: (phase: GamePhase) => void;
   setIsAlive: (value: boolean) => void;
@@ -43,6 +47,8 @@ interface GameState {
     round: number;
     deadlineTimestamp: number;
     currentNightRole?: Role | null;
+    deadIds?: string[];
+    eliminatedId?: string | null;
   }) => void;
   completePhaseTransition: () => void;
   resetGame: () => void;
@@ -66,14 +72,18 @@ const initialState = {
   shouldShowPhaseTransition: false,
   previousPhase: null as GamePhase | null,
   seerReveal: null as { targetId: string; revealedRole: Role.VILLAGER | Role.WEREWOLF } | null,
+  fellowWolves: [] as string[],
+  lastPhaseDeadIds: [] as string[],
+  lastPhaseEliminatedId: null as string | null,
 };
 
 export const useGameStore = create<GameState>((set) => ({
   ...initialState,
+  setFellowWolves: (fellowWolves) => set({ fellowWolves }),
   bootstrapGame: (roomId) => set((state) => ({ ...state, roomId })),
   startSequence: () => set({ startSequenceStep: "starting" }),
   setSequenceStep: (step) => set({ startSequenceStep: step }),
-  setAssignedRole: (role) =>
+  setAssignedRole: (role, fellowWolves = []) =>
     set({
       assignedRole: role,
       currentPlayerRole: role,
@@ -82,6 +92,7 @@ export const useGameStore = create<GameState>((set) => ({
       hunterTriggered: false,
       lastNightActionKey: null,
       witchPotions: role === Role.WITCH ? { healUsed: false, poisonUsed: false } : { healUsed: false, poisonUsed: false },
+      fellowWolves,
     }),
   confirmReveal: () => set({ revealConfirmed: true, startSequenceStep: "readyForPhase" }),
   setPhase: (phase) => set({ phase }),
@@ -102,8 +113,10 @@ export const useGameStore = create<GameState>((set) => ({
       hasActed: false,
       lastNightActionKey: null,
       currentNightRole: payload.currentNightRole ?? null,
-      seerReveal: null,
+      seerReveal: payload.phase === state.phase ? state.seerReveal : null,
       shouldShowPhaseTransition: state.startSequenceStep === "readyForPhase" && state.phase !== payload.phase,
+      lastPhaseDeadIds: payload.deadIds ?? [],
+      lastPhaseEliminatedId: payload.eliminatedId ?? null,
     })),
   completePhaseTransition: () => set({ shouldShowPhaseTransition: false }),
   resetGame: () => set(initialState),

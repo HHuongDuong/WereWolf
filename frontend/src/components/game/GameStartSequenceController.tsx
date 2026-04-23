@@ -38,10 +38,10 @@ export function GameStartSequenceController({ playerName }: GameStartSequenceCon
       });
     });
 
-    // Ensure at least 1800ms loading screen for cinematic effect, but also wait for images
+    // Ensure at least 2000ms loading screen for cinematic effect, but also wait for images
     Promise.all([
       ...preloadPromises,
-      new Promise((resolve) => setTimeout(resolve, 1800))
+      new Promise((resolve) => setTimeout(resolve, 2000))
     ]).then(() => {
       if (isMounted) {
         setSequenceStep("dealing");

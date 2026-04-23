@@ -23,6 +23,10 @@ export interface GatewayErrorPayload {
 
 export interface GatewayRoleAssignedPayload {
   role: Role;
+  fellowWolves?: string[];
+  metadata?: {
+    fellowWolves?: string[];
+  };
 }
 
 export interface GatewayNightActionAckPayload {

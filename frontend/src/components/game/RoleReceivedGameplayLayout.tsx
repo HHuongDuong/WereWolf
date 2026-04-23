@@ -127,11 +127,20 @@ function Seat({
             alt={revealedRole ? `${revealedRole} card` : "Hidden role card"}
             className="w-full rounded-md border border-slate-700"
           />
+          {!player.isAlive && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md">
+              <img src="/images/overlay/claw_mark.png" alt="Dead" className="w-full h-full object-contain opacity-40" />
+            </div>
+          )}
         </div>
         <div className={isSelected ? "drop-shadow-[0_0_8px_rgba(153,27,27,0.8)] transition-all" : "transition-all group-hover:drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]"}>
           <Avatar name={player.name} isDead={!player.isAlive} size="sm" shape="circle" />
         </div>
-        <p className="line-clamp-2 text-xs font-serif font-medium text-slate-300 group-hover:text-white transition-colors">{player.name}</p>
+        <div className="mt-1 w-full bg-black/60 py-1 px-1 rounded border border-slate-700/50">
+          <p className="line-clamp-1 text-[11px] md:text-xs font-accent tracking-widest uppercase text-amber-500/90 group-hover:text-amber-400 transition-colors drop-shadow-md">
+            {player.name}
+          </p>
+        </div>
       </div>
 
       {isSelected && (
@@ -160,6 +169,11 @@ export function RoleReceivedGameplayLayout({
   roomConfig,
 }: RoleReceivedGameplayLayoutProps) {
   const seerReveal = useGameStore((state) => state.seerReveal);
+  const fellowWolves = useGameStore((state) => state.fellowWolves);
+  const previousPhase = useGameStore((state) => state.previousPhase);
+  const lastPhaseDeadIds = useGameStore((state) => state.lastPhaseDeadIds);
+  const lastPhaseEliminatedId = useGameStore((state) => state.lastPhaseEliminatedId);
+  const [lastAnnouncedPhase, setLastAnnouncedPhase] = useState<GamePhase | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "sys-1",
@@ -230,7 +244,61 @@ export function RoleReceivedGameplayLayout({
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [deadlineTimestamp]);
+  }, [deadlineTimestamp, phase, currentNightRole, roomConfig]);
+
+  useEffect(() => {
+    if (phase === lastAnnouncedPhase) return;
+
+    if (phase === GamePhase.DAY && previousPhase === GamePhase.NIGHT) {
+      if (lastPhaseDeadIds.length > 0) {
+        const deadNames = lastPhaseDeadIds.map(id => players.find(p => p.id === id)?.name || "Unknown").join(", ");
+        setMessages(prev => [...prev, {
+          id: `sys-death-${Date.now()}`,
+          type: "system",
+          subtype: "important",
+          content: `The village awakens to tragedy. ${deadNames} ${lastPhaseDeadIds.length > 1 ? "were" : "was"} found dead.`,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else {
+        setMessages(prev => [...prev, {
+          id: `sys-peace-${Date.now()}`,
+          type: "system",
+          subtype: "normal",
+          content: "The village awakens peacefully. No one was killed in the night.",
+          timestamp: new Date().toISOString(),
+        }]);
+      }
+    } else if (phase === GamePhase.NIGHT && previousPhase === GamePhase.VOTING) {
+      if (lastPhaseEliminatedId) {
+        const eliminatedName = players.find(p => p.id === lastPhaseEliminatedId)?.name || "Unknown";
+        setMessages(prev => [...prev, {
+          id: `sys-vote-${Date.now()}`,
+          type: "system",
+          subtype: "important",
+          content: `The village has spoken. ${eliminatedName} was voted out and eliminated.`,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else if (lastPhaseDeadIds.length > 0 && lastPhaseDeadIds.length !== 1 && lastPhaseDeadIds[0] !== lastPhaseEliminatedId) {
+        const deadNames = lastPhaseDeadIds.map(id => players.find(p => p.id === id)?.name || "Unknown").join(", ");
+        setMessages(prev => [...prev, {
+          id: `sys-vote-death-${Date.now()}`,
+          type: "system",
+          subtype: "important",
+          content: `The village has spoken, but tragedy strikes. ${deadNames} ${lastPhaseDeadIds.length > 1 ? "were" : "was"} found dead.`,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else if (!lastPhaseEliminatedId) {
+        setMessages(prev => [...prev, {
+          id: `sys-vote-skip-${Date.now()}`,
+          type: "system",
+          subtype: "normal",
+          content: `The village has spoken. No one was voted out.`,
+          timestamp: new Date().toISOString(),
+        }]);
+      }
+    }
+    setLastAnnouncedPhase(phase);
+  }, [phase, previousPhase, lastPhaseDeadIds, lastPhaseEliminatedId, players, lastAnnouncedPhase]);
 
   useEffect(() => {
     if (!toast.isVisible) return;
@@ -331,6 +399,24 @@ export function RoleReceivedGameplayLayout({
     ]);
   };
 
+  const getSeatProps = (player: Player) => {
+    const isFellowWolf = currentRole === Role.WEREWOLF && fellowWolves.includes(player.id);
+    const revealedRole = seerReveal?.targetId === player.id
+      ? seerReveal.revealedRole
+      : isFellowWolf
+        ? Role.WEREWOLF
+        : null;
+    const isWolfTargetingWolfInNight = phase === GamePhase.NIGHT && isFellowWolf;
+    const isEnabled = canSelectTarget && !isWolfTargetingWolfInNight;
+
+    return {
+      isSelected: selectedTargetId === player.id,
+      isEnabled,
+      onSelect: setSelectedTargetId,
+      revealedRole,
+    };
+  };
+
   return (
     <div className="-mt-8 space-y-6">
       <ActionResultToast
@@ -376,30 +462,21 @@ export function RoleReceivedGameplayLayout({
                 <Seat
                   label="P1"
                   player={topPlayers[0]}
-                  isSelected={selectedTargetId === topPlayers[0].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[0].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[0])}
                 />
               )}
               {topPlayers[1] && (
                 <Seat
                   label="P2"
                   player={topPlayers[1]}
-                  isSelected={selectedTargetId === topPlayers[1].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[1].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[1])}
                 />
               )}
               {topPlayers[2] && (
                 <Seat
                   label="P3"
                   player={topPlayers[2]}
-                  isSelected={selectedTargetId === topPlayers[2].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[2].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[2])}
                 />
               )}
             </div>
@@ -468,30 +545,21 @@ export function RoleReceivedGameplayLayout({
                 <Seat
                   label="P4"
                   player={topPlayers[3]}
-                  isSelected={selectedTargetId === topPlayers[3].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[3].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[3])}
                 />
               )}
               {topPlayers[4] && (
                 <Seat
                   label="P5"
                   player={topPlayers[4]}
-                  isSelected={selectedTargetId === topPlayers[4].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[4].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[4])}
                 />
               )}
               {topPlayers[5] && (
                 <Seat
                   label="P6"
                   player={topPlayers[5]}
-                  isSelected={selectedTargetId === topPlayers[5].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === topPlayers[5].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(topPlayers[5])}
                 />
               )}
             </div>
@@ -503,50 +571,35 @@ export function RoleReceivedGameplayLayout({
                 <Seat
                   label="P7"
                   player={bottomPlayers[0]}
-                  isSelected={selectedTargetId === bottomPlayers[0].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === bottomPlayers[0].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(bottomPlayers[0])}
                 />
               )}
               {bottomPlayers[1] && (
                 <Seat
                   label="P8"
                   player={bottomPlayers[1]}
-                  isSelected={selectedTargetId === bottomPlayers[1].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === bottomPlayers[1].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(bottomPlayers[1])}
                 />
               )}
               {bottomPlayers[2] && (
                 <Seat
                   label="P9"
                   player={bottomPlayers[2]}
-                  isSelected={selectedTargetId === bottomPlayers[2].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === bottomPlayers[2].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(bottomPlayers[2])}
                 />
               )}
               {bottomPlayers[3] && (
                 <Seat
                   label="P10"
                   player={bottomPlayers[3]}
-                  isSelected={selectedTargetId === bottomPlayers[3].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === bottomPlayers[3].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(bottomPlayers[3])}
                 />
               )}
               {bottomPlayers[4] && (
                 <Seat
                   label="P11"
                   player={bottomPlayers[4]}
-                  isSelected={selectedTargetId === bottomPlayers[4].id}
-                  isEnabled={canSelectTarget}
-                  onSelect={setSelectedTargetId}
-                  revealedRole={seerReveal?.targetId === bottomPlayers[4].id ? seerReveal.revealedRole : null}
+                  {...getSeatProps(bottomPlayers[4])}
                 />
               )}
             </div>
