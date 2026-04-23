@@ -10,6 +10,7 @@ import { ActionResultToast } from "@/components/game/actions/ActionResultToast";
 import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
 import { useGameStore, WitchPotionsState } from "@/entities/game/model/gameStore";
 import { RoomConfig } from "@/shared/types/lobby";
+import { getOrCreateGuestId } from "@/shared/lib/guestSession";
 
 interface RoleReceivedGameplayLayoutProps {
   players: Player[];
@@ -173,6 +174,7 @@ export function RoleReceivedGameplayLayout({
   const previousPhase = useGameStore((state) => state.previousPhase);
   const lastPhaseDeadIds = useGameStore((state) => state.lastPhaseDeadIds);
   const lastPhaseEliminatedId = useGameStore((state) => state.lastPhaseEliminatedId);
+  const chatMessages = useGameStore((state) => state.chatMessages);
   const [lastAnnouncedPhase, setLastAnnouncedPhase] = useState<GamePhase | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -380,23 +382,43 @@ export function RoleReceivedGameplayLayout({
     setToast({ isVisible: true, type: "success", message: `Sent: ${action.label}${suffix}` });
   };
 
-  const handleSendMessage = (content: string, channel: "global" | "werewolf" = "global") => {
+  const handleSendMessage = async (content: string, channel: "global" | "werewolf" = "global") => {
     if (!isAlive) {
       setToast({ isVisible: true, type: "info", message: "You are dead and cannot chat." });
       return;
     }
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}`,
-        sender: playerName,
-        content,
-        timestamp: new Date().toISOString(),
-        isOwn: true,
-        type: "message",
-        channel,
-      },
-    ]);
+
+    if (!roomId) {
+      setToast({ isVisible: true, type: "error", message: "Room not found." });
+      return;
+    }
+
+    const guestId = getOrCreateGuestId();
+    const channelName = channel === "werewolf" ? "wolves" : "all";
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CHAT_SERVICE_URL}/chat/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId,
+          channel: channelName,
+          senderId: guestId,
+          senderName: playerName,
+          content,
+          round: day,
+          phase: phase.toLowerCase(),
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        setToast({ isVisible: true, type: "error", message: result.message || "Failed to send message" });
+      }
+    } catch (error) {
+      console.error("Failed to send chat message:", error);
+      setToast({ isVisible: true, type: "error", message: "Failed to send message" });
+    }
   };
 
   const getSeatProps = (player: Player) => {
@@ -416,6 +438,40 @@ export function RoleReceivedGameplayLayout({
       revealedRole,
     };
   };
+
+  const villageMessages = useMemo(() => {
+    return chatMessages
+      .filter((msg) => msg.channel === "all")
+      .map((msg) => ({
+        id: `${msg.sentAt}`,
+        sender: msg.senderName,
+        content: msg.content,
+        timestamp: new Date(msg.sentAt).toISOString(),
+        isOwn: msg.senderName === playerName,
+        type: "message" as const,
+        channel: "global" as const,
+      }));
+  }, [chatMessages, playerName]);
+
+  const wolfMessages = useMemo(() => {
+    return chatMessages
+      .filter((msg) => msg.channel === "wolves")
+      .map((msg) => ({
+        id: `${msg.sentAt}`,
+        sender: msg.senderName,
+        content: msg.content,
+        timestamp: new Date(msg.sentAt).toISOString(),
+        isOwn: msg.senderName === playerName,
+        type: "message" as const,
+        channel: "werewolf" as const,
+      }));
+  }, [chatMessages, playerName]);
+
+  const isVillageSquareEnabled = phase === GamePhase.DAY || phase === GamePhase.VOTING;
+  const isWolfDenEnabled = 
+    currentRole === Role.WEREWOLF && 
+    phase === GamePhase.NIGHT && 
+    currentNightRole === Role.WEREWOLF;
 
   return (
     <div className="-mt-8 space-y-6">
@@ -614,11 +670,13 @@ export function RoleReceivedGameplayLayout({
           </div>
           <div className="flex-1 min-h-[300px]">
             <ChatBox
-              messages={messages}
-              werewolfMessages={[]}
+              messages={villageMessages}
+              werewolfMessages={wolfMessages}
               onSendMessage={handleSendMessage}
               currentRole={currentRole}
               inputDisabled={!isAlive}
+              villageSquareEnabled={isVillageSquareEnabled}
+              wolfDenEnabled={isWolfDenEnabled}
             />
           </div>
         </div>

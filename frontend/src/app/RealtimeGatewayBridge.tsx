@@ -140,6 +140,16 @@ export function RealtimeGatewayBridge() {
         });
         setHasActed(false);
       }
+
+      if (message.event === "chat_message") {
+        const chatMessage = {
+          senderName: message.data.senderName,
+          channel: message.data.channel,
+          content: message.data.content,
+          sentAt: message.data.sentAt,
+        };
+        useGameStore.getState().addChatMessage(chatMessage);
+      }
     });
 
     return () => {

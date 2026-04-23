@@ -14,6 +14,8 @@ interface ChatBoxProps {
   onSendMessage: (message: string, channel?: "global" | "werewolf") => void;
   currentRole?: Role | string;
   inputDisabled?: boolean;
+  villageSquareEnabled?: boolean;
+  wolfDenEnabled?: boolean;
 }
 
 export function ChatBox({
@@ -22,9 +24,11 @@ export function ChatBox({
   onSendMessage,
   currentRole,
   inputDisabled = false,
+  villageSquareEnabled = true,
+  wolfDenEnabled = false,
 }: ChatBoxProps) {
   const [activeTab, setActiveTab] = useState<"global" | "werewolf">("global");
-  const isWerewolf = currentRole === "WEREWOLF";
+  const isWerewolf = currentRole === "WEREWOLF" || currentRole === Role.WEREWOLF;
 
   return (
     <Card className="h-[620px] flex flex-col overflow-hidden border-slate-800 bg-black/50 shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-md">
@@ -57,13 +61,18 @@ export function ChatBox({
       {activeTab === "global" ? (
         <>
           <MessageList messages={messages} />
-          <ChatInput onSend={(msg) => onSendMessage(msg, "global")} disabled={inputDisabled} />
+          <ChatInput 
+            onSend={(msg) => onSendMessage(msg, "global")} 
+            disabled={inputDisabled || !villageSquareEnabled}
+            placeholder={!villageSquareEnabled ? "Village Square is closed at night..." : "Type your message..."}
+          />
         </>
       ) : (
         <PrivateMessagePanel
           messages={werewolfMessages}
           onSend={(msg) => onSendMessage(msg, "werewolf")}
-          inputDisabled={inputDisabled}
+          inputDisabled={inputDisabled || !wolfDenEnabled}
+          placeholder={!wolfDenEnabled ? "Wolf Den is only open during werewolf turn..." : "Type to your pack..."}
         />
       )}
     </Card>
