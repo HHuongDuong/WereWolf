@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/entities/game/model/gameStore";
 import { useLobbyStore } from "@/entities/room/model/lobbyStore";
+import { useChatStore } from "@/entities/chat/model/chatStore";
 import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
 import { GamePhase, Role } from "@/shared/types/game";
 import { getOrCreateGuestId } from "@/shared/lib/guestSession";
@@ -21,6 +22,8 @@ export function RealtimeGatewayBridge() {
   const setHunterTriggered = useGameStore((state) => state.setHunterTriggered);
   const setSeerReveal = useGameStore((state) => state.setSeerReveal);
   const markPlayersDead = useLobbyStore((state) => state.markPlayersDead);
+  const addGlobalMessage = useChatStore((state) => state.addGlobalMessage);
+  const addWolvesMessage = useChatStore((state) => state.addWolvesMessage);
 
   useEffect(() => {
     socket.connect();
@@ -132,6 +135,25 @@ export function RealtimeGatewayBridge() {
         });
         setHasActed(false);
       }
+
+      if (message.event === "chat_message") {
+        const { senderName, channel, content, sentAt } = message.data;
+        const chatMessage = {
+          id: `${sentAt}-${Math.random()}`,
+          sender: senderName,
+          content,
+          timestamp: new Date(sentAt).toLocaleTimeString(),
+          isOwn: false,
+          type: "message" as const,
+          channel: channel === "wolves" ? ("werewolf" as const) : ("global" as const),
+        };
+
+        if (channel === "wolves") {
+          addWolvesMessage(chatMessage);
+        } else {
+          addGlobalMessage(chatMessage);
+        }
+      }
     });
 
     return () => {
@@ -148,6 +170,8 @@ export function RealtimeGatewayBridge() {
     setSeerReveal,
     setWitchPotions,
     markPlayersDead,
+    addGlobalMessage,
+    addWolvesMessage,
     socket,
     startSequence,
   ]);

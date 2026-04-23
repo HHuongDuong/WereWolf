@@ -9,6 +9,9 @@ import { backCardImage, roleCardFrontImageByRole } from "@/shared/lib/roleCardAs
 import { ActionResultToast } from "@/components/game/actions/ActionResultToast";
 import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
 import { useGameStore, WitchPotionsState } from "@/entities/game/model/gameStore";
+import { useChatStore } from "@/entities/chat/model/chatStore";
+import { sendChatMessage } from "@/shared/api/chatApi";
+import { getOrCreateGuestId } from "@/shared/lib/guestSession";
 import { RoomConfig } from "@/shared/types/lobby";
 
 interface RoleReceivedGameplayLayoutProps {
@@ -160,15 +163,10 @@ export function RoleReceivedGameplayLayout({
   roomConfig,
 }: RoleReceivedGameplayLayoutProps) {
   const seerReveal = useGameStore((state) => state.seerReveal);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "sys-1",
-      type: "system",
-      subtype: "normal",
-      content: "The village has gathered. Discuss before making your move.",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const globalMessages = useChatStore((state) => state.globalMessages);
+  const wolvesMessages = useChatStore((state) => state.wolvesMessages);
+  const addGlobalMessage = useChatStore((state) => state.addGlobalMessage);
+  const addWolvesMessage = useChatStore((state) => state.addWolvesMessage);
 
   const topAndBottomPlayers = useMemo(() => createSeatPool(players, playerName), [playerName, players]);
   const outerRingPlayers = topAndBottomPlayers.slice(0, OUTER_RING_MAX);
@@ -312,23 +310,79 @@ export function RoleReceivedGameplayLayout({
     setToast({ isVisible: true, type: "success", message: `Sent: ${action.label}${suffix}` });
   };
 
-  const handleSendMessage = (content: string, channel: "global" | "werewolf" = "global") => {
+  const handleSendMessage = async (content: string, channel: "global" | "werewolf" = "global") => {
     if (!isAlive) {
       setToast({ isVisible: true, type: "info", message: "You are dead and cannot chat." });
       return;
     }
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}`,
-        sender: playerName,
-        content,
-        timestamp: new Date().toISOString(),
-        isOwn: true,
-        type: "message",
-        channel,
-      },
-    ]);
+
+    // Check phase-based chat permissions
+    if (channel === "werewolf") {
+      // Wolves can only chat during night phase when it's their turn
+      if (phase !== GamePhase.NIGHT || currentNightRole !== Role.WEREWOLF) {
+        setToast({ isVisible: true, type: "info", message: "Wolves can only chat during their night turn." });
+        return;
+      }
+      if (currentRole !== Role.WEREWOLF) {
+        setToast({ isVisible: true, type: "error", message: "Only werewolves can use this channel." });
+        return;
+      }
+    } else {
+      // Global chat is disabled during night phase
+      if (phase === GamePhase.NIGHT) {
+        setToast({ isVisible: true, type: "info", message: "Global chat is disabled during night." });
+        return;
+      }
+    }
+
+    if (!roomId) {
+      setToast({ isVisible: true, type: "error", message: "Room ID not found." });
+      return;
+    }
+
+    if (content.length > 200) {
+      setToast({ isVisible: true, type: "error", message: "Message too long (max 200 characters)." });
+      return;
+    }
+
+    const guestId = getOrCreateGuestId();
+    const chatChannel = channel === "werewolf" ? "wolves" : "all";
+
+    // Optimistically add message to local state
+    const optimisticMessage: Message = {
+      id: `${Date.now()}-${Math.random()}`,
+      sender: playerName,
+      content,
+      timestamp: new Date().toLocaleTimeString(),
+      isOwn: true,
+      type: "message",
+      channel,
+    };
+
+    if (channel === "werewolf") {
+      addWolvesMessage(optimisticMessage);
+    } else {
+      addGlobalMessage(optimisticMessage);
+    }
+
+    // Send to backend
+    const response = await sendChatMessage({
+      roomId,
+      channel: chatChannel,
+      senderId: guestId,
+      senderName: playerName,
+      content,
+      round: day,
+      phase: phase.toLowerCase(),
+    });
+
+    if (!response.success) {
+      setToast({ 
+        isVisible: true, 
+        type: "error", 
+        message: response.message || "Failed to send message" 
+      });
+    }
   };
 
   return (
@@ -561,11 +615,13 @@ export function RoleReceivedGameplayLayout({
           </div>
           <div className="flex-1 min-h-[300px]">
             <ChatBox
-              messages={messages}
-              werewolfMessages={[]}
+              messages={globalMessages}
+              werewolfMessages={wolvesMessages}
               onSendMessage={handleSendMessage}
               currentRole={currentRole}
               inputDisabled={!isAlive}
+              phase={phase}
+              currentNightRole={currentNightRole}
             />
           </div>
         </div>
