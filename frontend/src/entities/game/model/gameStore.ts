@@ -6,6 +6,13 @@ export type WitchPotionsState = {
   poisonUsed: boolean;
 };
 
+export type ChatMessage = {
+  senderName: string;
+  channel: string;
+  content: string;
+  sentAt: number;
+};
+
 interface GameState {
   roomId: string | null;
   currentPlayerRole: Role | null;
@@ -28,8 +35,10 @@ interface GameState {
   lastPhaseDeadIds: string[];
   lastPhaseEliminatedId: string | null;
   lastProtectedPlayerId: string | null;
+  chatMessages: ChatMessage[];
   setLastProtectedPlayerId: (id: string | null) => void;
   setFellowWolves: (fellowWolves: string[]) => void;
+  addChatMessage: (message: ChatMessage) => void;
   bootstrapGame: (roomId: string) => void;
   startSequence: () => void;
   setSequenceStep: (step: GameStartSequenceStep) => void;
@@ -78,12 +87,14 @@ const initialState = {
   lastPhaseDeadIds: [] as string[],
   lastPhaseEliminatedId: null as string | null,
   lastProtectedPlayerId: null as string | null,
+  chatMessages: [] as ChatMessage[],
 };
 
 export const useGameStore = create<GameState>((set) => ({
   ...initialState,
   setLastProtectedPlayerId: (id) => set({ lastProtectedPlayerId: id }),
   setFellowWolves: (fellowWolves) => set({ fellowWolves }),
+  addChatMessage: (message) => set((state) => ({ chatMessages: [...state.chatMessages, message] })),
   bootstrapGame: (roomId) => set((state) => ({ ...state, roomId })),
   startSequence: () => set({ startSequenceStep: "starting" }),
   setSequenceStep: (step) => set({ startSequenceStep: step }),
