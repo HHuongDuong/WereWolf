@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLobbyStore } from "@/entities/room/model/lobbyStore";
-import { useGameStore } from "@/entities/game/model/gameStore";
 import { PlayerIdentityGate } from "@/features/lobby/set-player-name/ui/PlayerIdentityGate";
 import { LobbyBrowser } from "@/widgets/lobby-browser/ui/LobbyBrowser";
 import { RoomDetailsView } from "@/widgets/room-details/ui/RoomDetailsView";
@@ -16,16 +15,13 @@ export default function LobbyView() {
   const currentRoomId = useLobbyStore((state) => state.currentRoomId);
   const setCurrentRoomId = useLobbyStore((state) => state.setCurrentRoomId);
   const upsertRoomFromGateway = useLobbyStore((state) => state.upsertRoomFromGateway);
-  const setRoomName = useLobbyStore((state) => state.setRoomName);
   const removeRoom = useLobbyStore((state) => state.removeRoom);
   const lastError = useLobbyStore((state) => state.lastError);
   const setLastError = useLobbyStore((state) => state.setLastError);
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
-  const [pendingCreatedRoomName, setPendingCreatedRoomName] = useState<string | null>(null);
 
   const currentUserId = useMemo(() => getOrCreateGuestId(), []);
   const socket = useMemo(() => getRoomGatewaySocket(), []);
@@ -36,13 +32,17 @@ export default function LobbyView() {
     const unsubscribe = socket.onEvent((message) => {
       if (message.event === "ROOM_UPDATED") {
         upsertRoomFromGateway(message.data);
-        if (pendingCreatedRoomName && message.data.hostId === currentUserId) {
-          setRoomName(message.data.roomId, pendingCreatedRoomName);
-          setPendingCreatedRoomName(null);
-        }
-        if (!useLobbyStore.getState().currentRoomId) {
+        
+        // Chỉ auto-join vào phòng nếu user là thành viên và chưa có phòng nào
+        const isUserInRoom = message.data.players.some((p) => p.guestId === currentUserId);
+        if (!useLobbyStore.getState().currentRoomId && isUserInRoom) {
           setCurrentRoomId(message.data.roomId);
+          // Redirect to /lobby when joining a room
+          if (window.location.pathname === "/") {
+            router.push("/lobby");
+          }
         }
+        
         const activeRoomId = useLobbyStore.getState().currentRoomId;
         if (message.data.status === "in_game" && activeRoomId === message.data.roomId) {
           router.push("/game");
@@ -54,6 +54,10 @@ export default function LobbyView() {
         removeRoom(message.data.roomId);
         if (useLobbyStore.getState().currentRoomId === message.data.roomId) {
           setCurrentRoomId(null);
+          // Redirect back to home when room is cancelled
+          if (window.location.pathname === "/lobby") {
+            router.push("/");
+          }
         }
         return;
       }
@@ -70,25 +74,20 @@ export default function LobbyView() {
     };
   }, [
     currentUserId,
-    pendingCreatedRoomName,
     removeRoom,
     setCurrentRoomId,
     setLastError,
-    setRoomName,
     socket,
     router,
     upsertRoomFromGateway,
   ]);
 
-  const handleCreateRoom = (name: string) => {
+  const handleCreateRoom = () => {
     if (!playerName) return;
-    const normalizedRoomName = name.trim() || "Gathering";
-    setPendingCreatedRoomName(normalizedRoomName);
     socket.send("CREATE_ROOM", {
       guestId: currentUserId,
       displayName: playerName,
     });
-    setShowCreateModal(false);
   };
 
   const handleJoinRoom = (roomId: string) => {
@@ -175,6 +174,8 @@ export default function LobbyView() {
         onLeaveRoom={() => {
           socket.send("LEAVE_ROOM", { roomId: room.id, guestId: currentUserId });
           setCurrentRoomId(null);
+          // Redirect back to home when leaving room
+          router.push("/");
         }}
         onStartGame={() => handleStartGame(room.id)}
         onConfigureRoom={handleConfigureRoom}
@@ -187,13 +188,11 @@ export default function LobbyView() {
       rooms={rooms}
       playerName={playerName}
       roomCodeInput={roomCodeInput}
-      showCreateModal={showCreateModal}
       showJoinModal={showJoinModal}
       onRoomCodeInputChange={setRoomCodeInput}
       onJoinRoom={handleJoinRoom}
       onJoinByCode={handleJoinByCode}
-      onOpenCreateModal={() => setShowCreateModal(true)}
-      onCloseCreateModal={() => setShowCreateModal(false)}
+      onOpenJoinModal={() => setShowJoinModal(true)}
       onCloseJoinModal={() => setShowJoinModal(false)}
       onCreateRoom={handleCreateRoom}
       onJoinByModalCode={handleJoinByCode}
