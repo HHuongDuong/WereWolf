@@ -35,9 +35,17 @@ public class DayPhaseService {
 
         long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("voteDuration", 30) : 30;
         long deadline = System.currentTimeMillis() + (durationSec * 1000L);
-        state.setPhase(GamePhase.VOTE);
+        state.setPhase(GamePhase.DAY);
         state.setPhaseDeadline(deadline);
         repo.save(roomId, state);
+
+        producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                .roomId(roomId)
+                .phase("day")
+                .round(state.getRound())
+                .deadlineTimestamp(state.getPhaseDeadline())
+                .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
+                .build());
 
         List<String> alivePlayers = state.getPlayers().entrySet().stream()
                 .filter(e -> e.getValue().isAlive())
@@ -84,12 +92,18 @@ public class DayPhaseService {
             return;
         try {
             GameState state = repo.get(event.getRoomId());
-            if (state == null || state.getPhase() != GamePhase.VOTE)
+            if (state == null || state.getPhase() != GamePhase.DAY)
                 return;
 
             if (event.getEliminatedId() != null && state.getPlayers().containsKey(event.getEliminatedId())) {
                 state.getPlayers().get(event.getEliminatedId()).setAlive(false);
             }
+
+            if (nightPhaseService.enterHunterPhaseAfterVote(event.getRoomId(), state, event.getEliminatedId())) {
+                repo.markProcessed(idempotencyKey);
+                return;
+            }
+
             state.setRound(state.getRound() + 1);
             repo.save(event.getRoomId(), state);
             repo.markProcessed(idempotencyKey);
@@ -118,7 +132,7 @@ public class DayPhaseService {
             return;
         try {
             GameState state = repo.get(roomId);
-            if (state == null || state.getPhase() != GamePhase.VOTE)
+            if (state == null || state.getPhase() != GamePhase.DAY)
                 return;
             // No eliminate fallback:
             state.setRound(state.getRound() + 1);

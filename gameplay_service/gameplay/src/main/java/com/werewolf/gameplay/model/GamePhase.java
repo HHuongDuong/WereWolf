@@ -3,7 +3,7 @@ package com.werewolf.gameplay.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GamePhase {
-    ROLE_REVEAL, NIGHT, DISCUSS, DAY, VOTE;
+    ROLE_REVEAL, NIGHT, DISCUSS, DAY, HUNTER;
 
     @JsonValue
     public String toValue() {
