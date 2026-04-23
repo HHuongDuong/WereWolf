@@ -14,9 +14,24 @@ interface GameEndScreenProps {
 }
 
 export function GameEndScreen({ winner, players, onReturnToVillage, onLeaveVillage }: GameEndScreenProps) {
+  const isVillageWin = winner === "VILLAGE";
+  const bgUrl = isVillageWin
+    ? "/images/background/background_day.webp"
+    : "/images/background/background_night.webp";
+
   return (
-    <div className="min-h-screen bg-[#0B0F1A] py-16 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="relative min-h-screen py-16 px-6 overflow-hidden">
+      {/* Blurred background image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={bgUrl}
+          alt="background"
+          className="w-full h-full object-cover blur-[6px] brightness-50 scale-105 select-none pointer-events-none"
+          draggable={false}
+        />
+        <div className="absolute inset-0 bg-black/40" />
+      </div>
+      <div className="relative z-10 max-w-5xl mx-auto">
         <WinnerBanner winner={winner} />
 
         <motion.div

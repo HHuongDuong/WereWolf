@@ -35,26 +35,28 @@ export function ChatBox({
       <div className="flex border-b border-slate-800 bg-black/60 relative z-10">
         <button
           onClick={() => setActiveTab("global")}
-          className={`flex-1 py-4 font-serif tracking-[0.2em] text-xs transition-all uppercase ${
+          className={`flex-1 py-4 font-serif tracking-[0.2em] text-xs uppercase transition-all duration-300 rounded-t-md
+          ${
             activeTab === "global"
-              ? "text-slate-200 border-b-2 border-red-900/80 bg-red-950/10 shadow-[inset_0_-20px_20px_-20px_rgba(153,27,27,0.2)]"
-              : "text-slate-500 hover:text-slate-300 hover:bg-slate-900/50"
+            ? "text-slate-200 border border-slate-700 border-b-transparent bg-slate-900/80 shadow-[0_0_10px_rgba(153,27,27,0.25)]"
+            : "text-slate-500 hover:text-slate-300 hover:bg-slate-900/50"
           }`}
         >
           Village Square
         </button>
 
         {isWerewolf && (
-          <button
-            onClick={() => setActiveTab("werewolf")}
-            className={`flex-1 py-4 font-serif tracking-[0.2em] text-xs transition-all uppercase ${
-              activeTab === "werewolf"
-                ? "text-red-400 border-b-2 border-red-700 bg-red-950/20 shadow-[inset_0_-20px_20px_-20px_rgba(220,38,38,0.3)]"
-                : "text-slate-600 hover:text-red-900/70 hover:bg-red-950/10"
-            }`}
-          >
-            🐺 Wolf Den
-          </button>
+        <button
+          onClick={() => setActiveTab("werewolf")}
+          className={`flex-1 py-4 font-serif tracking-[0.2em] text-xs uppercase transition-all duration-300 rounded-t-md
+          ${
+            activeTab === "werewolf"
+            ? "text-red-300 border border-red-900/60 border-b-transparent bg-red-950/30 shadow-[0_0_12px_rgba(220,38,38,0.35)]"
+            : "text-slate-600 hover:text-red-300 hover:bg-red-950/10"
+          }`}
+        >
+          🐺 Wolf Den
+        </button>
         )}
       </div>
 

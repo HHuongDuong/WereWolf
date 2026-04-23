@@ -11,6 +11,7 @@ import { getRoomGatewaySocket } from "@/shared/network/roomGatewaySocket";
 import { useGameStore, WitchPotionsState } from "@/entities/game/model/gameStore";
 import { RoomConfig } from "@/shared/types/lobby";
 import { getOrCreateGuestId } from "@/shared/lib/guestSession";
+import { m } from "framer-motion";
 
 interface RoleReceivedGameplayLayoutProps {
   players: Player[];
@@ -257,7 +258,7 @@ export function RoleReceivedGameplayLayout({
         setMessages(prev => [...prev, {
           id: `sys-death-${Date.now()}`,
           type: "system",
-          subtype: "important",
+          subtype: "vote",
           content: `The village awakens to tragedy. ${deadNames} ${lastPhaseDeadIds.length > 1 ? "were" : "was"} found dead.`,
           timestamp: new Date().toISOString(),
         }]);
@@ -276,7 +277,7 @@ export function RoleReceivedGameplayLayout({
         setMessages(prev => [...prev, {
           id: `sys-vote-${Date.now()}`,
           type: "system",
-          subtype: "important",
+          subtype: "vote",
           content: `The village has spoken. ${eliminatedName} was voted out and eliminated.`,
           timestamp: new Date().toISOString(),
         }]);
@@ -285,7 +286,7 @@ export function RoleReceivedGameplayLayout({
         setMessages(prev => [...prev, {
           id: `sys-vote-death-${Date.now()}`,
           type: "system",
-          subtype: "important",
+          subtype: "vote",
           content: `The village has spoken, but tragedy strikes. ${deadNames} ${lastPhaseDeadIds.length > 1 ? "were" : "was"} found dead.`,
           timestamp: new Date().toISOString(),
         }]);
@@ -293,7 +294,7 @@ export function RoleReceivedGameplayLayout({
         setMessages(prev => [...prev, {
           id: `sys-vote-skip-${Date.now()}`,
           type: "system",
-          subtype: "normal",
+          subtype: "vote",
           content: `The village has spoken. No one was voted out.`,
           timestamp: new Date().toISOString(),
         }]);
@@ -466,6 +467,16 @@ export function RoleReceivedGameplayLayout({
         channel: "werewolf" as const,
       }));
   }, [chatMessages, playerName]);
+  
+  const mergedMessages = useMemo(() => {
+    // Chuyển timestamp về dạng số để sort
+    const parseTime = (msg: any) => {
+      if (msg.timestamp) return new Date(msg.timestamp).getTime();
+      if (msg.sentAt) return typeof msg.sentAt === "number" ? msg.sentAt : Date.parse(msg.sentAt);
+      return 0;
+    };
+    return [...messages, ...villageMessages].sort((a, b) => parseTime(a) - parseTime(b));
+  }, [messages, villageMessages]);
 
   const isVillageSquareEnabled = phase === GamePhase.DAY || phase === GamePhase.VOTING;
   const isWolfDenEnabled = 
@@ -673,7 +684,7 @@ export function RoleReceivedGameplayLayout({
         </div>
 
         <ChatBox
-          messages={villageMessages}
+          messages={mergedMessages}
           werewolfMessages={wolfMessages}
           onSendMessage={handleSendMessage}
           currentRole={currentRole}
