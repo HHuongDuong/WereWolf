@@ -32,50 +32,54 @@ public class NightPhaseService {
     private final GameEventProducer producer;
     private final EndGameService endGameService;
     private static final List<String> NIGHT_ORDER = List.of("GUARD", "SEER", "WEREWOLF", "WITCH");
+    private static final String HUNTER_PHASE_FROM_NIGHT = "NIGHT";
+    private static final String HUNTER_PHASE_FROM_DAY = "DAY";
 
     public void handleNightAction(NightActionEvent event) {
         if (repo.isProcessed(event.getEventId())) return;
 
         String actorRole = normalizeRole(event.getRole());
+        boolean handledHunterAction = false;
         boolean shouldAdvanceAfterAction = false;
         boolean shouldRequestWerewolfVote = false;
         if (!lockService.tryLock(event.getRoomId())) return;
         try {
             GameState state = repo.get(event.getRoomId());
-            if (state == null || state.getPhase() != GamePhase.NIGHT) return;
+            if (state == null) return;
 
-            String currentRole = normalizeRole(state.getCurrentNightRole());
-            if (currentRole == null || !currentRole.equals(actorRole)) return;
-
-            PlayerState actor = state.getPlayers().get(event.getPlayerId());
-            if (actor == null || !actor.isAlive() || !actorRole.equals(normalizeRole(actor.getRole()))) return;
-            if (event.getTargetId() != null) {
-                PlayerState target = state.getPlayers().get(event.getTargetId());
-                if (target == null || !target.isAlive()) return;
-            }
-
-            NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
-            state.setNightActions(actions);
-
-            if (!applyNightAction(state, event, actorRole)) {
-                return;
-            }
-
-            if ("SEER".equals(actorRole) && event.getTargetId() != null) {
-                PlayerState target = state.getPlayers().get(event.getTargetId());
-                String revealedRole = target != null && "WEREWOLF".equals(normalizeRole(target.getRole()))
-                        ? "WEREWOLF"
-                        : "VILLAGER";
-                producer.publishSeerResult(event.getRoomId(), event.getPlayerId(), event.getTargetId(), revealedRole);
-            }
-
-            repo.save(event.getRoomId(), state);
-            repo.markProcessed(event.getEventId());
-            if ("WEREWOLF".equals(actorRole)) {
-                shouldRequestWerewolfVote = allAliveWolvesVoted(state)
-                        && shouldTriggerWerewolfVote(event.getRoomId(), state);
+            if (state.getPhase() == GamePhase.HUNTER) {
+                handledHunterAction = handleHunterActionLocked(event.getRoomId(), state, event, actorRole);
+                if (handledHunterAction) {
+                    repo.markProcessed(event.getEventId());
+                }
             } else {
-                shouldAdvanceAfterAction = true;
+                if (state.getPhase() != GamePhase.NIGHT) return;
+
+                String currentRole = normalizeRole(state.getCurrentNightRole());
+                if (currentRole == null || !currentRole.equals(actorRole)) return;
+
+                PlayerState actor = state.getPlayers().get(event.getPlayerId());
+                if (actor == null || !actor.isAlive() || !actorRole.equals(normalizeRole(actor.getRole()))) return;
+                if (event.getTargetId() != null) {
+                    PlayerState target = state.getPlayers().get(event.getTargetId());
+                    if (target == null || !target.isAlive()) return;
+                }
+
+                NightActions actions = Optional.ofNullable(state.getNightActions()).orElseGet(NightActions::new);
+                state.setNightActions(actions);
+
+                if (!applyNightAction(state, event, actorRole)) {
+                    return;
+                }
+
+                repo.save(event.getRoomId(), state);
+                repo.markProcessed(event.getEventId());
+                if ("WEREWOLF".equals(actorRole)) {
+                    shouldRequestWerewolfVote = allAliveWolvesVoted(state)
+                            && shouldTriggerWerewolfVote(event.getRoomId(), state);
+                } else {
+                    shouldAdvanceAfterAction = true;
+                }
             }
         } finally {
             lockService.releaseLock(event.getRoomId());
@@ -86,6 +90,9 @@ public class NightPhaseService {
         }
         if (shouldAdvanceAfterAction) {
             advanceNightPhase(event.getRoomId());
+        }
+        if (handledHunterAction) {
+            continueAfterHunterAction(event.getRoomId());
         }
     }
 
@@ -213,37 +220,17 @@ public class NightPhaseService {
         state.setNightActions(new NightActions());
         state.getPlayers().values().forEach(p -> p.setProtectedThisNight(false));
 
+        String hunterId = findDeadHunter(state, newlyDeadPlayers);
+        if (hunterId != null) {
+            enterHunterPhase(roomId, state, hunterId, HUNTER_PHASE_FROM_NIGHT, newlyDeadPlayers, null);
+            return;
+        }
+
         if (!newlyDeadPlayers.isEmpty() && endGameService.checkEndGame(roomId, state)) {
             return;
         }
 
-        state.setPhase(GamePhase.DISCUSS);
-        long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("discussDuration", 60) : 60;
-        state.setPhaseDeadline(System.currentTimeMillis() + (durationSec * 1000L));
-        repo.save(roomId, state);
-
-        List<String> alivePlayerIds = state.getPlayers().entrySet().stream()
-                .filter(e -> e.getValue().isAlive())
-                .map(Map.Entry::getKey)
-                .toList();
-
-        producer.publishPhaseChanged(PhaseChangedEvent.builder()
-                .roomId(roomId)
-                .phase("day")
-                .round(state.getRound())
-                .deadlineTimestamp(state.getPhaseDeadline())
-                .currentNightRole(null)
-                .metadata(new PhaseChangedEvent.Metadata(newlyDeadPlayers, null))
-                .build());
-
-        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
-                .roomId(roomId).channel("wolves").enabled(false)
-                .allowedGuestIds(List.of())
-                .round(state.getRound()).build());
-        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
-                .roomId(roomId).channel("all").enabled(true)
-                .allowedGuestIds(alivePlayerIds)
-                .round(state.getRound()).build());
+        moveToDiscuss(roomId, state, newlyDeadPlayers);
     }
 
     private String findNextNightRole(GameState state, String currentNightRole) {
@@ -360,7 +347,6 @@ public class NightPhaseService {
                 .round(state.getRound())
                 .alivePlayerIds(aliveWolfIds)
                 .durationSec(durationSec)
-                .voteType("WOLF")
                 .build());
         repo.markProcessed(requestKey);
     }
@@ -394,6 +380,7 @@ public class NightPhaseService {
             return switch (role) {
                 case "GUARD", "SEER", "WITCH" -> 30L;
                 case "WEREWOLF" -> 45L;
+                case "HUNTER" -> 15L;
                 default -> 30L;
             };
         }
@@ -402,8 +389,238 @@ public class NightPhaseService {
             case "SEER" -> config.getOrDefault("seerDuration", 30);
             case "WEREWOLF" -> config.getOrDefault("werewolfDuration", 45);
             case "WITCH" -> config.getOrDefault("witchDuration", 30);
+            case "HUNTER" -> config.getOrDefault("hunterDuration", 15);
             default -> 30;
         };
+    }
+
+    public boolean enterHunterPhaseAfterVote(String roomId, GameState state, String eliminatedId) {
+        if (eliminatedId == null) {
+            return false;
+        }
+        PlayerState eliminatedPlayer = state.getPlayers().get(eliminatedId);
+        if (eliminatedPlayer == null || !"HUNTER".equals(normalizeRole(eliminatedPlayer.getRole()))) {
+            return false;
+        }
+
+        enterHunterPhase(roomId, state, eliminatedId, HUNTER_PHASE_FROM_DAY, List.of(eliminatedId), eliminatedId);
+        return true;
+    }
+
+    public void resolveHunterTimeout(String roomId) {
+        boolean shouldContinue = false;
+        if (!lockService.tryLock(roomId)) {
+            return;
+        }
+        try {
+            GameState state = repo.get(roomId);
+            if (state == null || state.getPhase() != GamePhase.HUNTER || state.getHunterPendingId() == null) {
+                return;
+            }
+
+            markHunterActionResolved(state);
+            repo.save(roomId, state);
+            shouldContinue = true;
+        } finally {
+            lockService.releaseLock(roomId);
+        }
+
+        if (shouldContinue) {
+            continueAfterHunterAction(roomId);
+        }
+    }
+
+    private boolean handleHunterActionLocked(String roomId, GameState state, NightActionEvent event, String actorRole) {
+        if (state.getHunterPendingId() == null || !"HUNTER".equals(actorRole)) {
+            return false;
+        }
+
+        if (!event.getPlayerId().equals(state.getHunterPendingId()) || event.getTargetId() == null) {
+            return false;
+        }
+
+        PlayerState actor = state.getPlayers().get(event.getPlayerId());
+        PlayerState target = state.getPlayers().get(event.getTargetId());
+        if (actor == null || actor.isAlive() || !"HUNTER".equals(normalizeRole(actor.getRole()))) {
+            return false;
+        }
+        if (target == null || !target.isAlive() || event.getPlayerId().equals(event.getTargetId())) {
+            return false;
+        }
+
+        target.setAlive(false);
+        if (state.getHunterPendingDeadIds() != null && !state.getHunterPendingDeadIds().contains(event.getTargetId())) {
+            state.getHunterPendingDeadIds().add(event.getTargetId());
+        }
+        String originPhase = state.getHunterPendingOriginPhase();
+        markHunterActionResolved(state);
+        repo.save(roomId, state);
+
+        publishHunterResolved(roomId, state, originPhase, event.getTargetId());
+        return true;
+    }
+
+    private void continueAfterHunterAction(String roomId) {
+        if (!lockService.tryLock(roomId)) {
+            return;
+        }
+        try {
+            GameState state = repo.get(roomId);
+            if (state == null || state.getPhase() != GamePhase.HUNTER || state.getHunterPendingId() != null
+                    || state.getHunterPendingOriginPhase() == null) {
+                return;
+            }
+        } finally {
+            lockService.releaseLock(roomId);
+        }
+        continueAfterResolvedHunter(roomId);
+    }
+
+    private void continueAfterResolvedHunter(String roomId) {
+        boolean shouldAdvanceNight = false;
+        if (!lockService.tryLock(roomId)) {
+            return;
+        }
+        try {
+            GameState state = repo.get(roomId);
+            if (state == null || state.getPhase() != GamePhase.HUNTER) {
+                return;
+            }
+
+            String originPhase = state.getHunterPendingOriginPhase();
+            List<String> deadIds = state.getHunterPendingDeadIds() == null ? List.of() : List.copyOf(state.getHunterPendingDeadIds());
+            String eliminatedId = state.getHunterPendingEliminatedId();
+            clearHunterPending(state);
+
+            if (HUNTER_PHASE_FROM_NIGHT.equals(originPhase)) {
+                if (endGameService.checkEndGame(roomId, state)) {
+                    return;
+                }
+                moveToDiscuss(roomId, state, deadIds);
+                return;
+            }
+
+            if (endGameService.checkEndGame(roomId, state)) {
+                return;
+            }
+
+            state.setRound(state.getRound() + 1);
+            repo.save(roomId, state);
+
+            producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                    .roomId(roomId)
+                    .phase("day")
+                    .round(state.getRound())
+                    .deadlineTimestamp(System.currentTimeMillis())
+                    .metadata(new PhaseChangedEvent.Metadata(deadIds, eliminatedId))
+                    .build());
+
+            if (!endGameService.checkEndGame(roomId, state)) {
+                setupNightAfterHunter(roomId, state);
+                shouldAdvanceNight = true;
+            }
+        } finally {
+            lockService.releaseLock(roomId);
+        }
+
+        if (shouldAdvanceNight) {
+            advanceNightPhase(roomId);
+        }
+    }
+
+    private void enterHunterPhase(String roomId, GameState state, String hunterId, String originPhase,
+                                  List<String> deadIds, String eliminatedId) {
+        state.setPhase(GamePhase.HUNTER);
+        state.setHunterPendingId(hunterId);
+        state.setHunterPendingOriginPhase(originPhase);
+        state.setHunterPendingDeadIds(new ArrayList<>(deadIds));
+        state.setHunterPendingEliminatedId(eliminatedId);
+        state.setPhaseDeadline(System.currentTimeMillis() + (getNightDuration(state, "HUNTER") * 1000L));
+        repo.save(roomId, state);
+
+        producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                .roomId(roomId)
+                .phase("hunter")
+                .round(state.getRound())
+                .deadlineTimestamp(state.getPhaseDeadline())
+                .metadata(new PhaseChangedEvent.Metadata(deadIds, eliminatedId))
+                .build());
+    }
+
+    private void moveToDiscuss(String roomId, GameState state, List<String> newlyDeadPlayers) {
+        state.setPhase(GamePhase.DISCUSS);
+        long durationSec = state.getConfig() != null ? state.getConfig().getOrDefault("discussDuration", 60) : 60;
+        state.setPhaseDeadline(System.currentTimeMillis() + (durationSec * 1000L));
+        repo.save(roomId, state);
+
+        List<String> alivePlayerIds = state.getPlayers().entrySet().stream()
+                .filter(e -> e.getValue().isAlive())
+                .map(Map.Entry::getKey)
+                .toList();
+
+        producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                .roomId(roomId)
+                .phase("day")
+                .round(state.getRound())
+                .deadlineTimestamp(state.getPhaseDeadline())
+                .metadata(new PhaseChangedEvent.Metadata(newlyDeadPlayers, null))
+                .build());
+
+        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
+                .roomId(roomId).channel("wolves").enabled(false)
+                .allowedGuestIds(List.of())
+                .round(state.getRound()).build());
+        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
+                .roomId(roomId).channel("all").enabled(true)
+                .allowedGuestIds(alivePlayerIds)
+                .round(state.getRound()).build());
+    }
+
+    private void setupNightAfterHunter(String roomId, GameState state) {
+        state.setPhase(GamePhase.NIGHT);
+        state.setNightActions(new NightActions());
+        state.setCurrentNightRole(null);
+        state.setPhaseDeadline(System.currentTimeMillis());
+        repo.save(roomId, state);
+        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
+                .roomId(roomId).channel("all").enabled(false)
+                .allowedGuestIds(List.of())
+                .round(state.getRound()).build());
+        producer.publishChatChannelUpdated(ChatChannelEvent.builder()
+                .roomId(roomId).channel("wolves").enabled(false)
+                .allowedGuestIds(List.of())
+                .round(state.getRound()).build());
+    }
+
+    private void publishHunterResolved(String roomId, GameState state, String originPhase, String targetId) {
+        producer.publishPhaseChanged(PhaseChangedEvent.builder()
+                .roomId(roomId)
+                .phase(HUNTER_PHASE_FROM_NIGHT.equals(originPhase) ? "day" : "hunter")
+                .round(state.getRound())
+                .deadlineTimestamp(System.currentTimeMillis())
+                .metadata(new PhaseChangedEvent.Metadata(List.of(targetId), targetId))
+                .build());
+    }
+
+    private String findDeadHunter(GameState state, List<String> deadPlayerIds) {
+        return deadPlayerIds.stream()
+                .filter(playerId -> {
+                    PlayerState player = state.getPlayers().get(playerId);
+                    return player != null && "HUNTER".equals(normalizeRole(player.getRole()));
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void clearHunterPending(GameState state) {
+        state.setHunterPendingId(null);
+        state.setHunterPendingOriginPhase(null);
+        state.setHunterPendingDeadIds(null);
+        state.setHunterPendingEliminatedId(null);
+    }
+
+    private void markHunterActionResolved(GameState state) {
+        state.setHunterPendingId(null);
     }
 
     private void publishNightWindow(String roomId, GameState state) {
@@ -412,7 +629,6 @@ public class NightPhaseService {
                 .phase("night")
                 .round(state.getRound())
                 .deadlineTimestamp(state.getPhaseDeadline())
-                .currentNightRole(normalizeRole(state.getCurrentNightRole()))
                 .metadata(new PhaseChangedEvent.Metadata(List.of(), null))
                 .build());
 

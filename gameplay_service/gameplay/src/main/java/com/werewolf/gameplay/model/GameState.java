@@ -1,6 +1,8 @@
 package com.werewolf.gameplay.model;
 
 import lombok.*;
+
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -19,4 +21,8 @@ public class GameState {
     private String currentNightRole;
     private Map<String, Integer> config;
     private long phaseDeadline;
+    private String hunterPendingId;
+    private String hunterPendingOriginPhase;
+    private List<String> hunterPendingDeadIds;
+    private String hunterPendingEliminatedId;
 }

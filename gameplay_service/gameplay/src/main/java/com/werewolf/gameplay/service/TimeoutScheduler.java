@@ -38,6 +38,7 @@ public class TimeoutScheduler {
                     log.warn("Vote timeout for roomId={}, triggering force resolve", roomId);
                     dayPhaseService.forceResolveVote(roomId);
                 }
+                case HUNTER -> nightPhaseService.resolveHunterTimeout(roomId);
             }
         }
     }
