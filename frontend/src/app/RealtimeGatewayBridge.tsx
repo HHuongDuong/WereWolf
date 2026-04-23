@@ -146,9 +146,15 @@ export function RealtimeGatewayBridge() {
           senderName: message.data.senderName,
           channel: message.data.channel,
           content: message.data.content,
-          sentAt: message.data.sentAt,
+          sentAt: typeof message.data.sentAt === "number" ? message.data.sentAt : Date.parse(message.data.sentAt),
         };
         useGameStore.getState().addChatMessage(chatMessage);
+      }
+
+      if (message.event === "game_ended") {
+        const roomId = message.data.roomId;
+        useGameStore.getState().setPhase(GamePhase.END);
+        useGameStore.getState().setWinner(message.data.winner === "villager" ? "VILLAGER" : "WEREWOLF");
       }
     });
 

@@ -9,14 +9,15 @@ import { Player } from "@/shared/types/game";
 interface GameEndScreenProps {
   winner: "VILLAGE" | "WEREWOLVES";
   players: Player[];
-  onReturnToLobby: () => void;
+  onReturnToVillage: () => void;
+  onLeaveVillage: () => void;
 }
 
-export function GameEndScreen({ winner, players, onReturnToLobby }: GameEndScreenProps) {
+export function GameEndScreen({ winner, players, onReturnToVillage, onLeaveVillage }: GameEndScreenProps) {
   return (
     <div className="min-h-screen bg-[#0B0F1A] py-16 px-6">
       <div className="max-w-5xl mx-auto">
-        <WinnerBanner winner={winner} onContinue={onReturnToLobby} />
+        <WinnerBanner winner={winner} />
 
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -26,13 +27,22 @@ export function GameEndScreen({ winner, players, onReturnToLobby }: GameEndScree
           <StatsBoard players={players} winner={winner} />
         </motion.div>
 
-        <div className="flex justify-center mt-16">
+        <div className="flex justify-center gap-6 mt-16">
           <Button
             variant="secondary"
             size="lg"
-            onClick={onReturnToLobby}
+            onClick={onReturnToVillage}
+            className="font-serif tracking-widest bg-white/10 hover:bg-white/20 border border-white/30 px-8 py-4"
           >
-            RETURN TO THE LOBBY
+            RETURN TO VILLAGE
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={onLeaveVillage}
+            className="font-serif tracking-widest text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-transparent hover:border-red-900/50 px-8 py-4"
+          >
+            LEAVE VILLAGE
           </Button>
         </div>
       </div>

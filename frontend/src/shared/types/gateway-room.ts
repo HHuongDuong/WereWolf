@@ -60,6 +60,11 @@ export interface GatewaySeerResultPayload {
   revealedRole: "VILLAGER" | "WEREWOLF";
 }
 
+export interface GatewayGameEndedPayload {
+  roomId: string;
+  winner: "werewolf" | "villager";
+}
+
 export type GatewayIncomingEvent =
   | { event: "ROOM_UPDATED"; data: GatewayRoomUpdatedPayload }
   | { event: "ROOM_CANCELLED"; data: { roomId: string } }
@@ -68,6 +73,8 @@ export type GatewayIncomingEvent =
   | { event: "seer_result"; data: GatewaySeerResultPayload }
   | { event: "role_assigned"; data: GatewayRoleAssignedPayload }
   | { event: "phase_changed"; data: any }
+  | { event: "chat_message"; data: { senderName: string; channel: string; content: string; sentAt: string } }
   | { event: "night_action_ack"; data: GatewayNightActionAckPayload }
   | { event: "vote_started"; data: GatewayVoteStartedPayload }
-  | { event: "vote_ack"; data: GatewayVoteAckPayload };
+  | { event: "vote_ack"; data: GatewayVoteAckPayload }
+  | { event: "game_ended"; data: GatewayGameEndedPayload };

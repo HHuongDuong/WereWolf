@@ -27,6 +27,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     await this.consumer.subscribe({ topic: 'room.deleted', fromBeginning: false });
     await this.consumer.subscribe({ topic: 'game.phase.changed', fromBeginning: false });
     await this.consumer.subscribe({ topic: 'game.vote.start', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'game.ended', fromBeginning: false });
     
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {
@@ -50,6 +51,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
               candidates: payload.alivePlayerIds ?? [],
               voteType: payload.voteType ?? 'DAY',
             });
+        } else if (topic === 'game.ended') {
+            this.logger.debug(`[Kafka] Received game.ended for roomId=${payload.roomId}`);
+            this.roomGateway.broadcastEvent(payload.roomId, 'game_ended', payload);
         }
       },
     });

@@ -35,6 +35,7 @@ interface GameState {
   lastPhaseDeadIds: string[];
   lastPhaseEliminatedId: string | null;
   lastProtectedPlayerId: string | null;
+  winner: "VILLAGER" | "WEREWOLF" | null;
   chatMessages: ChatMessage[];
   setLastProtectedPlayerId: (id: string | null) => void;
   setFellowWolves: (fellowWolves: string[]) => void;
@@ -61,6 +62,7 @@ interface GameState {
     deadIds?: string[];
     eliminatedId?: string | null;
   }) => void;
+  setWinner: (winner: "VILLAGER" | "WEREWOLF" | null) => void;
   completePhaseTransition: () => void;
   resetGame: () => void;
 }
@@ -87,6 +89,7 @@ const initialState = {
   lastPhaseDeadIds: [] as string[],
   lastPhaseEliminatedId: null as string | null,
   lastProtectedPlayerId: null as string | null,
+  winner: null as "VILLAGER" | "WEREWOLF" | null,
   chatMessages: [] as ChatMessage[],
 };
 
@@ -133,6 +136,7 @@ export const useGameStore = create<GameState>((set) => ({
       lastPhaseDeadIds: payload.deadIds ?? [],
       lastPhaseEliminatedId: payload.eliminatedId ?? null,
     })),
+  setWinner: (winner) => set({ winner }),
   completePhaseTransition: () => set({ shouldShowPhaseTransition: false }),
   resetGame: () => set(initialState),
 }));
