@@ -541,6 +541,7 @@ export function RoleReceivedGameplayLayout({
               <div className="relative rounded-xl border border-slate-800 bg-black/60 p-5 text-center shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-sm">
                 <div className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(153,27,27,0.05),transparent_70%)]" />
                 <p className="relative text-[11px] uppercase tracking-[0.2em] font-serif text-red-400/80">Identity</p>
+
                 <div className="relative mt-4 flex items-center justify-center">
                   <div className="relative w-52 overflow-visible rounded-lg border-2 border-slate-700/50 shadow-[0_15px_35px_rgba(0,0,0,0.7),0_0_20px_rgba(153,27,27,0.2)] transition-transform hover:scale-105 duration-500">
                     <img
@@ -549,8 +550,17 @@ export function RoleReceivedGameplayLayout({
                       decoding="sync"
                       className="h-auto w-full object-cover rounded-md"
                     />
-                    <div className="absolute -bottom-4 -right-4 rounded-full border border-slate-700 bg-black p-1 shadow-[0_0_15px_rgba(153,27,27,0.5)]">
-                      <Avatar name={playerName} isDead={!isAlive} size="sm" shape="circle" />
+                    
+                    {/* Player Name Badge - Top Right */}
+                    <div className="absolute -top-3 -right-3 z-10">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-900/50 bg-gradient-to-br from-amber-950/90 to-black/90 shadow-[0_0_15px_rgba(251,191,36,0.3)] backdrop-blur-sm">
+                        <span className="text-xs font-accent tracking-wide text-amber-400/90">
+                          {playerName}
+                        </span>
+                        {!isAlive && (
+                          <span className="text-[10px]">☠️</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -662,24 +672,15 @@ export function RoleReceivedGameplayLayout({
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-black/40 p-4 shadow-[0_0_30px_rgba(0,0,0,0.9)] backdrop-blur-sm flex flex-col">
-          <div className="mb-4 flex items-center gap-3 px-2">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-            <p className="text-[11px] uppercase tracking-[0.25em] font-serif text-slate-400">Whispers</p>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-          </div>
-          <div className="flex-1 min-h-[300px]">
-            <ChatBox
-              messages={villageMessages}
-              werewolfMessages={wolfMessages}
-              onSendMessage={handleSendMessage}
-              currentRole={currentRole}
-              inputDisabled={!isAlive}
-              villageSquareEnabled={isVillageSquareEnabled}
-              wolfDenEnabled={isWolfDenEnabled}
-            />
-          </div>
-        </div>
+        <ChatBox
+          messages={villageMessages}
+          werewolfMessages={wolfMessages}
+          onSendMessage={handleSendMessage}
+          currentRole={currentRole}
+          inputDisabled={!isAlive}
+          villageSquareEnabled={isVillageSquareEnabled}
+          wolfDenEnabled={isWolfDenEnabled}
+        />
       </section>
 
     </div>
