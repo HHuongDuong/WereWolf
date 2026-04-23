@@ -1,5 +1,9 @@
 package com.werewolf.gameplay.kafka;
 
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.stereotype.Component;
+
 import com.werewolf.gameplay.model.GamePhase;
 import com.werewolf.gameplay.model.GameState;
 import com.werewolf.gameplay.model.events.NightActionEvent;
@@ -9,11 +13,9 @@ import com.werewolf.gameplay.redis.GameStateRepository;
 import com.werewolf.gameplay.service.DayPhaseService;
 import com.werewolf.gameplay.service.GameInitService;
 import com.werewolf.gameplay.service.NightPhaseService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
