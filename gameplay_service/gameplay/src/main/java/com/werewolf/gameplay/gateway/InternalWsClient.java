@@ -33,7 +33,10 @@ public class InternalWsClient {
         this.internalToken = internalToken;
     }
 
-    public boolean sendRoleAssigned(String roomId, String guestId, String role) {
+    public boolean sendRoleAssigned(String roomId, String guestId, String role, java.util.List<String> fellowWolves) {
+        if (fellowWolves != null && !fellowWolves.isEmpty()) {
+            return sendPrivate(roomId, guestId, "role_assigned", Map.of("role", role, "fellowWolves", fellowWolves));
+        }
         return sendPrivate(roomId, guestId, "role_assigned", Map.of("role", role));
     }
 

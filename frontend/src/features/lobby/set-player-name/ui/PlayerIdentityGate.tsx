@@ -30,7 +30,7 @@ export function PlayerIdentityGate({
             <Flame className="w-12 h-12 text-[#FF4500] relative z-10 animate-[flicker_3s_infinite]" />
           </div>
 
-          <h2 className="text-4xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-brand-moonlight to-gray-400 mb-3 relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h2 className="text-4xl font-sans text-transparent bg-clip-text bg-gradient-to-b from-brand-moonlight to-gray-400 mb-3 relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Welcome, Wanderer
           </h2>
 
@@ -40,7 +40,7 @@ export function PlayerIdentityGate({
             <div className="h-px bg-gradient-to-l from-transparent via-[#FF4500]/50 to-transparent flex-1" />
           </div>
 
-          <p className="text-gray-400 text-sm mb-6 relative z-10 font-serif italic">
+          <p className="text-gray-400 text-sm mb-6 relative z-10 font-accent italic">
             "What name shall the village carve upon your grave if you fall?"
           </p>
 
@@ -50,7 +50,7 @@ export function PlayerIdentityGate({
               type="text"
               value={nameInput}
               onChange={(event) => onNameInputChange(event.target.value)}
-              className="relative w-full bg-[#050303] border border-[#3A2A1A] rounded-lg px-6 py-4 text-center text-2xl text-brand-moonlight focus:outline-none focus:border-[#FF4500]/80 focus:shadow-[0_0_15px_rgba(255,69,0,0.3)] transition-all font-serif placeholder:text-gray-700 placeholder:italic"
+              className="relative w-full bg-[#050303] border border-[#3A2A1A] rounded-lg px-6 py-4 text-center text-2xl text-brand-moonlight focus:outline-none focus:border-[#FF4500]/80 focus:shadow-[0_0_15px_rgba(255,69,0,0.3)] transition-all font-sans placeholder:text-gray-700 placeholder:italic"
               placeholder="Your name..."
               maxLength={16}
               autoFocus
@@ -65,7 +65,7 @@ export function PlayerIdentityGate({
           <StartGameButton
             onClick={onConfirm}
             disabled={!nameInput.trim()}
-            className="w-full relative z-10 shadow-[0_0_30px_rgba(159,18,57,0.3)]"
+            className="w-full relative z-10 font-serif shadow-[0_0_30px_rgba(159,18,57,0.3)]"
           >
             ENTER THE VILLAGE
           </StartGameButton>

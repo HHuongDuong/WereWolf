@@ -116,21 +116,21 @@ function Seat({
       className={[
         "group relative mx-auto aspect-square w-full max-w-[136px] rounded-lg border backdrop-blur-sm p-2 text-left transition-all duration-300",
         isSelected
-          ? "border-red-900 shadow-[0_0_15px_rgba(153,27,27,0.6),inset_0_0_20px_rgba(153,27,27,0.2)] bg-black/60"
-          : "border-slate-800 bg-black/40",
-        isEnabled ? "hover:border-red-800/80 hover:shadow-[0_0_10px_rgba(153,27,27,0.4)] hover:bg-black/50" : "cursor-not-allowed opacity-40 grayscale",
+          ? "border-red-900 shadow-[0_0_15px_rgba(153,27,27,0.6),inset_0_0_20px_rgba(153,27,27,0.2)] bg-black/40"
+          : "border-slate-800 bg-black/20",
+        isEnabled ? "hover:border-red-800/80 hover:shadow-[0_0_10px_rgba(153,27,27,0.4)] hover:bg-black/30" : "cursor-not-allowed opacity-50",
       ].join(" ")}
     >
       <div className="mt-2 flex h-[calc(100%-1rem)] flex-col items-center justify-center gap-1.5 text-center">
-        <div className="relative w-16">
+        <div className="relative h-12 sm:h-14">
           <img
             src={cardImage}
             alt={revealedRole ? `${revealedRole} card` : "Hidden role card"}
-            className="w-full rounded-md border border-slate-700"
+            className="h-full w-auto object-contain rounded-md border border-slate-700"
           />
           {!player.isAlive && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md">
-              <img src="/images/overlay/claw_mark.png" alt="Dead" className="w-full h-full object-contain opacity-40" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 rounded-md">
+              <img src="/images/overlay/claw_mark.png" alt="Dead" className="w-full h-full object-contain mix-blend-screen opacity-50" />
             </div>
           )}
         </div>
@@ -138,7 +138,7 @@ function Seat({
           <Avatar name={player.name} isDead={!player.isAlive} size="sm" shape="circle" />
         </div>
         <div className="mt-1 w-full bg-black/60 py-1 px-1 rounded border border-slate-700/50">
-          <p className="line-clamp-1 text-[11px] md:text-xs font-accent tracking-widest uppercase text-amber-500/90 group-hover:text-amber-400 transition-colors drop-shadow-md">
+          <p className="line-clamp-1 text-[11px] md:text-xs font-accent tracking-widest text-amber-500/90 group-hover:text-amber-400 transition-colors drop-shadow-md">
             {player.name}
           </p>
         </div>
@@ -503,7 +503,7 @@ export function RoleReceivedGameplayLayout({
           </div>
           <div className="text-right">
             <p className="text-[11px] uppercase tracking-[0.3em] font-serif text-slate-400">Time Remaining</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-red-400 drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]">
+            <p className="mt-1 font-accent tabular-nums text-2xl font-bold text-red-400 drop-shadow-[0_0_5px_rgba(153,27,27,0.5)]">
               {secondsLeft === null ? "--:--" : `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")}`}
             </p>
           </div>

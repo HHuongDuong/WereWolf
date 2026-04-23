@@ -67,10 +67,10 @@ export function RoleRevealModal({ isOpen, onClose, role, playerName }: RoleRevea
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <p className="text-[#9CA3AF] uppercase tracking-[4px] text-sm mb-2">
+                    <p className="font-accent text-[#9CA3AF] uppercase tracking-[4px] text-sm mb-2">
                       The Moon reveals your fate...
                     </p>
-                    <h2 className="text-4xl font-bold text-white mb-8">
+                    <h2 className="font-serif text-4xl font-bold text-white mb-8 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
                       {playerName}
                     </h2>
                   </motion.div>
@@ -88,7 +88,7 @@ export function RoleRevealModal({ isOpen, onClose, role, playerName }: RoleRevea
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="text-[#E5E7EB]/80 text-lg leading-relaxed mb-10"
+                    className="font-serif text-[#E5E7EB]/80 text-xl leading-relaxed mb-10 drop-shadow-md"
                   >
                     You are <span className="font-bold" style={{ color: accentColor }}>{role}</span>.
                   </motion.p>

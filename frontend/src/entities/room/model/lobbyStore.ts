@@ -29,56 +29,8 @@ function createMockPlayers(count: number, prefix: string): Player[] {
   }));
 }
 
-const initialMockRooms: Room[] = [
-  {
-    id: "1",
-    name: "The Howling Table",
-    code: "HTAB48",
-    hostName: "Anh Duong",
-    hostId: "host-1",
-    maxPlayers: 12,
-    players: createMockPlayers(7, "howling"),
-  },
-  {
-    id: "2",
-    name: "Blood Moon Pack",
-    code: "BMON72",
-    hostName: "Luna",
-    hostId: "host-2",
-    maxPlayers: 12,
-    players: createMockPlayers(4, "blood"),
-  },
-  {
-    id: "3",
-    name: "Silent Forest",
-    code: "SFOR11",
-    hostName: "Shadow",
-    hostId: "host-3",
-    maxPlayers: 12,
-    players: createMockPlayers(12, "silent"),
-  },
-  {
-    id: "4",
-    name: "Witch's Hut",
-    code: "WHUT33",
-    hostName: "Elara",
-    hostId: "host-4",
-    maxPlayers: 8,
-    players: createMockPlayers(6, "witch"),
-  },
-  {
-    id: "5",
-    name: "Cursed Village",
-    code: "CVIL99",
-    hostName: "Victor",
-    hostId: "host-5",
-    maxPlayers: 16,
-    players: createMockPlayers(9, "cursed"),
-  },
-];
-
 export const useLobbyStore = create<LobbyState>((set) => ({
-  rooms: initialMockRooms,
+  rooms: [],
   isLoading: false,
   playerName: null,
   currentRoomId: null,

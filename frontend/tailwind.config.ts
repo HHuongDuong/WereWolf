@@ -5,9 +5,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-eb-garamond)", "sans-serif"],
-        serif: ["var(--font-cinzel)", "serif"],
-        accent: ["var(--font-im-fell-english)", "serif"],
+        sans: ["EB Garamond", "sans-serif"],
+        serif: ["Cinzel", "serif"],
+        accent: ["IM Fell English", "serif"],
       },
     },
   },

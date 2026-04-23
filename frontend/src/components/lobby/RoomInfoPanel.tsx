@@ -28,23 +28,6 @@ export function RoomInfoPanel({
 }: RoomInfoPanelProps) {
   const isHost = room.hostId === currentUserId;
   const enoughPlayers = room.players.length >= room.maxPlayers;
-  const [activeTab, setActiveTab] = useState<"chat" | "config">("chat");
-  const chatScrollRef = useRef<HTMLDivElement | null>(null);
-  const messages = useMemo(
-    () => [
-      { who: "System", text: "The blood moon rises over the square..." },
-      { who: "Vesper", text: "Ready to hunt or be hunted." },
-      { who: "Thorne", text: "We need two more souls before we begin." },
-    ],
-    [],
-  );
-
-  useEffect(() => {
-    if (activeTab !== "chat") return;
-    const el = chatScrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [activeTab, messages.length]);
   const gameState = {
     isHost,
     enoughPlayers,
@@ -79,8 +62,8 @@ export function RoomInfoPanel({
                 player={player}
                 isHost={room.hostId === player.id}
                 isCurrentUser={player.id === currentUserId}
-                canKick={isHost && player.id !== currentUserId}
-                onKick={onKickPlayer}
+                canKick={false}
+                onKick={() => {}}
                 seatIndex={index + 1}
               />
             ))}
@@ -93,72 +76,24 @@ export function RoomInfoPanel({
         {/* RIGHT: Tabs + Actions */}
         <div className="bg-black/40 border border-white/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden flex flex-col min-h-[520px] relative">
           <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/stardust.png')" }} />
-          
+
           <div className="px-4 pt-4 pb-3 border-b border-white/10 flex items-center gap-3 relative z-10">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={[
-                "text-xs font-serif font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
-                activeTab === "chat"
-                  ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
-                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
-              ].join(" ")}
-            >
-              💬 CHAT
-            </button>
-            <button
-              onClick={() => setActiveTab("config")}
-              className={[
-                "text-xs font-serif font-bold tracking-widest px-3 py-2 rounded-lg border transition-all",
-                activeTab === "config"
-                  ? "border-brand-moonlight/50 text-brand-moonlight bg-brand-moonlight/10 shadow-[0_0_15px_rgba(168,192,214,0.15)]"
-                  : "border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/5",
-              ].join(" ")}
-            >
+            <h3 className="text-sm font-serif font-bold tracking-widest text-brand-moonlight px-3 py-2">
               ⚙ CONFIG
-            </button>
+            </h3>
             <div className="flex-1" />
-            {!isHost && activeTab === "config" && (
+            {!isHost && (
               <div className="text-[10px] text-gray-500 tracking-widest uppercase">Host only</div>
             )}
           </div>
 
           <div className="flex-1 min-h-0 p-4 relative z-10">
-            {activeTab === "chat" ? (
-              <div className="h-full flex flex-col">
-                <div
-                  ref={chatScrollRef}
-                  className="flex-1 min-h-0 overflow-y-auto space-y-3 text-sm font-serif pr-2 custom-scrollbar"
-                >
-                  {messages.map((m, idx) => (
-                    <div key={idx} className="text-gray-300">
-                      <span className={m.who === "System" ? "text-gray-500 italic" : "text-[#A8C0D6] font-bold"}>
-                        {m.who}:
-                      </span>{" "}
-                      <span className={m.who === "System" ? "text-gray-500 italic" : ""}>{m.text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-white/10 flex gap-3 relative z-10">
-                  <input
-                    type="text"
-                    placeholder="Whisper into the dark..."
-                    className="flex-1 bg-black/50 border border-white/10 rounded px-4 py-2 text-gray-300 placeholder-gray-600 text-sm italic focus:outline-none focus:border-brand-moonlight/50 focus:shadow-[0_0_10px_rgba(168,192,214,0.2)] transition-all"
-                  />
-                  <button className="px-4 py-2 bg-brand-moonlight/10 hover:bg-brand-moonlight/20 text-brand-moonlight rounded text-xs font-serif font-bold tracking-[0.2em] transition-colors border border-brand-moonlight/30 shadow-[0_0_10px_rgba(168,192,214,0.1)] hover:shadow-[0_0_15px_rgba(168,192,214,0.3)]">
-                    SEND
-                  </button>
-                </div>
-              </div>
-            ) : (
               <RoomConfigPanel
                 maxPlayers={room.maxPlayers}
                 config={room.config}
                 onSave={onConfigureRoom}
                 disabled={!isHost}
               />
-            )}
           </div>
 
           <div className="p-4 border-t border-white/10 relative z-10">

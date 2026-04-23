@@ -28,7 +28,7 @@ export function RoleDistributionAnimation({
               className="mb-12"
             >
               <div className="text-6xl mb-6">🌕</div>
-              <p className="text-[#9CA3AF] tracking-[4px] text-sm">THE MOON HAS CHOSEN</p>
+              <p className="font-accent text-[#9CA3AF] tracking-[4px] text-sm uppercase">The moon has chosen</p>
             </motion.div>
 
             <motion.div
@@ -43,7 +43,7 @@ export function RoleDistributionAnimation({
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="mt-10 text-5xl font-bold text-white"
+              className="mt-10 font-serif text-5xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]"
             >
               {playerName}
             </motion.h2>
@@ -52,9 +52,9 @@ export function RoleDistributionAnimation({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
-              className="mt-8 text-2xl text-[#C4B5FD]"
+              className="mt-8 font-serif text-2xl text-[#C4B5FD] drop-shadow-md"
             >
-              You are the <span className="font-bold">{playerRole}</span>
+              You are the <span className="font-bold text-red-400">{playerRole}</span>
             </motion.p>
           </div>
         </div>

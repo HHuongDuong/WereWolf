@@ -49,11 +49,11 @@ export function PhaseTransitionOverlay({
             >
               <div className="text-8xl mb-6">🌕</div>
 
-              <div className="text-[#E5E7EB] text-6xl font-black tracking-widest mb-4">
+              <div className="text-[#E5E7EB] text-6xl font-serif font-black tracking-widest mb-4">
                 {toPhase}
               </div>
 
-              <div className="text-[#9CA3AF] text-2xl tracking-[4px] uppercase">
+              <div className="text-[#9CA3AF] text-2xl font-accent tracking-[4px] uppercase">
                 Transitioning from {fromPhase}
               </div>
             </motion.div>

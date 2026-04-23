@@ -36,12 +36,12 @@ export default function LobbyView() {
     const unsubscribe = socket.onEvent((message) => {
       if (message.event === "ROOM_UPDATED") {
         upsertRoomFromGateway(message.data);
-        if (pendingCreatedRoomName && message.data.hostId === currentUserId) {
-          setRoomName(message.data.roomId, pendingCreatedRoomName);
-          setPendingCreatedRoomName(null);
-        }
-        if (!useLobbyStore.getState().currentRoomId) {
+        const isPlayerInRoom = message.data.players.some((p: any) => p.guestId === currentUserId);
+        
+        if (!useLobbyStore.getState().currentRoomId && isPlayerInRoom) {
           setCurrentRoomId(message.data.roomId);
+        } else if (useLobbyStore.getState().currentRoomId === message.data.roomId && !isPlayerInRoom) {
+          setCurrentRoomId(null);
         }
         const activeRoomId = useLobbyStore.getState().currentRoomId;
         if (message.data.status === "in_game" && activeRoomId === message.data.roomId) {
@@ -80,15 +80,12 @@ export default function LobbyView() {
     upsertRoomFromGateway,
   ]);
 
-  const handleCreateRoom = (name: string) => {
+  const handleCreateRoom = () => {
     if (!playerName) return;
-    const normalizedRoomName = name.trim() || "Gathering";
-    setPendingCreatedRoomName(normalizedRoomName);
     socket.send("CREATE_ROOM", {
       guestId: currentUserId,
       displayName: playerName,
     });
-    setShowCreateModal(false);
   };
 
   const handleJoinRoom = (roomId: string) => {
@@ -187,13 +184,10 @@ export default function LobbyView() {
       rooms={rooms}
       playerName={playerName}
       roomCodeInput={roomCodeInput}
-      showCreateModal={showCreateModal}
       showJoinModal={showJoinModal}
       onRoomCodeInputChange={setRoomCodeInput}
       onJoinRoom={handleJoinRoom}
       onJoinByCode={handleJoinByCode}
-      onOpenCreateModal={() => setShowCreateModal(true)}
-      onCloseCreateModal={() => setShowCreateModal(false)}
       onCloseJoinModal={() => setShowJoinModal(false)}
       onCreateRoom={handleCreateRoom}
       onJoinByModalCode={handleJoinByCode}

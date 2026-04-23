@@ -16,10 +16,8 @@ interface LobbyBrowserProps {
   onRoomCodeInputChange: (code: string) => void;
   onJoinRoom: (roomId: string) => void;
   onJoinByCode: () => void;
-  onOpenCreateModal: () => void;
-  onCloseCreateModal: () => void;
   onCloseJoinModal: () => void;
-  onCreateRoom: (name: string) => void;
+  onCreateRoom: () => void;
   onJoinByModalCode: (roomCode: string) => void;
   errorMessage?: string | null;
 }
@@ -33,8 +31,6 @@ export function LobbyBrowser({
   onRoomCodeInputChange,
   onJoinRoom,
   onJoinByCode,
-  onOpenCreateModal,
-  onCloseCreateModal,
   onCloseJoinModal,
   onCreateRoom,
   onJoinByModalCode,
@@ -68,16 +64,11 @@ export function LobbyBrowser({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg text-white drop-shadow-md">{playerName}</span>
-                <span className="bg-brand-blood px-2 py-0.5 rounded text-[10px] font-bold tracking-wider">LVL 4</span>
               </div>
-              <div className="text-xs text-gray-400 mt-1">Games: 42 • Win Rate: 68%</div>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 mb-8 relative z-10">
-            <button className="bg-brand-moonlight/10 hover:bg-brand-moonlight/20 text-brand-moonlight border border-brand-moonlight/30 rounded-lg py-3 px-4 flex items-center justify-center gap-2 font-bold transition-all shadow-[0_0_15px_rgba(168,192,214,0.05)] hover:shadow-[0_0_20px_rgba(168,192,214,0.15)]">
-              <Dices className="w-5 h-5" /> Join Random Fire
-            </button>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -101,34 +92,13 @@ export function LobbyBrowser({
               </div>
             )}
           </div>
-
-          <div className="flex-1 relative z-10">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Awake Friends (2)</h3>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#111] border border-green-500/50 flex items-center justify-center text-xs">🐺</div>
-                <div>
-                  <div className="text-sm font-bold text-gray-200">ShadowBite</div>
-                  <div className="text-[10px] text-green-400">Sitting by campfire #47</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#111] border border-blue-500/50 flex items-center justify-center text-xs">👁️</div>
-                <div>
-                  <div className="text-sm font-bold text-gray-200">LunaSeer</div>
-                  <div className="text-[10px] text-blue-400">In game</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       <div className="h-24 bg-gradient-to-t from-brand-background via-brand-background/80 to-transparent flex items-center justify-center relative shrink-0">
-        <StartGameButton onClick={onOpenCreateModal}>LIGHT A NEW FIRE</StartGameButton>
+        <StartGameButton onClick={onCreateRoom}>LIGHT A NEW FIRE</StartGameButton>
       </div>
 
-      <CreateRoomModal isOpen={showCreateModal} onClose={onCloseCreateModal} onCreate={onCreateRoom} />
       <JoinRoomModal isOpen={showJoinModal} onClose={onCloseJoinModal} onJoin={onJoinByModalCode} />
     </div>
   );

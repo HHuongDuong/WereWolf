@@ -56,8 +56,19 @@ public class GameEventProducer {
             log.warn("No role assignments to send for room {}", event.getRoomId());
             return;
         }
+
+        java.util.List<String> fellowWolves = event.getPlayers().entrySet().stream()
+                .filter(e -> "WEREWOLF".equalsIgnoreCase(e.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+
         event.getPlayers().forEach((guestId, role) -> {
-            boolean delivered = internalWsClient.sendRoleAssigned(event.getRoomId(), guestId, role);
+            boolean delivered;
+            if ("WEREWOLF".equalsIgnoreCase(role)) {
+                delivered = internalWsClient.sendRoleAssigned(event.getRoomId(), guestId, role, fellowWolves);
+            } else {
+                delivered = internalWsClient.sendRoleAssigned(event.getRoomId(), guestId, role, null);
+            }
             if (!delivered) {
                 log.warn("role_assigned not delivered: roomId={}, guestId={}", event.getRoomId(), guestId);
             }

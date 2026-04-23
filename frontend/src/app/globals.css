@@ -5,14 +5,20 @@
   --color-brand-moonlight: #A8C0D6;
   --color-brand-blood: #9F1239;
   --color-brand-wood: #2A1F1A;
-  
-  --font-sans: var(--font-eb-garamond), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: var(--font-cinzel), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-accent: var(--font-im-fell-english), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  --font-sans: "EB Garamond", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cinzel", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-accent: "IM Fell English", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-serif;
   }
 }
@@ -28,7 +34,8 @@ body {
   color: #E5E7EB;
 }
 
-img, canvas {
+img,
+canvas {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: high-quality;
 }
@@ -133,7 +140,7 @@ img, canvas {
 }
 
 .panel {
-  @apply border-[3px] border-double border-[#4A3421]/90 bg-gradient-to-b from-[#140C08]/85 via-[#0D0907]/90 to-[#080606]/95 backdrop-blur-md p-5 rounded-lg shadow-[0_18px_45px_rgba(0,0,0,0.55)] relative overflow-hidden;
+  @apply border-[3px] border-double border-[#4A3421]/90 bg-gradient-to-b from-[#140C08]/85 via-[#0D0907]/90 to-[#080606]/95 backdrop-blur-md p-5 rounded-lg shadow-[0_18px_45px_#0000008c] relative overflow-hidden;
 }
 
 .panel-overlay {
@@ -149,11 +156,11 @@ img, canvas {
 }
 
 .room-title {
-  @apply text-2xl md:text-3xl font-serif font-bold text-[#E8E3D8] tracking-wider uppercase drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)];
+  @apply text-2xl md:text-3xl font-serif font-bold text-[#E8E3D8] tracking-wider uppercase drop-shadow-[0_2px_10px_#00000099];
 }
 
 .room-code {
-  @apply text-[#FF6A2A]/90 drop-shadow-[0_0_10px_rgba(255,95,47,0.35)];
+  @apply text-[#FF6A2A]/90 drop-shadow-[0_0_10px_#ff5f2f59];
 }
 
 .panel-sub {
@@ -161,7 +168,7 @@ img, canvas {
 }
 
 .village-panel {
-  @apply border border-[#362019]/80 bg-gradient-to-b from-[#1A0D0B]/80 via-[#100706]/88 to-[#080404]/94 rounded-xl p-10 flex flex-col items-center text-center shadow-[0_24px_55px_rgba(0,0,0,0.6)] relative overflow-hidden;
+  @apply border border-[#362019]/80 bg-gradient-to-b from-[#1A0D0B]/80 via-[#100706]/88 to-[#080404]/94 rounded-xl p-10 flex flex-col items-center text-center shadow-[0_24px_55px_#00000099] relative overflow-hidden;
 }
 
 .texture-scales {
@@ -169,11 +176,11 @@ img, canvas {
 }
 
 .village-title {
-  @apply text-[#FF5E2A]/65 tracking-[0.42em] text-sm font-bold mb-8 drop-shadow-[0_0_12px_rgba(255,90,40,0.2)];
+  @apply text-[#FF5E2A]/65 tracking-[0.42em] text-sm font-bold mb-8 drop-shadow-[0_0_12px_#ff5a2833];
 }
 
 .moon-text {
-  @apply text-3xl md:text-4xl font-serif text-[#C8D5E8] mb-6 drop-shadow-[0_0_18px_rgba(168,192,214,0.35)];
+  @apply text-3xl md:text-4xl font-serif text-[#C8D5E8] mb-6 drop-shadow-[0_0_18px_#a8c0d659];
 }
 
 .player-info {
@@ -189,9 +196,30 @@ img, canvas {
 }
 
 .start-button {
-  @apply w-full shadow-[0_0_40px_rgba(127,21,43,0.45)] hover:shadow-[0_0_55px_rgba(145,31,58,0.55)];
+  @apply w-full shadow-[0_0_40px_#7f152b73] hover:shadow-[0_0_55px_#911f3a8c];
 }
 
 .waiting-box {
   @apply py-4 px-6 border border-[#43302A]/70 bg-[#17100E]/70 rounded-lg text-[#A9A19B] italic text-sm;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-VariableFont_wght.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Cinzel";
+  src: url("/fonts/Cinzel-VariableFont_wght.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IM Fell English";
+  src: url("/fonts/IMFellEnglish-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
 }

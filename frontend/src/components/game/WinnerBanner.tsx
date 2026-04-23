@@ -43,7 +43,7 @@ export function WinnerBanner({ winner, onContinue }: WinnerBannerProps) {
         {isVillageWin ? "🌟" : "🐺"}
       </motion.div>
 
-      <h1 className={`text-7xl font-black tracking-widest mb-4 ${isVillageWin ? "text-[#4ADE80]" : "text-[#F87171]"}`}>
+      <h1 className={`text-7xl font-serif font-black tracking-widest mb-4 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] ${isVillageWin ? "text-[#4ADE80]" : "text-[#F87171]"}`}>
         {isVillageWin ? "THE VILLAGE SURVIVES" : "THE WOLVES REIGN"}
       </h1>
 
@@ -56,7 +56,7 @@ export function WinnerBanner({ winner, onContinue }: WinnerBannerProps) {
       {onContinue && (
         <button
           onClick={onContinue}
-          className="mt-12 px-14 py-5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-2xl text-lg font-semibold tracking-widest transition-all"
+          className="mt-12 px-14 py-5 font-serif bg-white/10 hover:bg-white/20 border border-white/30 rounded-2xl text-lg font-semibold tracking-widest transition-all uppercase"
         >
           RETURN TO LOBBY
         </button>

@@ -47,9 +47,6 @@ export function LobbyLayout({ children, playerName, title }: LobbyLayoutProps) {
 
         {/* Center */}
         <div className="flex flex-col items-center w-1/3">
-          <div className="text-brand-moonlight text-sm tracking-widest font-semibold animate-pulse drop-shadow-[0_0_5px_rgba(168,192,214,0.6)]">
-            {title || "312 VILLAGERS AWAKE TONIGHT"}
-          </div>
         </div>
 
         {/* Right */}
@@ -64,10 +61,6 @@ export function LobbyLayout({ children, playerName, title }: LobbyLayoutProps) {
                 <Avatar name={playerName || "Wanderer"} size="sm" shape="circle" />
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-4 border-l border-white/10 pl-6">
-            <button className="text-brand-moonlight/60 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all"><Bell className="w-5 h-5" /></button>
-            <button className="text-brand-moonlight/60 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all"><Settings className="w-5 h-5" /></button>
           </div>
         </div>
       </header>
