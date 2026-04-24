@@ -41,9 +41,6 @@ export function RoomHeader({
 
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-4">
-          <div className="text-base font-serif font-black tracking-[0.2em] text-white uppercase whitespace-nowrap drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
-            {name}
-          </div>
 
           <div className="text-sm font-bold text-gray-300 whitespace-nowrap tracking-wider">
             ROOM <span className="text-brand-moonlight drop-shadow-[0_0_5px_rgba(168,192,214,0.5)]">#{shortCode}</span>
